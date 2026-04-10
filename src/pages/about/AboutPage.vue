@@ -636,7 +636,7 @@ onBeforeUnmount(() => {
       <button class="close-button" type="button" @click="videoOpen = false">
         <X :size="22" />
       </button>
-      <video controls autoplay playsinline src="/images/vd/1fb59345-a995-4408-b03b-e8e38ff258e7.mp4" />
+      <video controls autoplay playsinline src="/images/vd/1fb59345-a995-4408-b03b-e8e38ff258e7.web.mp4" />
     </div>
 
     <div v-if="chartOpen" class="about-modal light" @click.self="chartOpen = false">
