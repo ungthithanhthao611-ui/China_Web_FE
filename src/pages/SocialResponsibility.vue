@@ -1,0 +1,1 @@
+<template><div class='page-SocialResponsibility'><section class='section-padding'><div class='container'><h1>SocialResponsibility Page</h1><p>Content coming soon...</p></div></section></div></template>
