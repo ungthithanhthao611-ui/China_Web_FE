@@ -1,10 +1,14 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { Menu, X, Search, Globe } from 'lucide-vue-next'
+import { ChevronDown, Globe, Menu, Search, X } from 'lucide-vue-next'
 import { uiState } from '../../utils/uiState'
 
 const isMobileMenuOpen = ref(false)
+const isSearchOpen = ref(false)
+const searchQuery = ref('')
+const searchInputRef = ref(null)
+const mobileExpandedGroups = ref([])
 const route = useRoute()
 
 const navItems = [
@@ -60,7 +64,17 @@ const navItems = [
 ]
 
 const isHomeOverlay = computed(() => route.path === '/' || route.path === '/honors')
+const isContactHero = computed(
+  () =>
+    ['/contact', '/subsidiary', '/branch', '/join-us'].includes(route.path) &&
+    (!route.hash || route.hash === '#ctn1')
+)
 const isAboutPage = computed(() => route.path.startsWith('/about'))
+const isNewsHero = computed(() => route.path.startsWith('/news'))
+const isVideoHero = computed(() => route.path === '/video')
+const isProjectCase = computed(
+  () => route.path === '/project-case' || route.path === '/projects' || route.path.startsWith('/projects/')
+)
 const isAboutHero = computed(
   () =>
     isAboutPage.value &&
@@ -79,16 +93,80 @@ const isLinkActive = (path) => {
   return route.path.startsWith(normalizedPath)
 }
 
+const searchLinks = computed(() =>
+  navItems.flatMap((item) => [item, ...(item.children || [])]).map((item) => ({
+    name: item.name,
+    path: item.path
+  }))
+)
+
+const filteredSearchLinks = computed(() => {
+  const keyword = searchQuery.value.trim().toLowerCase()
+
+  if (!keyword) {
+    return searchLinks.value
+  }
+
+  return searchLinks.value.filter((item) => item.name.toLowerCase().includes(keyword))
+})
+
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
+
+const toggleMobileGroup = (name) => {
+  if (mobileExpandedGroups.value.includes(name)) {
+    mobileExpandedGroups.value = mobileExpandedGroups.value.filter((item) => item !== name)
+    return
+  }
+
+  mobileExpandedGroups.value = [...mobileExpandedGroups.value, name]
+}
+
+const isMobileGroupExpanded = (name) => mobileExpandedGroups.value.includes(name)
+
+const setBodyLock = (locked) => {
+  const isProjectCaseLocked = document.body.dataset.projectCaseScrollLock === 'true'
+  document.body.style.overflow = locked || isProjectCaseLocked ? 'hidden' : ''
+}
+
+const openSearch = async () => {
+  isSearchOpen.value = true
+  await nextTick()
+  searchInputRef.value?.focus()
+}
+
+const closeSearch = () => {
+  isSearchOpen.value = false
+  searchQuery.value = ''
+}
+
+const handleKeydown = (event) => {
+  if (event.key === 'Escape') {
+    closeSearch()
+  }
 }
 
 watch(
   () => route.fullPath,
   () => {
     isMobileMenuOpen.value = false
+    closeSearch()
   }
 )
+
+watch(isSearchOpen, (value) => {
+  setBodyLock(value)
+})
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+  setBodyLock(false)
+})
 </script>
 
 <template>
@@ -97,6 +175,10 @@ watch(
       'header',
       {
         'is-home': isHomeOverlay || isAboutHero,
+        'is-contact-hero': isContactHero,
+        'is-news-hero': isNewsHero,
+        'is-video-hero': isVideoHero,
+        'is-project-case': isProjectCase,
         'is-about-light': isAboutSectionOverlay,
         'is-hidden': uiState.isHeaderHidden,
         'is-hovered': uiState.isHeaderHovered
@@ -130,9 +212,9 @@ watch(
           </div>
         </nav>
 
-        <a class="nav_search" href="#" @click.prevent aria-label="Search">
+        <button class="nav_search" type="button" aria-label="Search" @click="openSearch">
           <Search :size="28" stroke-width="1.7" />
-        </a>
+        </button>
 
         <a href="https://www.sinodecor.com" class="lang" target="_blank" rel="noopener noreferrer">
           <Globe :size="28" stroke-width="1.7" />
@@ -148,8 +230,26 @@ watch(
 
     <div :class="['mobile-nav', { 'is-open': isMobileMenuOpen }]">
       <div v-for="item in navItems" :key="`mobile-${item.name}`" class="mobile-nav-item">
-        <router-link :to="item.path" @click="isMobileMenuOpen = false">{{ item.name }}</router-link>
-        <div v-if="item.children?.length" class="mobile-dropdown">
+        <div class="mobile-nav-head">
+          <router-link :to="item.path" @click="isMobileMenuOpen = false">{{ item.name }}</router-link>
+          <button
+            v-if="item.children?.length"
+            type="button"
+            class="mobile-nav-toggle"
+            :aria-label="`Toggle ${item.name}`"
+            @click="toggleMobileGroup(item.name)"
+          >
+            <ChevronDown
+              :size="18"
+              :class="{ rotated: isMobileGroupExpanded(item.name) }"
+            />
+          </button>
+        </div>
+        <div
+          v-if="item.children?.length"
+          class="mobile-dropdown"
+          :class="{ 'is-open': isMobileGroupExpanded(item.name) }"
+        >
           <router-link
             v-for="child in item.children"
             :key="`mobile-${child.name}`"
@@ -161,6 +261,42 @@ watch(
         </div>
       </div>
     </div>
+
+    <transition name="search-fade">
+      <div v-if="isSearchOpen" class="search-overlay">
+        <button class="search-overlay__close" type="button" aria-label="Close search" @click="closeSearch">
+          <X :size="28" />
+        </button>
+
+        <div class="search-overlay__inner">
+          <p class="search-overlay__eyebrow">Search</p>
+          <div class="search-overlay__field">
+            <Search :size="22" />
+            <input
+              ref="searchInputRef"
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search page links..."
+            />
+          </div>
+
+          <div class="search-overlay__results">
+            <router-link
+              v-for="item in filteredSearchLinks"
+              :key="`${item.path}-${item.name}`"
+              :to="item.path"
+              class="search-overlay__result"
+              @click="closeSearch"
+            >
+              <span>{{ item.name }}</span>
+              <span>{{ item.path }}</span>
+            </router-link>
+
+            <p v-if="!filteredSearchLinks.length" class="search-overlay__empty">No matching links.</p>
+          </div>
+        </div>
+      </div>
+    </transition>
   </header>
 </template>
 
@@ -201,6 +337,91 @@ watch(
       height: 180px;
       background: linear-gradient(180deg, rgba(4, 15, 38, 0.78) 0%, rgba(4, 15, 38, 0.34) 58%, rgba(4, 15, 38, 0) 100%);
       pointer-events: none;
+    }
+  }
+
+  &.is-contact-hero {
+    position: fixed;
+    background: transparent;
+    border-bottom-color: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    opacity: 1;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 180px;
+      background: linear-gradient(180deg, rgba(10, 20, 39, 0.56) 0%, rgba(10, 20, 39, 0.18) 62%, rgba(10, 20, 39, 0) 100%);
+      pointer-events: none;
+    }
+  }
+
+  &.is-news-hero,
+  &.is-video-hero {
+    position: fixed;
+    background: transparent;
+    border-bottom-color: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    opacity: 1;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 200px;
+      background: linear-gradient(180deg, rgba(9, 20, 43, 0.62) 0%, rgba(9, 20, 43, 0.26) 58%, rgba(9, 20, 43, 0) 100%);
+      pointer-events: none;
+    }
+
+    .fnt_16 a,
+    .nav_search,
+    .lang {
+      color: #efc392;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .fnt_16:hover a,
+    .fnt_16.active a,
+    .nav_search:hover,
+    .lang:hover {
+      color: #f6d1a7;
+    }
+
+    .colum2 {
+      background: rgba(6, 18, 42, 0.96);
+      border-color: rgba(214, 184, 136, 0.24);
+    }
+  }
+
+  &.is-project-case {
+    position: fixed;
+    opacity: 1;
+    background: rgba(247, 247, 247, 0.94);
+    border-bottom: 1px solid rgba(226, 215, 198, 0.66);
+    box-shadow: none;
+    backdrop-filter: none;
+
+    .fnt_16 a,
+    .nav_search,
+    .lang {
+      color: #dfbd8e;
+      text-shadow: none;
+    }
+
+    .fnt_16:hover a,
+    .fnt_16.active a,
+    .nav_search:hover,
+    .lang:hover {
+      color: #f1cda0;
+    }
+
+    .colum2 {
+      background: rgba(255, 255, 255, 0.98);
+      border-color: rgba(214, 184, 136, 0.26);
+      box-shadow: 0 10px 24px rgba(29, 35, 52, 0.12);
     }
   }
 
@@ -357,6 +578,8 @@ watch(
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 0;
+  background: transparent;
   color: #dfbd8e;
   flex-shrink: 0;
   transition: color 0.2s ease, transform 0.2s ease;
@@ -437,11 +660,43 @@ watch(
     }
   }
 
+  .mobile-nav-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .mobile-nav-toggle {
+    border: 0;
+    background: transparent;
+    color: #e6c596;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-nav-toggle :deep(svg) {
+    transition: transform 0.25s ease;
+  }
+
+  .mobile-nav-toggle :deep(svg.rotated) {
+    transform: rotate(180deg);
+  }
+
   .mobile-dropdown {
     display: grid;
     gap: 8px;
-    margin-top: 10px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, margin-top 0.25s ease;
+    margin-top: 0;
     padding-left: 12px;
+
+    &.is-open {
+      max-height: 360px;
+      margin-top: 10px;
+    }
 
     a {
       color: #e2d1b7;
@@ -471,5 +726,101 @@ watch(
   .nav_search {
     display: none;
   }
+}
+
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background:
+    linear-gradient(135deg, rgba(8, 14, 26, 0.96), rgba(22, 33, 52, 0.94)),
+    radial-gradient(circle at top right, rgba(215, 0, 15, 0.18), transparent 30%);
+  backdrop-filter: blur(14px);
+}
+
+.search-overlay__close {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  border: 0;
+  background: transparent;
+  color: #f6d0a5;
+  cursor: pointer;
+}
+
+.search-overlay__inner {
+  width: min(920px, 100%);
+}
+
+.search-overlay__eyebrow {
+  color: rgba(246, 208, 165, 0.78);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 12px;
+}
+
+.search-overlay__field {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid rgba(246, 208, 165, 0.28);
+  color: #f6d0a5;
+}
+
+.search-overlay__field input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: clamp(28px, 4vw, 56px);
+  line-height: 1.2;
+  padding: 12px 0 18px;
+  outline: none;
+}
+
+.search-overlay__field input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.search-overlay__results {
+  margin-top: 28px;
+  display: grid;
+  gap: 12px;
+  max-height: min(52vh, 520px);
+  overflow-y: auto;
+}
+
+.search-overlay__result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(246, 208, 165, 0.12);
+  color: #ffffff;
+}
+
+.search-overlay__result span:last-child {
+  color: rgba(246, 208, 165, 0.72);
+  font-size: 14px;
+}
+
+.search-overlay__empty {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.search-fade-enter-active,
+.search-fade-leave-active {
+  transition: opacity 0.22s ease;
+}
+
+.search-fade-enter-from,
+.search-fade-leave-to {
+  opacity: 0;
 }
 </style>

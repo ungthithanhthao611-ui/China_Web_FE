@@ -2,16 +2,24 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChevronLeft, ChevronRight, Play, X } from "lucide-vue-next";
+import { Swiper, SwiperSlide } from "swiper/vue";
+import "swiper/css";
+import { Autoplay } from "swiper/modules";
 
 const route = useRoute();
 const router = useRouter();
 
 const imageBase = "https://en.sinodecor.com/portal-local/ngc202304190002/cms/image";
+const repositoryImageBase = "https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image";
 const imgSrc = (file) => `${imageBase}/${file}`;
+const repoImg = (file) => `${repositoryImageBase}/${file}`;
 const localImg = (file) => `/images/${file}`;
 const speechPortrait = localImg("4e3ee279-9a2c-4021-8fbf-ce7c9aefc218.jpg");
 const speechSignature = localImg("5ea063cc-18de-4c5c-8e82-3fb04d11f038.png");
 const speechTitleSeal = localImg("about/chairman-speech-seal.png");
+const timelineTitleIcon = repoImg("bd97f2ca-79a8-43ee-8efa-5b6056d5b1c1.png");
+const timelineHoverBefore = repoImg("e012bd80-11a1-4e5c-b5fa-2eda75b67d66.png");
+const timelineHoverAfter = repoImg("dfc20891-e902-474e-8c93-c374b583041d.png");
 
 const sectionMeta = [
   { id: "page1", title: "About Hero", route: "/about/company-introduction", hash: "#page1" },
@@ -79,23 +87,23 @@ const cultureBlocks = [
 ];
 
 const timelineEntries = [
-  { year: "1984", month: "09", title: "The company was approved to be established as China Indoor Complete Sets Corporation.", image: "" },
-  { year: "1985", month: "11", title: "The company undertook the first five-star hotel decoration project, the Friendship Hotel project.", image: imgSrc("6d13d208-48e9-4b73-aee5-c356fa97ca03.jpg") },
-  { year: "1989", month: "12", title: "The company held the first interior decoration exhibition in Beijing.", image: imgSrc("610aa7c0-9b72-44a2-bda2-48afb495ee95.jpg") },
-  { year: "1992", month: "12", title: "Held the inauguration meeting of China Interior Decoration Complete Sets Group in the Great Hall of the People.", image: imgSrc("a481f2e2-5e24-4f0f-90d0-ef1a93986f03.jpg") },
-  { year: "1995", month: "12", title: "The Party committee of the company held a party member meeting.", image: imgSrc("50808b66-5056-4c17-9ce9-c9fe80f31ca6.jpg") },
-  { year: "1996", month: "12", title: "The company's office building has been completed.", image: "" },
-  { year: "1997", month: "09", title: "The company was renamed China Decoration (Group) Company.", image: "" },
-  { year: "2003", month: "01", title: "The first reform of China Decoration registered the company as China Decoration Co., LTD.", image: "" },
-  { year: "2009", month: "06", title: "The Henan Art Center project that the company participated in won the Luban Award of China Construction Engineering.", image: "" },
-  { year: "2009", month: "10", title: "The company presented a Tian'anmen LED display system to celebrate the 60th anniversary of the motherland.", image: imgSrc("3b800d78-091f-41b3-a57f-a6584ab2c64a.jpg") },
-  { year: "2010", month: "12", title: "The company name is changed to China Decoration Co., LTD.", image: "" },
-  { year: "2011", month: "12", title: "Established Yangzhou Yangzijiang China Decoration Building Decoration Engineering Co., LTD., a joint venture with Yangzhou Yangzijiang Group.", image: "" },
-  { year: "2014", month: "12", title: "Held the 30th anniversary celebration 'Collection Glory Flying Dream' at the National Convention Center.", image: imgSrc("c6e0ed19-2885-4752-a334-9255baa8257b.jpg") },
-  { year: "2015", month: "05", title: "Li Jiefeng, the former chairman of the company, was elected president and secretary-general of Beijing Architectural Decoration Association.", image: "" },
-  { year: "2016", month: "06", title: "The company passed the national high-tech enterprise identification.", image: imgSrc("f031b874-f982-4b1b-9ec2-9060a03e18a6.jpg") },
-  { year: "2020", month: "06", title: "Xin Jianlin took over as the third chairman and established a new executive team.", image: imgSrc("0f422b10-759a-4f1c-9ca7-43f739047ed8.jpg") },
-  { year: "2025", month: "01", title: "The company held the 40th anniversary celebration 'Create and Fight for the Future' in Beijing.", image: imgSrc("238a2ef1-f15e-4758-bd09-8167e7a86216.jpg") }
+  { year: "1984", month: "09", title: 'The company was approved to be established as "China Indoor Complete Sets Corporation"', image: "" },
+  { year: "1985", month: "11", title: "The company undertook the first five-star hotel decoration project - Friendship Hotel project", image: imgSrc("6d13d208-48e9-4b73-aee5-c356fa97ca03.jpg") },
+  { year: "1989", month: "12", title: "The company held the first interior decoration exhibition in Beijing", image: imgSrc("610aa7c0-9b72-44a2-bda2-48afb495ee95.jpg") },
+  { year: "1992", month: "12", title: "Held the inauguration meeting of China Interior Decoration Complete Sets Group in the Great Hall of the People", image: imgSrc("a481f2e2-5e24-4f0f-90d0-ef1a93986f03.jpg") },
+  { year: "1995", month: "12", title: "The Party committee of the company held a party member meeting", image: imgSrc("50808b66-5056-4c17-9ce9-c9fe80f31ca6.jpg") },
+  { year: "1996", month: "12", title: "The company's office building has been completed", image: "" },
+  { year: "1997", month: "09", title: "The company was renamed China Decoration (Group) Company", image: "" },
+  { year: "2003", month: "01", title: "The first reform of China Decoration, registered by the State Administration for Industry and Commerce as China Decoration Co., LTD", image: "" },
+  { year: "2009", month: "06", title: "The Henan Art Center project that the company participated in won the Luban Award of China Construction Engineering", image: "" },
+  { year: "2009", month: "10", title: "The company presents to the 60th birthday of the motherland through the Tian'anmen LED display system", image: imgSrc("3b800d78-091f-41b3-a57f-a6584ab2c64a.jpg") },
+  { year: "2010", month: "12", title: "The company name is changed to China Decoration Co., LTD", image: "" },
+  { year: "2011", month: "12", title: "Established Yangzhou Yangzijiang China Decoration Building Decoration Engineering Co., LTD., a joint venture with Yangzhou Yangzijiang Group", image: "" },
+  { year: "2014", month: "12", title: 'The company held the 30th anniversary celebration of "Collection Glory Flying Dream" at the National Convention Center', image: imgSrc("c6e0ed19-2885-4752-a334-9255baa8257b.jpg") },
+  { year: "2015", month: "05", title: "Li Jiefeng, the former chairman of the company, was elected president and secretary-general of Beijing Architectural Decoration Association", image: "" },
+  { year: "2016", month: "06", title: "The company passed the national high-tech enterprise identification", image: imgSrc("f031b874-f982-4b1b-9ec2-9060a03e18a6.jpg") },
+  { year: "2020", month: "06", title: "Xin Jianlin, the third chairman of the company, took over from China Decoration and set up a new executive team", image: imgSrc("0f422b10-759a-4f1c-9ca7-43f739047ed8.jpg") },
+  { year: "2025", month: "01", title: 'The Company Held a "Create and Fight for the Future" 40th Anniversary Celebration at the Beijing International Hotel Conference Center', image: imgSrc("238a2ef1-f15e-4758-bd09-8167e7a86216.jpg") }
 ];
 
 const leadershipItems = [
@@ -195,8 +203,10 @@ const activeCultureTitle = ref("Corporate Purpose");
 const visibleSections = ref(new Set(["page1"]));
 const videoOpen = ref(false);
 const chartOpen = ref(false);
-const timelineScroller = ref(null);
-const leadershipScroller = ref(null);
+const timelineSwiper = ref(null);
+const timelineAtStart = ref(true);
+const timelineAtEnd = ref(false);
+const leadershipSwiper = ref(null);
 const introScroller = ref(null);
 const speechScroller = ref(null);
 const syncingRouteFromSection = ref(false);
@@ -210,6 +220,59 @@ const currentPartnerLogos = computed(
 const currentCultureBlock = computed(
   () => cultureBlocks.find((item) => item.title === activeCultureTitle.value) ?? cultureBlocks[0]
 );
+
+const timelineSlides = computed(() =>
+  timelineEntries.map((item) => ({
+    ...item,
+    type: item.image ? "ad-image" : "no-image"
+  }))
+);
+
+const timelineModules = [Autoplay];
+
+const updateTimelineSwiperState = (instance) => {
+  if (!instance) {
+    return;
+  }
+
+  timelineAtStart.value = instance.isBeginning;
+  timelineAtEnd.value = instance.isEnd;
+};
+
+const bindTimelineSwiper = (instance) => {
+  timelineSwiper.value = instance;
+  updateTimelineSwiperState(instance);
+};
+
+const slideTimeline = (direction) => {
+  const instance = timelineSwiper.value;
+  if (!instance) {
+    return;
+  }
+
+  if (direction < 0) {
+    instance.slidePrev();
+  } else {
+    instance.slideNext();
+  }
+};
+
+const bindLeadershipSwiper = (instance) => {
+  leadershipSwiper.value = instance;
+};
+
+const slideLeadership = (direction) => {
+  const instance = leadershipSwiper.value;
+  if (!instance) {
+    return;
+  }
+
+  if (direction < 0) {
+    instance.slidePrev();
+  } else {
+    instance.slideNext();
+  }
+};
 
 const getTargetSectionId = () => {
   if (route.hash) {
@@ -323,18 +386,6 @@ const setupObserver = () => {
     if (element) {
       observer.observe(element);
     }
-  });
-};
-
-const scrollHorizontal = (target, direction) => {
-  const element = target.value;
-  if (!element) {
-    return;
-  }
-
-  element.scrollBy({
-    left: direction * Math.max(element.clientWidth * 0.82, 320),
-    behavior: "smooth"
   });
 };
 
@@ -527,37 +578,82 @@ onBeforeUnmount(() => {
     </section>
 
     <section id="page6" :class="['about-section timeline-section', { 'is-visible': isSectionVisible('page6') }]">
-      <div class="section-shell">
-        <div class="section-heading with-controls">
-          <div>
-            <span class="eyebrow">ABOUT US</span>
-            <h2>Development Course</h2>
-          </div>
-
-          <div class="slider-controls">
-            <button type="button" @click="scrollHorizontal(timelineScroller, -1)">
-              <ChevronLeft :size="20" />
-            </button>
-            <button type="button" @click="scrollHorizontal(timelineScroller, 1)">
-              <ChevronRight :size="20" />
-            </button>
-          </div>
+      <div class="section-shell timeline-shell">
+        <div class="timeline-heading">
+          <p class="timeline-title">
+            <i>Development Course</i>
+            <img :src="timelineTitleIcon" class="timeline-title-icon" alt="" />
+          </p>
+          <span class="timeline-heading-rule" />
         </div>
 
-        <div class="timeline-stage">
-          <div class="timeline-wave" />
-          <div ref="timelineScroller" class="timeline-track">
-          <article v-for="item in timelineEntries" :key="`${item.year}-${item.month}-${item.title}`" class="timeline-card">
-            <div class="timeline-image" :class="{ empty: !item.image }">
-              <img v-if="item.image" :src="item.image" :alt="item.title" />
-            </div>
-            <div class="timeline-meta">
-              <strong>{{ item.year }}</strong>
-              <span>{{ item.month }}</span>
-            </div>
-            <p>{{ item.title }}</p>
-          </article>
-        </div>
+        <div class="timeline-stage page6-con">
+          <button
+            type="button"
+            :class="['timeline-nav is-prev', { disabled: timelineAtStart }]"
+            aria-label="Previous slide"
+            :disabled="timelineAtStart"
+            @click="slideTimeline(-1)"
+          >
+            <ChevronLeft :size="24" />
+          </button>
+          <button
+            type="button"
+            :class="['timeline-nav is-next', { disabled: timelineAtEnd }]"
+            aria-label="Next slide"
+            :disabled="timelineAtEnd"
+            @click="slideTimeline(1)"
+          >
+            <ChevronRight :size="24" />
+          </button>
+
+          <div class="timeline-track">
+            <div class="timeline-wave" aria-hidden="true" />
+            <Swiper
+              class="timeline-swiper"
+              :modules="timelineModules"
+              :slides-per-view="2"
+              :speed="700"
+              :space-between="0"
+              :autoplay="{ delay: 3200, disableOnInteraction: false, pauseOnMouseEnter: true }"
+              :breakpoints="{ 1025: { slidesPerView: 5 } }"
+              :grab-cursor="true"
+              @swiper="bindTimelineSwiper"
+              @slideChange="updateTimelineSwiperState"
+              @transitionEnd="updateTimelineSwiperState"
+            >
+              <SwiperSlide
+                v-for="item in timelineSlides"
+                :key="`${item.year}-${item.month}-${item.title}`"
+                :class="['timeline-slide', item.type]"
+              >
+                <div class="timeline-slide-inner">
+                  <div class="slide-bg" />
+                  <div class="sw-image">
+                    <div class="bg-img">
+                      <template v-if="item.image">
+                        <div class="img_con">
+                          <img :src="item.image" :alt="item.title" class="h_pics" loading="lazy" />
+                        </div>
+                        <img :src="timelineHoverBefore" alt="" class="hover_before" />
+                        <img :src="timelineHoverAfter" alt="" class="hover_after" />
+                      </template>
+                      <div v-else class="bg-img-bg" />
+                    </div>
+
+                    <div class="sw-f">
+                      <p class="year">{{ item.year }}.</p>
+                      <p class="month">{{ item.month }}</p>
+                    </div>
+
+                    <div class="sw-i">
+                      <p class="tit">{{ item.title }}</p>
+                    </div>
+                  </div>
+                </div>
+              </SwiperSlide>
+            </Swiper>
+          </div>
         </div>
       </div>
     </section>
@@ -567,32 +663,46 @@ onBeforeUnmount(() => {
         <div class="leadership-heading">
           <h2 class="leadership-title">
             <span>Leadership Care</span>
-            <img :src="speechTitleSeal" alt="" />
+            <img :src="timelineTitleIcon" alt="" />
           </h2>
         </div>
 
         <div class="leadership-stage">
           <div class="leadership-nav">
-            <button type="button" class="is-prev" @click="scrollHorizontal(leadershipScroller, -1)">
+            <button type="button" class="is-prev" @click="slideLeadership(-1)">
               <ChevronLeft :size="34" />
             </button>
-            <button type="button" class="is-next" @click="scrollHorizontal(leadershipScroller, 1)">
+            <button type="button" class="is-next" @click="slideLeadership(1)">
               <ChevronRight :size="34" />
             </button>
           </div>
 
           <div class="leadership-fade" />
 
-          <div ref="leadershipScroller" class="leadership-track">
-            <article v-for="item in leadershipItems" :key="item.image" class="leadership-card">
-              <div class="leadership-card-frame">
-                <div class="leadership-photo">
-                  <img :src="item.image" alt="Leadership care" />
-                </div>
-                <strong class="leadership-year">{{ item.year }}</strong>
-              </div>
-              <p class="leadership-copy">{{ item.text }}</p>
-            </article>
+          <div class="leadership-carousel">
+            <Swiper
+              class="leadership-swiper"
+              :slides-per-view="1"
+              :space-between="0"
+              :speed="700"
+              :breakpoints="{
+                768: { slidesPerView: 'auto', spaceBetween: 50 },
+                1600: { slidesPerView: 'auto', spaceBetween: 100 }
+              }"
+              @swiper="bindLeadershipSwiper"
+            >
+              <SwiperSlide v-for="item in leadershipItems" :key="`${item.year}-${item.image}`">
+                <article class="leadership-card">
+                  <div class="leadership-card-frame">
+                    <div class="leadership-photo">
+                      <img :src="item.image" alt="Leadership care" />
+                    </div>
+                    <strong class="leadership-year">{{ item.year }}</strong>
+                  </div>
+                  <p class="leadership-copy">{{ item.text }}</p>
+                </article>
+              </SwiperSlide>
+            </Swiper>
           </div>
         </div>
       </div>
@@ -1199,6 +1309,26 @@ onBeforeUnmount(() => {
     linear-gradient(135deg, rgba(220, 214, 206, 0.16) 0%, transparent 36%);
 }
 
+.timeline-section {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.82)),
+    url("https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/ee74b14e-1476-4876-9329-4584b1c40a41.jpg")
+      no-repeat center center / cover;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 16% 34%, rgba(226, 223, 216, 0.28), transparent 26%),
+      radial-gradient(circle at 84% 62%, rgba(223, 218, 210, 0.16), transparent 24%);
+    opacity: 0.58;
+  }
+}
+
 .speech-section {
   position: relative;
   min-height: 100vh;
@@ -1552,134 +1682,458 @@ onBeforeUnmount(() => {
 
 .timeline-stage {
   position: relative;
-  padding: 48px 0 42px;
+  min-height: 70vh;
+  padding: 18px 0 0;
+}
+
+.timeline-track {
+  position: relative;
+  overflow: visible;
+  height: 70vh;
+  margin-top: 40px;
+  padding: 0 0 12px;
+}
+
+.timeline-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: none;
+}
+
+.timeline-heading {
+  display: grid;
+  justify-items: center;
+  margin-bottom: 24px;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.timeline-section.is-visible .timeline-heading {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.timeline-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  margin: 0;
+
+  i {
+    color: #2c3038;
+    font-style: normal;
+    font-family: "Times New Roman", Georgia, serif;
+    font-size: clamp(40px, 4vw, 60px);
+    line-height: 1;
+  }
+}
+
+.timeline-title-icon {
+  width: clamp(42px, 2.6vw, 54px);
+  height: clamp(42px, 2.6vw, 54px);
+  object-fit: contain;
+}
+
+.timeline-heading-rule {
+  position: relative;
+  display: block;
+  width: min(620px, 44vw);
+  height: 2px;
+  margin-top: 16px;
+  background: linear-gradient(90deg, rgba(198, 26, 33, 0) 0%, rgba(198, 26, 33, 0.94) 7%, rgba(198, 26, 33, 0.94) 93%, rgba(198, 26, 33, 0) 100%);
+  transform: scaleX(0.72);
+  transform-origin: center;
+  transition: transform 0.9s ease 0.1s;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #c61a21;
+    transform: translateY(-50%);
+  }
+
+  &::before {
+    left: 0;
+  }
+
+  &::after {
+    right: 0;
+  }
+}
+
+.timeline-section.is-visible .timeline-heading-rule {
+  transform: scaleX(1);
+}
+
+.page6-con {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: opacity 1s ease 0.4s, transform 1s ease 0.4s;
+}
+
+.timeline-section.is-visible .page6-con {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .timeline-wave {
   position: absolute;
   left: 0;
   right: 0;
-  top: 43%;
-  height: 26px;
+  top: 48%;
+  height: 112px;
+  pointer-events: none;
   background:
-    radial-gradient(circle at 2% 40%, transparent 22px, rgba(0, 0, 0, 0.84) 23px, rgba(0, 0, 0, 0.84) 28px, transparent 29px) 0 0/180px 100% repeat-x;
-  opacity: 0.66;
-  filter: blur(1px);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 120'%3E%3Cpath d='M0 70 C50 30 110 30 160 70 S270 110 320 70 S390 30 420 70' fill='none' stroke='%23131313' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      0 50% / 420px 118px repeat-x;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.9s ease 0.2s, transform 0.9s ease 0.2s;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.12));
 }
 
-.timeline-track {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(250px, 320px);
-  gap: 34px;
-  overflow-x: auto;
-  padding: 8px 4px 18px;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
+.timeline-section.is-visible .timeline-wave {
+  opacity: 0.92;
+  transform: translateY(0);
 }
 
-.timeline-card {
-  scroll-snap-align: start;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+.timeline-swiper {
+  height: 100%;
   overflow: visible;
 }
 
-.timeline-card {
-  padding-bottom: 24px;
-
-  p {
-    margin: 18px 0 0;
-    color: #707070;
-    font-size: 19px;
-    line-height: 1.75;
-  }
-}
-
-.timeline-image {
-  height: 180px;
-  width: 180px;
-  margin: 0 auto 18px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow:
-    0 0 0 18px rgba(255, 255, 255, 0.5),
-    18px 14px 0 rgba(220, 220, 220, 0.22);
-  overflow: hidden;
-
-  &.empty {
-    background: rgba(255, 255, 255, 0.7);
-  }
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-.timeline-meta {
-  display: flex;
-  flex-direction: column;
+.timeline-swiper :deep(.swiper-wrapper) {
   align-items: flex-start;
-  gap: 2px;
-  margin: 0 0 10px;
-  color: #b08b62;
+}
 
-  strong {
-    font-size: 58px;
-    line-height: 1;
+.timeline-swiper :deep(.swiper-slide) {
+  width: 337px;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.timeline-swiper :deep(.swiper-slide:nth-child(2n)) {
+  align-items: flex-end;
+}
+
+.timeline-swiper :deep(.swiper-slide:nth-child(2n)) .timeline-slide-inner {
+  margin-bottom: 40px;
+}
+
+.timeline-slide-inner {
+  position: relative;
+  width: 100%;
+  margin-top: 40px;
+  padding: 40px;
+}
+
+.timeline-slide.ad-image .timeline-slide-inner {
+  margin-top: 0;
+  padding: 0;
+}
+
+.slide-bg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  background: url("https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/feaced7b-b8ad-4ded-9680-7576697e7ba6.png")
+    no-repeat center center / 100% 100%;
+  transform: translate(-50%, -50%);
+  transition: width 0.8s ease, height 0.8s ease;
+}
+
+.sw-image {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  height: auto;
+  z-index: 2;
+}
+
+.timeline-slide.ad-image .sw-image {
+  align-items: flex-start;
+}
+
+.timeline-slide.no-image .sw-image {
+  display: block;
+}
+
+.bg-img {
+  position: relative;
+  width: 226px;
+  height: 176px;
+  margin-bottom: 0;
+  transform: none;
+  transition: none;
+}
+
+.img_con {
+  position: absolute;
+  left: 14%;
+  top: 16.8%;
+  z-index: 2;
+  width: 74%;
+  height: 69%;
+  border-radius: 0;
+  overflow: hidden;
+  transform: none;
+  box-shadow: none;
+}
+
+.h_pics {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: none;
+  filter: none;
+}
+
+.hover_before,
+.hover_after,
+.bg-img-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hover_before,
+.hover_after {
+  pointer-events: none;
+  object-fit: contain;
+  transition: opacity 0.5s ease;
+}
+
+.hover_before {
+  opacity: 1;
+  visibility: visible;
+}
+
+.hover_after {
+  z-index: 3;
+  opacity: 0;
+}
+
+.bg-img-bg {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.88), rgba(248, 246, 241, 0.92) 58%, rgba(223, 220, 214, 0.55) 70%, rgba(223, 220, 214, 0) 100%);
+}
+
+.sw-f,
+.sw-i {
+  transition: color 0.35s ease;
+}
+
+.sw-f {
+  flex: 0 0 30%;
+  display: block;
+  color: #b48b61;
+  opacity: 1;
+  transform: none;
+}
+
+.sw-f .year,
+.sw-f .month {
+  margin: 0;
+  font-family: "Times New Roman", Georgia, serif;
+  line-height: 0.92;
+}
+
+.sw-f .year {
+  font-size: 60px;
+  font-weight: 600;
+}
+
+.sw-f .month {
+  font-size: 46px;
+}
+
+.sw-i {
+  flex: 1;
+  padding: 0 0 0 20px;
+  opacity: 1;
+  transform: none;
+}
+
+.sw-i .tit {
+  margin: 0;
+  color: #6c6964;
+  font-size: 16px;
+  line-height: 1.66;
+  text-align: left;
+  font-weight: 400;
+  margin-top: 24px;
+}
+
+.timeline-slide.no-image .bg-img {
+  width: 172px;
+  height: 172px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.timeline-slide.no-image .bg-img-bg {
+  background: transparent;
+  opacity: 0;
+  box-shadow: none;
+}
+
+.timeline-slide.no-image .sw-f {
+  display: block;
+}
+
+.timeline-slide.no-image .sw-i {
+  padding: 0;
+}
+
+.timeline-slide.ad-image .sw-i .tit {
+  margin-top: 0;
+}
+
+.timeline-nav {
+  position: absolute;
+  top: 40%;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  box-shadow: 0 18px 34px rgba(112, 49, 44, 0.16);
+  cursor: pointer;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease,
+    background 0.25s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
   }
 
-  span {
-    font-size: 36px;
-    line-height: 1;
+  &:disabled,
+  &.disabled {
+    cursor: default;
+    opacity: 0.46;
   }
+
+  &.is-prev {
+    left: -60px;
+    background: #d7000f;
+  }
+
+  &.is-next {
+    right: -60px;
+    background: #d7000f;
+  }
+
+  svg {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+.timeline-nav.disabled,
+.timeline-nav:disabled {
+  background: #b3b3b4;
+  opacity: 0.6;
+}
+
+.timeline-slide.no-image:hover .slide-bg {
+  width: 320px;
+  height: 320px;
+}
+
+.timeline-slide.no-image:hover .sw-f p,
+.timeline-slide.no-image:hover .sw-i .tit {
+  color: #ffffff;
+}
+
+.timeline-slide.ad-image:hover .hover_after {
+  opacity: 1;
 }
 
 .leadership-stage {
   position: relative;
   overflow: hidden;
-  min-height: calc(100vh - 255px);
-  padding: 12px 0 18px;
-}
-
-.leadership-section {
-  position: relative;
-  min-height: 100vh;
-  padding-top: 118px;
-  padding-bottom: 0;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 245, 239, 0.96)),
-    radial-gradient(circle at 78% 46%, rgba(218, 212, 201, 0.18), transparent 34%),
-    linear-gradient(135deg, rgba(223, 219, 212, 0.18) 0%, transparent 38%);
+  min-height: calc(100vh - 190px);
+  padding: 4px 0 12px;
 
   &::before {
     content: "";
     position: absolute;
-    left: -9%;
-    top: -24%;
-    width: 42%;
-    height: 88%;
-    border-radius: 0 0 56% 0 / 0 0 100% 0;
-    background: rgba(214, 214, 214, 0.9);
+    left: 18%;
+    top: -28%;
+    z-index: 0;
+    width: 24vw;
+    min-width: 280px;
+    height: 135%;
+    border-radius: 48%;
+    background: rgba(255, 255, 255, 0.96);
+    transform: rotate(32deg);
   }
 
   &::after {
     content: "";
     position: absolute;
-    left: -14%;
-    bottom: -32%;
-    width: 54%;
-    height: 70%;
+    right: -10%;
+    top: -8%;
+    z-index: 0;
+    width: 38vw;
+    min-width: 420px;
+    height: 112%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 72%);
+    transform: rotate(16deg);
+    transform-origin: top right;
+  }
+}
+
+.leadership-section {
+  position: relative;
+  min-height: calc(100vh - 88px);
+  padding-top: 72px;
+  padding-bottom: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(247, 245, 239, 0.96));
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: -12%;
+    top: -16%;
+    z-index: 0;
+    width: 48%;
+    height: 72%;
+    border-radius: 0 0 70% 0 / 0 0 100% 0;
+    background: rgba(214, 214, 214, 0.95);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: -18%;
+    bottom: -18%;
+    z-index: 0;
+    width: 44%;
+    height: 46%;
     border-radius: 0 100% 0 0 / 0 100% 0 0;
-    background: rgba(177, 157, 133, 0.96);
+    background: rgba(176, 156, 131, 0.98);
   }
 }
 
@@ -1694,7 +2148,15 @@ onBeforeUnmount(() => {
 .leadership-heading {
   display: grid;
   justify-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 18px;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.leadership-section.is-visible .leadership-heading {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .leadership-title {
@@ -1702,14 +2164,14 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 34px;
   margin: 0;
-  padding: 0 5% 14px;
+  padding: 0 5% 10px;
   border-bottom: 1px solid #ce0021;
   position: relative;
 
   span {
     color: #333333;
     font-family: "Times New Roman", Georgia, serif;
-    font-size: clamp(38px, 3vw, 52px);
+    font-size: clamp(34px, 2.8vw, 50px);
     line-height: 1.08;
   }
 
@@ -1740,11 +2202,11 @@ onBeforeUnmount(() => {
 
 .leadership-nav {
   position: absolute;
-  left: clamp(92px, 10.5vw, 170px);
-  top: 29%;
+  left: clamp(108px, 9.5vw, 190px);
+  top: 36.5%;
   z-index: 4;
   display: inline-flex;
-  gap: 22px;
+  gap: 28px;
 
   button {
     width: 84px;
@@ -1763,12 +2225,9 @@ onBeforeUnmount(() => {
     }
   }
 
-  .is-prev {
-    background: rgba(187, 187, 187, 0.78);
-  }
-
+  .is-prev,
   .is-next {
-    background: #ea4b59;
+    background: #e23642;
   }
 }
 
@@ -1777,76 +2236,117 @@ onBeforeUnmount(() => {
   top: 0;
   right: 0;
   z-index: 3;
-  width: 12vw;
-  min-width: 140px;
+  width: 15vw;
+  min-width: 180px;
   height: 100%;
   pointer-events: none;
-  background: linear-gradient(90deg, rgba(247, 245, 239, 0) 0%, rgba(247, 245, 239, 0.96) 82%);
+  background: linear-gradient(90deg, rgba(247, 245, 239, 0) 0%, rgba(247, 245, 239, 0.98) 78%);
 }
 
-.leadership-track {
+.leadership-carousel {
   position: relative;
   z-index: 2;
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(410px, 25.2vw);
-  gap: clamp(40px, 3.2vw, 74px);
-  overflow-x: auto;
-  padding: 14px 10vw 34px clamp(430px, 29vw, 560px);
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
+  overflow: hidden;
+  padding: 6px 0 0 clamp(330px, 27vw, 520px);
+  opacity: 0;
+  transform: translateY(34px);
+  transition: opacity 0.85s ease 0.12s, transform 0.85s ease 0.12s;
+}
 
-  &::-webkit-scrollbar {
-    display: none;
+.leadership-section.is-visible .leadership-carousel {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.leadership-swiper {
+  overflow: hidden;
+
+  :deep(.swiper-wrapper) {
+    align-items: stretch;
+  }
+
+  :deep(.swiper-slide) {
+    position: relative;
+    height: auto;
+    width: clamp(470px, 28vw, 530px);
+    padding-right: clamp(24px, 2.7vw, 44px);
+  }
+
+  :deep(.swiper-slide)::after {
+    content: "";
+    position: absolute;
+    top: 18px;
+    right: 0;
+    width: 1px;
+    height: calc(100% - 56px);
+    background: rgba(207, 196, 179, 0.78);
   }
 }
 
 .leadership-card {
-  scroll-snap-align: start;
   display: grid;
-  gap: 28px;
+  gap: 16px;
   align-content: start;
+  min-height: 100%;
+  opacity: 0;
+  transform: translateY(36px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.leadership-section.is-visible .leadership-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.leadership-section.is-visible .leadership-swiper :deep(.swiper-slide:nth-child(2)) .leadership-card {
+  transition-delay: 0.08s;
+}
+
+.leadership-section.is-visible .leadership-swiper :deep(.swiper-slide:nth-child(3)) .leadership-card {
+  transition-delay: 0.16s;
 }
 
 .leadership-card-frame {
   padding: 18px;
-  border: 1px solid rgba(199, 186, 170, 0.92);
-  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(204, 191, 173, 0.96);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 0 0 18px rgba(255, 255, 255, 0.16);
 }
 
 .leadership-photo {
   display: grid;
   justify-items: center;
-  padding: 34px 32px 0;
-  min-height: 228px;
+  padding: 18px 16px 0;
+  min-height: 176px;
   background: #fff;
-  border: 1px solid rgba(220, 214, 205, 0.78);
+  border: 1px solid rgba(214, 203, 188, 0.9);
 
   img {
     width: 100%;
-    max-width: 278px;
-    height: 170px;
+    max-width: 298px;
+    height: 136px;
     object-fit: contain;
   }
 }
 
 .leadership-year {
   display: block;
-  margin: 12px 0 0 54px;
+  margin: 10px 0 6px 38px;
   color: #b08961;
   font-family: "Times New Roman", Georgia, serif;
-  font-size: clamp(40px, 3vw, 56px);
+  font-size: clamp(26px, 1.9vw, 34px);
   font-weight: 400;
   line-height: 1;
 }
 
 .leadership-copy {
   margin: 0;
-  padding: 0 24px 0 26px;
-  color: #7a7a7a;
-  font-size: clamp(17px, 1.15vw, 20px);
-  line-height: 1.72;
-  letter-spacing: 0.04em;
+  max-width: 520px;
+  padding: 0 18px 0 24px;
+  color: #7d7d7d;
+  font-size: clamp(13px, 0.92vw, 15px);
+  line-height: 1.58;
+  letter-spacing: 0.03em;
 }
 
 .partner-heading {
@@ -2069,9 +2569,40 @@ onBeforeUnmount(() => {
     margin-left: auto;
   }
 
+  .timeline-track {
+    padding-left: 74px;
+    padding-right: 74px;
+  }
+
+  .timeline-nav {
+    top: 236px;
+    width: 70px;
+    height: 70px;
+
+    &.is-prev {
+      left: -18px;
+    }
+
+    &.is-next {
+      right: -18px;
+    }
+  }
+
+  .timeline-swiper :deep(.swiper-slide) {
+    width: 320px;
+  }
+
+  .sw-f .year {
+    font-size: 54px;
+  }
+
+  .sw-f .month {
+    font-size: 40px;
+  }
+
   .leadership-nav {
-    left: 28px;
-    top: 26%;
+    left: 34px;
+    top: 34%;
 
     button {
       width: 68px;
@@ -2079,10 +2610,17 @@ onBeforeUnmount(() => {
     }
   }
 
-  .leadership-track {
-    grid-auto-columns: minmax(340px, 32vw);
-    gap: 36px;
-    padding: 14px 7vw 30px 160px;
+  .leadership-carousel {
+    padding: 8px 0 12px 220px;
+  }
+
+  .leadership-swiper :deep(.swiper-slide) {
+    width: 420px;
+    padding-right: 28px;
+  }
+
+  .leadership-swiper :deep(.swiper-slide)::after {
+    height: calc(100% - 48px);
   }
 
   .leadership-photo {
@@ -2189,6 +2727,90 @@ onBeforeUnmount(() => {
     margin-top: 28px;
   }
 
+  .timeline-heading-rule {
+    width: min(420px, 76vw);
+  }
+
+  .timeline-stage {
+    min-height: 590px;
+    padding-top: 12px;
+  }
+
+  .timeline-track {
+    padding: 18px 48px 28px;
+  }
+
+  .timeline-wave {
+    top: 238px;
+    height: 104px;
+    background-size: 360px 104px;
+  }
+
+  .timeline-title i {
+    font-size: 42px;
+  }
+
+  .timeline-title-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .timeline-swiper :deep(.swiper-slide) {
+    width: 280px;
+    height: 390px;
+  }
+
+  .bg-img {
+    width: 196px;
+    height: 156px;
+  }
+
+  .timeline-slide.no-image .bg-img {
+    width: 150px;
+    height: 150px;
+    background: transparent;
+  }
+
+  .img_con {
+    top: 24px;
+    width: 132px;
+    height: 132px;
+  }
+
+  .sw-f {
+    padding-left: 24px;
+  }
+
+  .sw-f .year {
+    font-size: 48px;
+  }
+
+  .sw-f .month {
+    font-size: 36px;
+  }
+
+  .sw-i {
+    padding: 10px 18px 0 24px;
+  }
+
+  .sw-i .tit {
+    font-size: 15px;
+  }
+
+  .timeline-nav {
+    top: 224px;
+    width: 58px;
+    height: 58px;
+
+    &.is-prev {
+      left: -6px;
+    }
+
+    &.is-next {
+      right: -6px;
+    }
+  }
+
   .speech-layout .split-copy {
     width: 100%;
     padding-left: 30px;
@@ -2218,17 +2840,17 @@ onBeforeUnmount(() => {
     padding-top: 108px;
 
     &::before {
-      width: 60%;
-      height: 56%;
-      top: -10%;
-      left: -22%;
+      width: 78%;
+      height: 42%;
+      top: -7%;
+      left: -28%;
     }
 
     &::after {
-      width: 72%;
-      height: 42%;
-      left: -24%;
-      bottom: -10%;
+      width: 86%;
+      height: 28%;
+      left: -34%;
+      bottom: -6%;
     }
   }
 
@@ -2251,19 +2873,41 @@ onBeforeUnmount(() => {
 
   .leadership-stage {
     min-height: auto;
-    padding-top: 74px;
+    padding-top: 62px;
+
+    &::before {
+      left: 6%;
+      top: -18%;
+      width: 40vw;
+      min-width: 160px;
+      height: 92%;
+    }
+
+    &::after {
+      right: -24%;
+      width: 56vw;
+      min-width: 220px;
+      height: 100%;
+    }
   }
 
   .leadership-nav {
     left: 20px;
-    top: 0;
+    top: 18px;
     gap: 14px;
   }
 
-  .leadership-track {
-    grid-auto-columns: minmax(300px, 72vw);
-    gap: 24px;
-    padding: 0 26px 24px;
+  .leadership-carousel {
+    padding: 0 26px 10px 26px;
+  }
+
+  .leadership-swiper :deep(.swiper-slide) {
+    width: auto;
+    padding-right: 0;
+  }
+
+  .leadership-swiper :deep(.swiper-slide)::after {
+    display: none;
   }
 
   .leadership-fade {
@@ -2303,9 +2947,103 @@ onBeforeUnmount(() => {
     display: none;
   }
 
-  .timeline-track,
-  .leadership-track {
-    grid-auto-columns: minmax(84vw, 84vw);
+  .leadership-carousel {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .timeline-shell {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .timeline-title {
+    gap: 12px;
+  }
+
+  .timeline-title i {
+    font-size: 32px;
+  }
+
+  .timeline-heading-rule {
+    width: min(280px, 72vw);
+  }
+
+  .timeline-stage {
+    min-height: 520px;
+    padding-top: 18px;
+  }
+
+  .timeline-track {
+    padding: 12px 22px 22px;
+  }
+
+  .timeline-wave {
+    top: 224px;
+    height: 92px;
+    background-size: 300px 92px;
+  }
+
+  .timeline-swiper :deep(.swiper-slide) {
+    width: 244px;
+    height: 360px;
+  }
+
+  .bg-img {
+    width: 178px;
+    height: 144px;
+  }
+
+  .timeline-slide.no-image .bg-img {
+    width: 138px;
+    height: 138px;
+    background: transparent;
+  }
+
+  .img_con {
+    top: 23px;
+    width: 118px;
+    height: 118px;
+  }
+
+  .sw-f {
+    padding-left: 18px;
+  }
+
+  .sw-f .year {
+    font-size: 42px;
+  }
+
+  .sw-f .month {
+    font-size: 32px;
+  }
+
+  .sw-i {
+    padding: 10px 12px 0 18px;
+  }
+
+  .sw-i .tit {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .timeline-nav {
+    top: 212px;
+    width: 48px;
+    height: 48px;
+
+    &.is-prev {
+      left: 2px;
+    }
+
+    &.is-next {
+      right: 2px;
+    }
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
   }
 
   .split-media img,
@@ -2395,8 +3133,7 @@ onBeforeUnmount(() => {
     padding-top: 0;
   }
 
-  .leadership-track {
-    gap: 18px;
+  .leadership-carousel {
     padding: 0 20px 24px;
   }
 
@@ -2409,23 +3146,23 @@ onBeforeUnmount(() => {
   }
 
   .leadership-photo {
-    min-height: 182px;
+    min-height: 170px;
     padding: 18px 12px 0;
 
     img {
-      height: 142px;
+      height: 128px;
     }
   }
 
   .leadership-year {
     margin-left: 26px;
-    font-size: 38px;
+    font-size: 32px;
   }
 
   .leadership-copy {
     padding: 0 6px;
-    font-size: 16px;
-    line-height: 1.65;
+    font-size: 14px;
+    line-height: 1.55;
     letter-spacing: 0.02em;
   }
 

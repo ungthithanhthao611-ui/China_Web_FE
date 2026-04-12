@@ -1,7 +1,10 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ChevronRight, House } from 'lucide-vue-next'
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import { Autoplay, Grid, Navigation } from 'swiper/modules'
+import 'swiper/css/grid'
 import {
   corporateHonors,
   honorsHero,
@@ -11,82 +14,44 @@ import {
 } from '../components/honors/honorsData'
 
 const route = useRoute()
+
+const swiperModules = [Autoplay, Grid, Navigation]
 const activeHonorTab = ref('corporate')
 const activeSection = ref('page1')
 const animatedSections = ref(['page1'])
-const currentCertificatePage = ref(0)
-const currentCorporatePage = ref(0)
-const currentProjectPage = ref(0)
+
+const certificateSwiper = ref(null)
+const corporateSwiper = ref(null)
+const projectSwiper = ref(null)
+
+const frameImage =
+  'https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/e936f2ab-1a31-4886-93cf-1a067c709aa5.png'
+const accentImage =
+  'https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/bd97f2ca-79a8-43ee-8efa-5b6056d5b1c1.png'
+const prevArrowImage =
+  'https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/cd7207b7-4985-4449-9ffd-acc5ff653fac.png'
+const nextArrowImage =
+  'https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/1bd7e198-70b1-453e-b508-6b9b9cb84b26.png'
 
 const honorTabs = [
   { key: 'corporate', label: 'Corporate Honors' },
   { key: 'project', label: 'Project Honors' }
 ]
 
-const sectionNavItems = [
-  { id: 'page2', label: 'Qualification certificate' },
-  { id: 'page3', label: 'Honorary Awards' }
-]
-
-const activeHonorList = computed(() =>
-  activeHonorTab.value === 'corporate' ? corporateHonors : projectHonors
-)
-
-const chunkItems = (items, size = 6) =>
-  items.reduce((chunks, item, index) => {
-    if (index % size === 0) {
-      chunks.push([])
-    }
-
-    chunks[chunks.length - 1].push(item)
-    return chunks
-  }, [])
-
-const certificatePages = computed(() => chunkItems(qualificationCertificates, 6))
-const corporateHonorPages = computed(() => chunkItems(corporateHonors, 6))
-const projectHonorPages = computed(() => chunkItems(projectHonors, 6))
-
-const visibleCertificateItems = computed(
-  () => certificatePages.value[currentCertificatePage.value] ?? []
-)
-
-const visibleCorporateHonorItems = computed(
-  () => corporateHonorPages.value[currentCorporatePage.value] ?? []
-)
-
-const visibleProjectHonorItems = computed(
-  () => projectHonorPages.value[currentProjectPage.value] ?? []
-)
-
-const cyclePage = (direction, pageRef, pageCount) => {
-  if (!pageCount) return
-
-  const nextIndex = pageRef.value + direction
-
-  if (nextIndex < 0) {
-    pageRef.value = pageCount - 1
-    return
+const honorsBreakpoints = {
+  320: {
+    slidesPerView: 2,
+    slidesPerGroup: 4,
+    spaceBetween: 18
+  },
+  768: {
+    slidesPerView: 3,
+    slidesPerGroup: 6,
+    spaceBetween: 28
   }
-
-  if (nextIndex >= pageCount) {
-    pageRef.value = 0
-    return
-  }
-
-  pageRef.value = nextIndex
 }
 
-const goToCertificatePage = (direction) => {
-  cyclePage(direction, currentCertificatePage, certificatePages.value.length)
-}
-
-const goToCorporatePage = (direction) => {
-  cyclePage(direction, currentCorporatePage, corporateHonorPages.value.length)
-}
-
-const goToProjectPage = (direction) => {
-  cyclePage(direction, currentProjectPage, projectHonorPages.value.length)
-}
+const certificateInitialSlide = 8
 
 const markAnimated = (id) => {
   if (!animatedSections.value.includes(id)) {
@@ -95,11 +60,10 @@ const markAnimated = (id) => {
 }
 
 const handleScroll = () => {
-  const sectionIds = honorPageSections.map((item) => item.id)
-  const scrollCenter = window.scrollY + window.innerHeight * 0.38
+  const scrollCenter = window.scrollY + window.innerHeight * 0.42
 
-  sectionIds.forEach((id) => {
-    const element = document.getElementById(id)
+  honorPageSections.forEach((item) => {
+    const element = document.getElementById(item.id)
 
     if (!element) return
 
@@ -107,11 +71,11 @@ const handleScroll = () => {
     const bottom = top + element.offsetHeight
 
     if (scrollCenter >= top && scrollCenter < bottom) {
-      activeSection.value = id
+      activeSection.value = item.id
     }
 
-    if (window.scrollY + window.innerHeight * 0.82 >= top) {
-      markAnimated(id)
+    if (window.scrollY + window.innerHeight * 0.8 >= top) {
+      markAnimated(item.id)
     }
   })
 }
@@ -121,11 +85,10 @@ const scrollToSection = (id) => {
 
   if (!element) return
 
-  const headerOffset = id === 'page1' ? 0 : 92
-  const position = element.getBoundingClientRect().top + window.scrollY - headerOffset
+  const top = element.getBoundingClientRect().top + window.scrollY
 
   window.scrollTo({
-    top: position,
+    top,
     behavior: 'smooth'
   })
 
@@ -139,9 +102,37 @@ const syncHashSection = async () => {
 
   if (hash && honorPageSections.some((item) => item.id === hash)) {
     scrollToSection(hash)
-  } else {
-    handleScroll()
+    return
   }
+
+  handleScroll()
+}
+
+const bindCertificateSwiper = (instance) => {
+  certificateSwiper.value = instance
+}
+
+const bindCorporateSwiper = (instance) => {
+  corporateSwiper.value = instance
+}
+
+const bindProjectSwiper = (instance) => {
+  projectSwiper.value = instance
+}
+
+const slideCertificates = (direction) => {
+  if (!certificateSwiper.value) return
+  direction > 0 ? certificateSwiper.value.slideNext() : certificateSwiper.value.slidePrev()
+}
+
+const slideCorporate = (direction) => {
+  if (!corporateSwiper.value) return
+  direction > 0 ? corporateSwiper.value.slideNext() : corporateSwiper.value.slidePrev()
+}
+
+const slideProject = (direction) => {
+  if (!projectSwiper.value) return
+  direction > 0 ? projectSwiper.value.slideNext() : projectSwiper.value.slidePrev()
 }
 
 watch(
@@ -151,9 +142,15 @@ watch(
   }
 )
 
-watch(activeHonorTab, () => {
-  currentCorporatePage.value = 0
-  currentProjectPage.value = 0
+watch(activeHonorTab, async (value) => {
+  await nextTick()
+
+  if (value === 'corporate') {
+    corporateSwiper.value?.slideTo(0)
+    return
+  }
+
+  projectSwiper.value?.slideTo(0)
 })
 
 watch(activeSection, (value) => {
@@ -198,286 +195,259 @@ onBeforeUnmount(() => {
         <img :src="honorsHero.background" :alt="honorsHero.title" />
       </picture>
 
-      <div class="hero-overlay"></div>
-      <div class="hero-glow hero-glow--left"></div>
-      <div class="hero-glow hero-glow--right"></div>
+      <div class="hero-shade"></div>
+      <div class="hero-shimmer"></div>
 
-      <div class="hero-shell">
-        <div class="hero-panel" :class="{ 'is-visible': animatedSections.includes('page1') }">
-          <div class="hero-breadcrumb">
-            <router-link id="honors-breadcrumb-home" to="/">Home</router-link>
-            <ChevronRight :size="14" />
-            <span>Qualification Honor</span>
+      <div class="hero-shell" :class="{ 'is-visible': animatedSections.includes('page1') }">
+        <div class="hero-panel">
+          <div class="hero-title">
+            <span>{{ honorsHero.title }}</span>
+            <img :src="honorsHero.accent" alt="Honor accent" />
           </div>
-
-          <div class="hero-title-row">
-            <h1 id="honors-page-title">Qualification Honor</h1>
-            <img :src="honorsHero.accent" alt="Honors accent" class="hero-accent" />
-          </div>
-
-          <span class="hero-line"></span>
-
-          <p class="hero-description">
-            {{ honorsHero.description }}
-          </p>
+          <div class="hero-line"></div>
+          <p>{{ honorsHero.description }}</p>
         </div>
+      </div>
+
+      <div class="hero-tabs">
+        <button type="button" @click="scrollToSection('page2')">Qualification certificate</button>
+        <button type="button" @click="scrollToSection('page3')">Honorary Awards</button>
       </div>
     </section>
 
-    <nav class="section-nav">
-      <div class="section-nav__inner">
-        <button
-          v-for="item in sectionNavItems"
-          :id="`section-nav-${item.id}`"
-          :key="item.id"
-          class="section-nav__item"
-          :class="{ active: activeSection === item.id }"
-          type="button"
-          @click="scrollToSection(item.id)"
-        >
-          {{ item.label }}
-        </button>
-      </div>
-    </nav>
+    <section id="page2" class="honors-section honors-section--certificate honors-screen">
+      <div class="honors-bg honors-bg--certificate"></div>
+      <div class="honors-glow honors-glow--certificate"></div>
 
-    <section id="page2" class="honors-section honors-screen honors-section--certificate">
-      <div class="section-backdrop section-backdrop--certificate"></div>
-      <div class="section-grid"></div>
-
-      <div class="shell shell--narrow section-shell" :class="{ 'is-visible': animatedSections.includes('page2') }">
-        <div class="breadcrumb breadcrumb--dark">
+      <div class="honors-stage" :class="{ 'is-visible': animatedSections.includes('page2') }">
+        <div class="honors-breadcrumb">
           <House :size="16" />
-          <router-link to="/">Home</router-link>
+          <router-link id="honors-home-link" to="/">Home</router-link>
           <ChevronRight :size="14" />
           <span>Qualification honor</span>
         </div>
 
-        <header class="section-heading section-heading--light">
-          <div>
-            <h2>Qualification Certificate</h2>
-            <span class="section-line"></span>
+        <header class="honors-heading">
+          <div class="honors-heading__title">
+            <h2 id="honors-cert-title">Qualification Certificate</h2>
+            <div class="honors-heading__line"></div>
           </div>
-          <img
-            src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/bd97f2ca-79a8-43ee-8efa-5b6056d5b1c1.png"
-            alt="Section accent"
-          />
+          <img :src="accentImage" alt="Section accent" />
         </header>
 
-        <div class="slider-block slider-block--angled">
-          <div class="honors-gallery honors-gallery--certificate">
-            <article
-              v-for="item in visibleCertificateItems"
-              :key="`${item.title}-${item.image}`"
-              class="honor-card honor-card--certificate"
-            >
-              <div class="honor-card__sparks">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-              <div class="honor-card__outer">
-                <div class="honor-card__frame">
-                  <img class="honor-card__image" :src="item.image" :alt="item.title" />
-                </div>
-              </div>
-              <h3>{{ item.title }}</h3>
-            </article>
-          </div>
-
-          <div class="gallery-side-dots" aria-hidden="true">
-            <button
-              v-for="(_, index) in certificatePages"
-              :id="`certificate-page-dot-${index}`"
-              :key="`certificate-page-dot-${index}`"
-              class="gallery-side-dots__item"
-              :class="{ active: currentCertificatePage === index }"
-              type="button"
-              @click="currentCertificatePage = index"
-            ></button>
-          </div>
-
-          <button id="cert-prev" class="slider-arrow cert-prev" type="button" aria-label="Previous certificate" @click="goToCertificatePage(-1)">
-            <img
-              src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/cd7207b7-4985-4449-9ffd-acc5ff653fac.png"
-              alt="Previous"
-            />
+        <div class="honors-carousel">
+          <button
+            id="honors-cert-prev"
+            class="slider-arrow slider-arrow--prev cert-swiper-prev"
+            type="button"
+            aria-label="Previous certificate"
+            @click="slideCertificates(-1)"
+          >
+            <img :src="prevArrowImage" alt="Previous" />
           </button>
-          <button id="cert-next" class="slider-arrow slider-arrow--next cert-next" type="button" aria-label="Next certificate" @click="goToCertificatePage(1)">
-            <img
-              src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/1bd7e198-70b1-453e-b508-6b9b9cb84b26.png"
-              alt="Next"
-            />
+
+          <Swiper
+            class="honors-swiper honors-swiper--certificate"
+            :modules="swiperModules"
+            :initial-slide="certificateInitialSlide"
+            :observer="true"
+            :observe-parents="true"
+            :slides-per-view="3"
+            :slides-per-group="6"
+            :space-between="28"
+            :speed="2000"
+            :grid="{ rows: 2, fill: 'column' }"
+            :navigation="{ nextEl: '.cert-swiper-next', prevEl: '.cert-swiper-prev' }"
+            :autoplay="{
+              delay: 4000,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true
+            }"
+            :breakpoints="honorsBreakpoints"
+            @swiper="bindCertificateSwiper"
+          >
+            <SwiperSlide
+              v-for="item in qualificationCertificates"
+              :key="`certificate-${item.title}-${item.image}`"
+            >
+              <article class="frame-card">
+                <div class="frame-card__visual">
+                  <img class="frame-card__shell" :src="frameImage" alt="" aria-hidden="true" />
+                  <div class="frame-card__inner">
+                    <img :src="item.image" :alt="item.title" />
+                  </div>
+                </div>
+                <h3>{{ item.title }}</h3>
+              </article>
+            </SwiperSlide>
+          </Swiper>
+
+          <button
+            id="honors-cert-next"
+            class="slider-arrow slider-arrow--next cert-swiper-next"
+            type="button"
+            aria-label="Next certificate"
+            @click="slideCertificates(1)"
+          >
+            <img :src="nextArrowImage" alt="Next" />
           </button>
         </div>
       </div>
     </section>
 
-    <section id="page3" class="honors-section honors-screen honors-section--awards">
-      <div class="section-backdrop section-backdrop--awards"></div>
-      <div class="section-grid"></div>
+    <section id="page3" class="honors-section honors-section--awards honors-screen">
+      <div class="honors-bg honors-bg--awards"></div>
+      <div class="honors-glow honors-glow--awards"></div>
 
-      <div class="shell shell--narrow section-shell" :class="{ 'is-visible': animatedSections.includes('page3') }">
-        <header class="section-heading section-heading--light">
-          <div>
+      <div class="honors-stage" :class="{ 'is-visible': animatedSections.includes('page3') }">
+        <header class="honors-heading honors-heading--awards">
+          <div class="honors-heading__title">
             <h2>Honorary Awards</h2>
-            <span class="section-line"></span>
+            <div class="honors-heading__line"></div>
           </div>
-          <img
-            src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/bd97f2ca-79a8-43ee-8efa-5b6056d5b1c1.png"
-            alt="Section accent"
-          />
+          <img :src="accentImage" alt="Section accent" />
         </header>
 
-        <div class="tab-switcher">
+        <div class="awards-tabs" role="tablist" aria-label="Honor categories">
           <button
             v-for="tab in honorTabs"
             :id="`honor-tab-${tab.key}`"
             :key="tab.key"
-            class="tab-switcher__item"
+            class="awards-tabs__item"
             :class="{ active: activeHonorTab === tab.key }"
             type="button"
+            role="tab"
+            :aria-selected="activeHonorTab === tab.key"
             @click="activeHonorTab = tab.key"
           >
             {{ tab.label }}
           </button>
         </div>
 
-        <transition name="fade-up" mode="out-in">
-          <div :key="activeHonorTab" class="slider-block slider-block--angled slider-block--awards">
-            <div v-if="activeHonorTab === 'corporate'" class="honors-gallery honors-gallery--awards">
-              <article
-                v-for="item in visibleCorporateHonorItems"
-                :key="`${activeHonorTab}-${item.title}-${item.image}`"
-                class="honor-card honor-card--award"
-              >
-                <div class="honor-card__sparks">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-                <div class="honor-card__outer">
-                  <div class="honor-card__frame">
-                    <img class="honor-card__image" :src="item.image" :alt="item.title" />
+        <div v-show="activeHonorTab === 'corporate'" class="honors-carousel honors-carousel--awards">
+          <button
+            id="honors-corp-prev"
+            class="slider-arrow slider-arrow--prev corp-swiper-prev"
+            type="button"
+            aria-label="Previous corporate honor"
+            @click="slideCorporate(-1)"
+          >
+            <img :src="prevArrowImage" alt="Previous" />
+          </button>
+
+          <Swiper
+            class="honors-swiper honors-swiper--awards honors-swiper--corporate"
+            :modules="swiperModules"
+            :observer="true"
+            :observe-parents="true"
+            :slides-per-view="3"
+            :slides-per-group="6"
+            :space-between="28"
+            :speed="2000"
+            :grid="{ rows: 2, fill: 'column' }"
+            :navigation="{ nextEl: '.corp-swiper-next', prevEl: '.corp-swiper-prev' }"
+            :autoplay="{
+              delay: 4000,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true
+            }"
+            :breakpoints="honorsBreakpoints"
+            @swiper="bindCorporateSwiper"
+          >
+            <SwiperSlide
+              v-for="item in corporateHonors"
+              :key="`corporate-${item.title}-${item.image}`"
+            >
+              <article class="frame-card">
+                <div class="frame-card__visual">
+                  <img class="frame-card__shell" :src="frameImage" alt="" aria-hidden="true" />
+                  <div class="frame-card__inner">
+                    <img :src="item.image" :alt="item.title" />
                   </div>
                 </div>
                 <h3>{{ item.title }}</h3>
               </article>
-            </div>
+            </SwiperSlide>
+          </Swiper>
 
-            <div v-else class="honors-gallery honors-gallery--awards honors-gallery--project">
-              <article
-                v-for="item in visibleProjectHonorItems"
-                :key="`${activeHonorTab}-${item.title}-${item.image}`"
-                class="honor-card honor-card--project"
-              >
-                <div class="honor-card__sparks">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-                <div class="honor-card__outer">
-                  <div class="honor-card__frame">
-                    <img class="honor-card__image" :src="item.image" :alt="item.title" />
+          <button
+            id="honors-corp-next"
+            class="slider-arrow slider-arrow--next corp-swiper-next"
+            type="button"
+            aria-label="Next corporate honor"
+            @click="slideCorporate(1)"
+          >
+            <img :src="nextArrowImage" alt="Next" />
+          </button>
+        </div>
+
+        <div v-show="activeHonorTab === 'project'" class="honors-carousel honors-carousel--awards">
+          <button
+            id="honors-proj-prev"
+            class="slider-arrow slider-arrow--prev proj-swiper-prev"
+            type="button"
+            aria-label="Previous project honor"
+            @click="slideProject(-1)"
+          >
+            <img :src="prevArrowImage" alt="Previous" />
+          </button>
+
+          <Swiper
+            class="honors-swiper honors-swiper--awards honors-swiper--project"
+            :modules="swiperModules"
+            :observer="true"
+            :observe-parents="true"
+            :slides-per-view="3"
+            :slides-per-group="6"
+            :space-between="28"
+            :speed="2000"
+            :grid="{ rows: 2, fill: 'column' }"
+            :navigation="{ nextEl: '.proj-swiper-next', prevEl: '.proj-swiper-prev' }"
+            :autoplay="{
+              delay: 4000,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true
+            }"
+            :breakpoints="honorsBreakpoints"
+            @swiper="bindProjectSwiper"
+          >
+            <SwiperSlide
+              v-for="item in projectHonors"
+              :key="`project-${item.title}-${item.image}`"
+            >
+              <article class="frame-card">
+                <div class="frame-card__visual">
+                  <img class="frame-card__shell" :src="frameImage" alt="" aria-hidden="true" />
+                  <div class="frame-card__inner">
+                    <img :src="item.image" :alt="item.title" />
                   </div>
                 </div>
                 <h3>{{ item.title }}</h3>
               </article>
-            </div>
+            </SwiperSlide>
+          </Swiper>
 
-            <div class="gallery-side-dots" aria-hidden="true">
-              <button
-                v-for="(_, index) in activeHonorTab === 'corporate' ? corporateHonorPages : projectHonorPages"
-                :id="`awards-page-dot-${activeHonorTab}-${index}`"
-                :key="`awards-page-dot-${activeHonorTab}-${index}`"
-                class="gallery-side-dots__item"
-                :class="{
-                  active:
-                    (activeHonorTab === 'corporate' ? currentCorporatePage : currentProjectPage) === index
-                }"
-                type="button"
-                @click="
-                  activeHonorTab === 'corporate'
-                    ? (currentCorporatePage = index)
-                    : (currentProjectPage = index)
-                "
-              ></button>
-            </div>
-
-            <template v-if="activeHonorTab === 'corporate'">
-              <button
-                id="corp-prev"
-                class="slider-arrow corp-prev"
-                type="button"
-                aria-label="Previous corporate honor"
-                @click="goToCorporatePage(-1)"
-              >
-                <img
-                  src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/cd7207b7-4985-4449-9ffd-acc5ff653fac.png"
-                  alt="Previous"
-                />
-              </button>
-              <button
-                id="corp-next"
-                class="slider-arrow slider-arrow--next corp-next"
-                type="button"
-                aria-label="Next corporate honor"
-                @click="goToCorporatePage(1)"
-              >
-                <img
-                  src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/1bd7e198-70b1-453e-b508-6b9b9cb84b26.png"
-                  alt="Next"
-                />
-              </button>
-            </template>
-
-            <template v-else>
-              <button
-                id="proj-prev"
-                class="slider-arrow proj-prev"
-                type="button"
-                aria-label="Previous project honor"
-                @click="goToProjectPage(-1)"
-              >
-                <img
-                  src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/cd7207b7-4985-4449-9ffd-acc5ff653fac.png"
-                  alt="Previous"
-                />
-              </button>
-              <button
-                id="proj-next"
-                class="slider-arrow slider-arrow--next proj-next"
-                type="button"
-                aria-label="Next project honor"
-                @click="goToProjectPage(1)"
-              >
-                <img
-                  src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/1bd7e198-70b1-453e-b508-6b9b9cb84b26.png"
-                  alt="Next"
-                />
-              </button>
-            </template>
-          </div>
-        </transition>
+          <button
+            id="honors-proj-next"
+            class="slider-arrow slider-arrow--next proj-swiper-next"
+            type="button"
+            aria-label="Next project honor"
+            @click="slideProject(1)"
+          >
+            <img :src="nextArrowImage" alt="Next" />
+          </button>
+        </div>
       </div>
     </section>
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped lang="scss">
 .honors-page {
   position: relative;
-  color: #fff;
-  background: #1a1208;
   overflow: clip;
-}
-
-.shell {
-  width: min(1600px, calc(100% - 48px));
-  margin: 0 auto;
-
-  &--narrow {
-    width: min(1420px, calc(100% - 64px));
-  }
+  background: #1e1408;
+  color: #fff;
 }
 
 .honors-screen {
@@ -487,44 +457,46 @@ onBeforeUnmount(() => {
 
 .honors-dots {
   position: fixed;
-  right: 18px;
   top: 50%;
-  z-index: 35;
+  right: 26px;
+  z-index: 30;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   transform: translateY(-50%);
 }
 
 .honors-dots__item {
   width: 18px;
   height: 18px;
-  display: grid;
-  place-items: center;
   border: none;
   background: transparent;
+  display: grid;
+  place-items: center;
   cursor: pointer;
 }
 
 .honors-dots__item span {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.45);
-  transition: all 0.25s ease;
+  transition: all 0.24s ease;
 }
 
 .honors-dots__item.active span,
 .honors-dots__item:hover span {
-  width: 8px;
-  height: 8px;
-  background: #ed1c24;
-  box-shadow: 0 0 14px rgba(237, 28, 36, 0.45);
+  width: 12px;
+  height: 12px;
+  background: #df0019;
+  box-shadow: 0 0 12px rgba(223, 0, 25, 0.35);
 }
 
 .honors-hero {
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding-bottom: 96px;
 }
 
 .hero-media,
@@ -537,657 +509,592 @@ onBeforeUnmount(() => {
 
 .hero-media img {
   object-fit: cover;
-  transform: scale(1.02);
-  animation: heroPan 12s ease-in-out infinite alternate;
 }
 
-.hero-overlay {
+.hero-shade {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(18, 12, 4, 0.82) 0%, rgba(22, 16, 6, 0.58) 34%, rgba(22, 16, 6, 0.12) 72%, rgba(22, 16, 6, 0.08) 100%),
-    linear-gradient(180deg, rgba(14, 10, 4, 0.06) 0%, rgba(14, 10, 4, 0.18) 100%);
+    linear-gradient(180deg, rgba(13, 8, 3, 0.16) 0%, rgba(13, 8, 3, 0.48) 100%),
+    linear-gradient(90deg, rgba(36, 22, 8, 0.74) 0%, rgba(36, 22, 8, 0.34) 38%, rgba(36, 22, 8, 0.08) 100%);
 }
 
-.hero-glow {
+.hero-shimmer {
   position: absolute;
-  pointer-events: none;
-  filter: blur(18px);
-  opacity: 0.35;
-}
-
-.hero-glow--left {
-  left: -120px;
-  bottom: 8%;
-  width: 320px;
-  height: 320px;
-  background: radial-gradient(circle, rgba(188, 35, 32, 0.38), transparent 68%);
-}
-
-.hero-glow--right {
-  right: -100px;
-  top: 14%;
-  width: 280px;
-  height: 280px;
-  background: radial-gradient(circle, rgba(198, 162, 98, 0.28), transparent 70%);
+  inset: 0;
+  background: linear-gradient(120deg, transparent 42%, rgba(255, 255, 255, 0.08) 50%, transparent 58%);
+  animation: heroShimmer 9s linear infinite;
 }
 
 .hero-shell {
   position: relative;
   z-index: 2;
-  width: min(1440px, calc(100% - 64px));
-  margin: 0 auto;
-}
-
-.hero-panel {
-  max-width: 650px;
-  padding-top: 110px;
+  width: min(1320px, calc(100% - 96px));
+  padding: 140px 0 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   opacity: 0;
-  transform: translateY(40px);
+  transform: translateY(36px);
   transition: opacity 0.9s ease, transform 0.9s ease;
 }
 
-.hero-panel.is-visible {
+.hero-shell.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-.hero-breadcrumb {
+.hero-panel {
+  max-width: 640px;
+  text-align: left;
+}
+
+.hero-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: rgba(255, 255, 255, 0.84);
-  font-size: 15px;
-  margin-bottom: 24px;
+  gap: 18px;
+  color: #fff;
 }
 
-.hero-breadcrumb a:hover {
-  color: #ffffff;
-}
-
-.hero-title-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.hero-title-row h1 {
-  margin: 0;
+.hero-title span {
   font-family: 'Times New Roman', serif;
-  font-size: clamp(2.4rem, 1.64rem + 1.7vw, 3.7rem);
-  line-height: 1.08;
-  font-weight: 400;
+  font-size: clamp(2.2rem, 1.6rem + 1.7vw, 3.3rem);
+  font-weight: 700;
+  line-height: 1.06;
   letter-spacing: 0.01em;
 }
 
-.hero-accent {
-  width: 22px;
-  height: 22px;
+.hero-title img {
+  width: 34px;
+  height: 34px;
   object-fit: contain;
+  margin-left: 10px;
 }
 
 .hero-line,
-.section-line {
+.honors-heading__line {
+  position: relative;
   display: block;
-  width: min(270px, 55vw);
-  height: 2px;
-  margin-top: 16px;
-  background: #ed1c24;
-  box-shadow: 0 0 16px rgba(237, 28, 36, 0.4);
+  width: min(460px, 56vw);
+  height: 1px;
+  background: #d90017;
 }
 
-.hero-description {
-  max-width: 510px;
-  margin-top: 34px;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 19px;
-  line-height: 1.9;
+.hero-line::before,
+.hero-line::after,
+.honors-heading__line::before,
+.honors-heading__line::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #d90017;
+  transform: translateY(-50%);
 }
 
-.section-nav {
-  position: sticky;
-  top: 0;
-  z-index: 28;
-  margin-top: -74px;
+.hero-line::before,
+.honors-heading__line::before {
+  left: -2px;
 }
 
-.section-nav__inner {
+.hero-line::after,
+.honors-heading__line::after {
+  right: -2px;
+}
+
+.hero-panel p {
+  max-width: 540px;
+  margin: 30px 0 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 18px;
+  line-height: 1.85;
+}
+
+.hero-tabs {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: min(1020px, calc(100% - 32px));
-  margin: 0 auto;
-  background: rgba(38, 28, 14, 0.88);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(198, 162, 102, 0.12);
-  box-shadow: 0 18px 40px rgba(12, 8, 2, 0.35);
+  width: min(1320px, calc(100% - 96px));
+  background: rgba(18, 31, 54, 0.92);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transform: translateX(-50%);
 }
 
-.section-nav__item {
-  min-height: 72px;
+.hero-tabs button {
+  min-height: 80px;
   border: none;
   background: transparent;
-  color: rgba(255, 244, 228, 0.78);
+  color: rgba(255, 255, 255, 0.88);
   font-size: 18px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: background 0.24s ease, color 0.24s ease;
 }
 
-.section-nav__item.active,
-.section-nav__item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: #ffffff;
+.hero-tabs button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+@media (max-width: 1400px) {
+  .hero-shell {
+    width: min(1180px, calc(100% - 72px));
+  }
+
+  .hero-tabs {
+    width: min(1180px, calc(100% - 72px));
+  }
+}
+
+.hero-tabs button + button {
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .honors-section {
   display: flex;
-  align-items: center;
-  padding: 120px 0 96px;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 56px 0 34px;
 }
 
-.section-backdrop,
-.section-grid {
+.honors-bg,
+.honors-glow {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.section-backdrop--certificate {
+.honors-bg--certificate,
+.honors-bg--awards {
+  background-image:
+    linear-gradient(90deg, rgba(49, 30, 12, 0.97) 0%, rgba(91, 64, 29, 0.94) 36%, rgba(176, 148, 92, 0.76) 100%),
+    url('https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/ee391405-cb7a-4434-91fa-fcf427544b97.jpg');
+  background-repeat: no-repeat;
+  background-size: cover, cover;
+  background-position: center, right center;
+}
+
+.honors-bg--awards {
+  background-image:
+    linear-gradient(90deg, rgba(34, 21, 8, 0.97) 0%, rgba(76, 52, 24, 0.95) 34%, rgba(164, 138, 86, 0.74) 100%),
+    url('https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/ee391405-cb7a-4434-91fa-fcf427544b97.jpg');
+}
+
+.honors-glow::before,
+.honors-glow::after {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(22px);
+}
+
+.honors-glow--certificate::before,
+.honors-glow--awards::before {
+  right: -10%;
+  top: 10%;
+  width: 42vw;
+  height: 80vh;
   background:
-    radial-gradient(ellipse at 12% 88%, rgba(198, 162, 98, 0.18), transparent 40%),
-    radial-gradient(ellipse at 88% 18%, rgba(230, 196, 132, 0.18), transparent 24%),
-    radial-gradient(circle at 84% 46%, rgba(231, 196, 126, 0.1), transparent 18%),
-    radial-gradient(circle at 50% 50%, rgba(198, 162, 98, 0.05), transparent 48%),
-    linear-gradient(180deg, #21170b 0%, #2b1f10 30%, #23180b 58%, #1a1208 100%);
+    linear-gradient(90deg, rgba(255, 235, 189, 0) 0%, rgba(255, 233, 173, 0.18) 40%, rgba(255, 238, 201, 0.36) 100%),
+    url('https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/ee391405-cb7a-4434-91fa-fcf427544b97.jpg');
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: right center;
+  opacity: 0.9;
+  transform: scale(1.06);
 }
 
-.section-backdrop--awards {
-  background:
-    radial-gradient(ellipse at 14% 88%, rgba(198, 162, 98, 0.16), transparent 36%),
-    radial-gradient(ellipse at 90% 16%, rgba(228, 193, 124, 0.18), transparent 24%),
-    radial-gradient(circle at 84% 44%, rgba(238, 198, 120, 0.1), transparent 18%),
-    radial-gradient(circle at 52% 48%, rgba(198, 162, 98, 0.04), transparent 46%),
-    linear-gradient(180deg, #1d1409 0%, #271d0f 32%, #201707 58%, #18120a 100%);
+.honors-glow--certificate::after,
+.honors-glow--awards::after {
+  right: 8%;
+  top: 22%;
+  width: 14vw;
+  height: 14vw;
+  background: radial-gradient(circle, rgba(255, 242, 213, 0.48), transparent 70%);
 }
 
-.section-grid {
-  background-image: none;
-  opacity: 0;
-}
-
-.section-shell {
+.honors-stage {
   position: relative;
   z-index: 2;
-  max-width: 1140px;
+  width: min(1460px, calc(100% - 68px));
   opacity: 0;
-  transform: translateY(48px);
-  transition: opacity 0.85s ease, transform 0.85s ease;
+  transform: translateY(36px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
 }
 
-.section-shell.is-visible {
+.honors-stage.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-.breadcrumb {
+.honors-breadcrumb {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
-  font-size: 14px;
+  gap: 12px;
+  margin: 0 0 36px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 15px;
 }
 
-.breadcrumb--dark {
-  color: rgba(255, 255, 255, 0.74);
+.honors-breadcrumb a {
+  color: #fff;
+  text-decoration: none;
 }
 
-.breadcrumb--dark a {
-  color: #ed1c24;
+.honors-breadcrumb a:hover {
+  color: #ffd9d9;
 }
 
-.breadcrumb--dark svg {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.breadcrumb--dark a:hover {
-  color: #ff474d;
-}
-
-.section-heading {
+.honors-heading {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 20px;
   margin-bottom: 28px;
+}
+
+.honors-heading--awards {
+  margin-top: 24px;
+}
+
+.honors-heading__title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.honors-heading h2 {
+  margin: 0;
+  color: #fff;
+  font-family: 'Times New Roman', serif;
+  font-size: clamp(2.1rem, 1.5rem + 1.2vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.08;
   text-align: center;
 }
 
-.section-heading--light h2 {
-  margin: 0;
-  color: #ffffff;
-  font-family: 'Times New Roman', serif;
-  font-size: clamp(2.08rem, 1.7rem + 0.7vw, 2.75rem);
-  font-weight: 700;
-  line-height: 1.08;
-}
-
-.section-heading img {
-  width: 22px;
-  height: 22px;
+.honors-heading img {
+  width: 40px;
+  height: 40px;
   object-fit: contain;
-  margin-bottom: 8px;
 }
 
-.slider-block {
+.honors-carousel {
   position: relative;
-  padding-inline: 76px;
+  padding: 0 112px;
 }
 
-.slider-block--angled::before {
-  content: '';
-  position: absolute;
-  left: 76px;
-  right: 76px;
-  top: 48%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
-  transform: translateY(-50%);
-}
-
-.honors-gallery {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 22px 30px;
-  align-items: start;
-  min-height: 452px;
-}
-
-.honors-gallery--certificate {
-  gap: 26px 34px;
-}
-
-.honors-gallery--awards {
-  gap: 22px 30px;
-}
-
-.gallery-side-dots {
-  position: absolute;
-  top: 48%;
-  right: 20px;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  transform: translateY(-50%);
-}
-
-.gallery-side-dots__item {
-  width: 7px;
-  height: 7px;
-  border: none;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.24);
-  cursor: pointer;
-  transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
-}
-
-.gallery-side-dots__item.active,
-.gallery-side-dots__item:hover {
-  background: #ffffff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-  transform: scale(1.12);
-}
-
-.honor-card {
-  position: relative;
-  padding-bottom: 4px;
-}
-
-.honor-card__sparks span {
-  position: absolute;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.68);
-  box-shadow: 0 0 5px rgba(255, 255, 255, 0.28);
-}
-
-.honor-card__sparks span:nth-child(1) {
-  width: 4px;
-  height: 4px;
-  left: 14px;
-  bottom: 58px;
-}
-
-.honor-card__sparks span:nth-child(2) {
-  width: 4px;
-  height: 4px;
-  right: 14px;
-  top: 38%;
-}
-
-.honor-card__sparks span:nth-child(3) {
-  width: 4px;
-  height: 4px;
-  left: 50%;
-  bottom: 52px;
-  transform: translateX(-50%);
-}
-
-.honor-card__outer {
-  position: relative;
-  padding: 12px;
-  border-radius: 3px;
-  background: linear-gradient(145deg, rgba(226, 232, 239, 0.42), rgba(118, 128, 145, 0.22));
-  border: 1px solid rgba(218, 224, 233, 0.56);
-  box-shadow:
-    0 14px 28px rgba(0, 0, 0, 0.24),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.42),
-    inset -1px -1px 0 rgba(72, 82, 96, 0.42);
-  transform: perspective(1100px) rotateY(-10deg) skewY(-0.55deg);
-  transition: transform 0.38s ease, box-shadow 0.38s ease;
-}
-
-.honor-card__outer::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 3px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.34), transparent 22%, transparent 74%, rgba(255, 255, 255, 0.08));
-  pointer-events: none;
-}
-
-.honor-card__frame {
-  position: relative;
-  overflow: hidden;
-  border-radius: 2px;
-  aspect-ratio: 0.72;
-  background: linear-gradient(180deg, #fffefb 0%, #ece8df 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(176, 184, 196, 0.56),
-    inset 0 0 0 8px rgba(245, 244, 240, 0.98),
-    0 7px 16px rgba(10, 6, 2, 0.16);
-}
-
-.honor-card__frame::before {
-  content: '';
-  position: absolute;
-  inset: 10px;
-  border: 1px solid rgba(184, 164, 126, 0.22);
-  pointer-events: none;
-}
-
-.honor-card__image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 8px;
-  transition: transform 0.42s ease, filter 0.42s ease;
-}
-
-.honor-card h3 {
-  margin: 12px 2px 0;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 12px;
-  line-height: 1.48;
-  font-weight: 400;
-  min-height: 34px;
-  text-transform: uppercase;
-  letter-spacing: 0.012em;
-}
-
-.honor-card--project h3 {
-  min-height: 48px;
-  font-size: 12px;
-}
-
-.honor-card:hover .honor-card__outer {
-  transform: perspective(1100px) rotateY(-5deg) translateY(-4px);
-  box-shadow:
-    0 18px 32px rgba(0, 0, 0, 0.28),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.36);
-}
-
-.honor-card:hover .honor-card__image {
-  transform: scale(1.01);
-  filter: brightness(1.01);
-}
-
-.tab-switcher {
-  display: inline-flex;
-  gap: 10px;
-  margin: 0 auto 20px;
-  justify-content: center;
-  width: 100%;
-}
-
-.tab-switcher__item {
-  min-width: 138px;
-  min-height: 32px;
-  padding: 0 16px;
-  border-radius: 1px;
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  background: transparent;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 13px;
-  font-weight: 400;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.tab-switcher__item.active,
-.tab-switcher__item:hover {
-  background: #e41218;
-  border-color: #e41218;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(200, 22, 26, 0.16);
+.honors-carousel--awards {
+  margin-top: 22px;
 }
 
 .slider-arrow {
   position: absolute;
-  top: 48%;
-  left: 26px;
-  z-index: 4;
-  width: 28px;
-  height: 28px;
+  top: 50%;
+  z-index: 3;
+  width: 66px;
+  height: 66px;
   border: none;
   border-radius: 999px;
-  background: rgba(34, 21, 7, 0.84);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+  background: rgba(48, 31, 12, 0.68);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  display: grid;
+  place-items: center;
   cursor: pointer;
   transform: translateY(-50%);
-  transition: transform 0.25s ease, background 0.25s ease;
+  transition: transform 0.24s ease, background 0.24s ease, opacity 0.24s ease;
+}
+
+.slider-arrow--prev {
+  left: 6px;
 }
 
 .slider-arrow--next {
-  right: 26px;
-  left: auto;
+  right: 6px;
 }
 
 .slider-arrow img {
-  width: 10px;
-  height: 10px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
 }
 
 .slider-arrow:hover {
-  background: rgba(56, 37, 12, 0.98);
-  transform: translateY(-50%) scale(1.06);
+  background: rgba(31, 18, 5, 0.88);
+  transform: translateY(-50%) scale(1.04);
 }
 
-.fade-up-enter-active,
-.fade-up-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+.awards-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
-.fade-up-enter-from,
-.fade-up-leave-to {
-  opacity: 0;
-  transform: translateY(12px);
+.awards-tabs__item {
+  min-width: 188px;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.24s ease, color 0.24s ease, border-color 0.24s ease;
 }
 
-@keyframes heroPan {
-  from {
-    transform: scale(1.02) translateX(0);
+.awards-tabs__item.active,
+.awards-tabs__item:hover {
+  background: #d90017;
+  border-color: #d90017;
+  color: #fff;
+}
+
+:deep(.honors-swiper) {
+  height: min(700px, calc(100vh - 230px));
+  overflow: hidden;
+}
+
+:deep(.honors-swiper .swiper-wrapper) {
+  align-items: stretch;
+}
+
+:deep(.honors-swiper .swiper-slide) {
+  display: flex;
+  height: auto;
+}
+
+.frame-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+}
+
+.frame-card__visual {
+  position: relative;
+  width: min(100%, 330px);
+  margin: 0 auto;
+  filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.16));
+  transition: transform 0.28s ease, filter 0.28s ease;
+}
+
+.frame-card__shell {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.frame-card__inner {
+  position: absolute;
+  inset: 16% 14% 18% 14%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 252, 245, 0.8);
+  overflow: hidden;
+}
+
+.frame-card__inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fffefb;
+}
+
+.frame-card h3 {
+  max-width: 95%;
+  margin: 0;
+  color: #fff;
+  font-family: 'Times New Roman', serif;
+  font-size: clamp(0.9rem, 0.86rem + 0.16vw, 1.02rem);
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+.frame-card:hover .frame-card__visual {
+  transform: translateY(-4px) scale(1.01);
+  filter: drop-shadow(0 22px 28px rgba(0, 0, 0, 0.18));
+}
+
+@keyframes heroShimmer {
+  0% {
+    transform: translateX(-18%);
   }
-  to {
-    transform: scale(1.08) translateX(1.2%);
+
+  100% {
+    transform: translateX(18%);
   }
 }
 
 @media (max-width: 1199px) {
-  .honors-screen {
-    min-height: auto;
+  .honors-stage {
+    width: calc(100% - 44px);
   }
 
-  .honors-section {
-    padding: 96px 0 78px;
+  .honors-carousel {
+    padding: 0 88px;
   }
 
-  .section-shell {
-    max-width: 1000px;
+  .slider-arrow {
+    width: 58px;
+    height: 58px;
   }
 
-  .slider-block {
-    padding-inline: 46px;
-  }
-}
-
-@media (max-width: 991px) {
-  .honors-dots {
-    display: none;
+  :deep(.honors-swiper) {
+    height: min(680px, calc(100vh - 260px));
   }
 
-  .section-nav {
-    margin-top: -38px;
-  }
-
-  .section-nav__item {
-    min-height: 62px;
-    font-size: 16px;
-  }
-
-  .hero-description {
-    font-size: 17px;
-  }
-
-  .section-heading {
-    justify-content: center;
-  }
-
-  .slider-block {
-    padding-inline: 44px;
-  }
-
-  .slider-block--angled::before {
-    left: 44px;
-    right: 44px;
-  }
-
-  .honors-gallery {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px 20px;
-    min-height: auto;
-  }
-
-  .gallery-side-dots {
-    right: 6px;
-  }
-
-  .honor-card__outer {
-    transform: perspective(1200px) rotateY(-6deg);
+  .frame-card__visual {
+    width: min(100%, 332px);
   }
 }
 
 @media (max-width: 767px) {
-  .shell--narrow,
+  .honors-dots {
+    right: 10px;
+    gap: 9px;
+  }
+
   .hero-shell {
-    width: min(100%, calc(100% - 28px));
+    width: calc(100% - 28px);
+    padding: 112px 0 64px;
   }
 
-  .honors-hero {
-    min-height: 720px;
-    align-items: flex-start;
+  .hero-title {
+    gap: 12px;
   }
 
-  .hero-panel {
-    padding-top: 132px;
+  .hero-title img {
+    width: 26px;
+    height: 26px;
   }
 
-  .hero-title-row {
-    align-items: flex-end;
-  }
-
-  .hero-title-row h1 {
-    font-size: 2.1rem;
-  }
-
-  .hero-description {
-    max-width: 320px;
+  .hero-panel p {
     font-size: 15px;
-    margin-top: 26px;
+    line-height: 1.72;
   }
 
-  .section-nav__inner {
-    width: calc(100% - 14px);
+  .hero-tabs {
+    margin-top: 42px;
   }
 
-  .section-nav__item {
-    min-height: 54px;
-    font-size: 14px;
-    padding: 0 10px;
+  .hero-tabs button {
+    min-height: 58px;
+    font-size: 16px;
   }
 
   .honors-section {
-    padding: 78px 0 68px;
+    padding: 34px 0 24px;
   }
 
-  .section-heading {
-    align-items: center;
-    justify-content: center;
+  .honors-stage {
+    width: calc(100% - 22px);
+  }
+
+  .honors-breadcrumb {
+    margin-bottom: 22px;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+
+  .honors-heading {
+    gap: 10px;
     margin-bottom: 24px;
   }
 
-  .section-heading--light h2 {
-    font-size: 1.85rem;
+  .honors-heading img {
+    width: 28px;
+    height: 28px;
   }
 
-  .slider-block {
-    padding-inline: 0;
+  .honors-heading__title {
+    gap: 14px;
   }
 
-  .slider-block--angled::before,
-  .slider-arrow,
-  .gallery-side-dots {
-    display: none;
+  .honors-heading__line,
+  .hero-line {
+    width: min(290px, 72vw);
   }
 
-  .honors-gallery {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    min-height: auto;
+  .honors-carousel {
+    padding: 0 16px;
   }
 
-  .tab-switcher {
-    display: grid;
-    width: 100%;
+  .honors-carousel--awards {
+    margin-top: 18px;
   }
 
-  .tab-switcher__item {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .honor-card__outer {
-    padding: 14px;
+  .slider-arrow {
+    width: 46px;
+    height: 46px;
+    top: auto;
+    bottom: -8px;
     transform: none;
   }
 
-  .honor-card:hover .honor-card__outer {
-    transform: translateY(-4px);
+  .slider-arrow--prev {
+    left: calc(50% - 54px);
   }
 
-  .honor-card h3 {
-    margin-top: 14px;
-    font-size: 13px;
+  .slider-arrow--next {
+    right: calc(50% - 54px);
+  }
+
+  .slider-arrow:hover {
+    transform: scale(1.04);
+  }
+
+  :deep(.honors-swiper) {
+    height: auto;
+    padding-bottom: 74px;
+  }
+
+  .frame-card {
+    gap: 12px;
+  }
+
+  .frame-card__visual {
+    width: min(100%, 240px);
+  }
+
+  .frame-card h3 {
+    font-size: 1rem;
+    line-height: 1.34;
+  }
+
+  .awards-tabs {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .awards-tabs__item {
+    min-width: 148px;
+    min-height: 40px;
+    font-size: 14px;
+  }
+
+  .honors-glow--certificate::before,
+  .honors-glow--awards::before {
+    right: -34%;
+    width: 70vw;
+    opacity: 0.55;
+  }
+
+  .honors-glow--certificate::after,
+  .honors-glow--awards::after {
+    width: 24vw;
+    height: 24vw;
   }
 }
 </style>

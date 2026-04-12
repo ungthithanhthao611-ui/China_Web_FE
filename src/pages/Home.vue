@@ -7,7 +7,6 @@ import BusinessDisplay from './home/BusinessDisplay.vue'
 import ProjectSection from './home/ProjectSection.vue'
 import NewsSection from './home/NewsSection.vue'
 import IndustrialDistribution from './home/IndustrialDistribution.vue'
-import PartnerSlider from './home/PartnerSlider.vue'
 import HomeNav from './home/HomeNav.vue'
 import AppFooter from '../components/layout/AppFooter.vue'
 import { uiState } from '../utils/uiState'
@@ -18,8 +17,8 @@ const activeBanner = ref(0)
 // Watch activeSection to control UI visibility
 watch(activeSection, (newVal) => {
   uiState.isHeaderHidden = newVal > 0
-  uiState.isNavHidden = newVal > 0 // Hide side navigation dots for all sections except Hero
-  uiState.isFooterHidden = true   // Keep global footer hidden on Home, we'll embed it in the last section
+  uiState.isNavHidden = false
+  uiState.isFooterHidden = true
 }, { immediate: true })
 
 onUnmounted(() => {
@@ -163,8 +162,7 @@ onUnmounted(() => {
 
       <section id="ctn7" class="section-full last-section">
         <div class="section-inner partner-section">
-          <PartnerSlider />
-          <AppFooter />
+          <AppFooter :force-visible="true" />
         </div>
       </section>
     </div>
@@ -235,11 +233,16 @@ onUnmounted(() => {
 .last-section {
   background-color: #f9f9f9;
   height: auto !important;
-  min-height: 100vh;
+  min-height: auto;
   
   .partner-section {
-    padding: 80px 0 0 0 !important;
+    padding: 0 !important;
     justify-content: flex-start !important;
+    flex: 0 0 auto;
+  }
+
+  @media (max-width: 992px) {
+    min-height: 100vh;
   }
 }
 </style>

@@ -6,7 +6,7 @@ import { uiState } from './utils/uiState'
 
 <template>
   <div class="app-wrapper">
-    <AppHeader />
+    <AppHeader v-if="!uiState.isNavHidden" />
 
     <main class="main-content">
       <router-view v-slot="{ Component }">

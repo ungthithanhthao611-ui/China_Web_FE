@@ -1,5 +1,4 @@
 <script setup>
-import { uiState } from './utils/uiState'
 </script>
 
 <template>

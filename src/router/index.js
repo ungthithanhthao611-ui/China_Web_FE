@@ -60,17 +60,17 @@ const routes = [
   {
     path: '/projects',
     name: 'Projects',
-    component: () => import('../pages/projects/ProjectList.vue')
+    component: () => import('../pages/projects/ProjectCasePage.vue')
   },
   {
     path: '/project-case',
     name: 'ProjectCase',
-    component: () => import('../pages/business/project/ProjectCase.vue')
+    component: () => import('../pages/projects/ProjectCasePage.vue')
   },
   {
     path: '/projects/:category',
     name: 'ProjectCategory',
-    component: () => import('../pages/projects/ProjectList.vue')
+    component: () => import('../pages/projects/ProjectCasePage.vue')
   },
   {
     path: '/project/:id',
@@ -110,6 +110,11 @@ const routes = [
     path: '/subsidiary',
     name: 'Subsidiary',
     component: () => import('../pages/Subsidiary.vue')
+  },
+  {
+    path: '/subsidiary_Detail/:id.html',
+    name: 'SubsidiaryDetail',
+    component: () => import('../pages/SubsidiaryDetail.vue')
   },
   {
     path: '/branch',
