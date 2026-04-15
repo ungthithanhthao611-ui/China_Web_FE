@@ -239,15 +239,21 @@ export function useNavigationMenusManager(props, emit) {
     parentForNewNodeCid.value = ''
   }
 
-  function openCreateMenuDrawer() {
+  async function openCreateMenuDrawer() {
+    if (languages.value.length === 0) {
+      await loadLanguages()
+    }
     resetMenuForm()
     openDrawer('createMenu', 'Add Menu')
   }
 
-  function openEditMenuDrawer() {
+  async function openEditMenuDrawer() {
     if (!selectedMenu.value) {
       notifyError('Please select a menu first.')
       return
+    }
+    if (languages.value.length === 0) {
+      await loadLanguages()
     }
     menuForm.name = selectedMenu.value.name || ''
     menuForm.location = selectedMenu.value.location || ''

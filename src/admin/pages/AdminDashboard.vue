@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -343,6 +343,7 @@ onBeforeUnmount(() => {
       <NavigationMenusManager
         v-else-if="activeSection === 'navigation'"
         :token="token"
+        :active="true"
         @notify-success="setSuccess"
         @notify-error="setError"
         @clear-notify="clearMessages"
