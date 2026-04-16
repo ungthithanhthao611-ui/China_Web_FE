@@ -30,10 +30,12 @@ export function getAdminEntities(token) {
   })
 }
 
-export function listAdminEntityRecords(entityName, token, query = {}) {
+export function listAdminEntityRecords(entityName, token, query = {}, options = {}) {
+  const timeoutMs = Number(options.timeoutMs)
   return fetchJson(`/admin/${entityName}`, {
     headers: withAdminHeaders(token),
     query,
+    ...(Number.isFinite(timeoutMs) && timeoutMs > 0 ? { timeoutMs } : {}),
   })
 }
 

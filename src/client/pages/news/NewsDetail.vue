@@ -1,50 +1,69 @@
 ﻿<script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, ExternalLink } from 'lucide-vue-next'
+import { ArrowLeft } from 'lucide-vue-next'
 import Breadcrumb from '@/client/components/shared/common/Breadcrumb.vue'
 import { uiState } from '@/utils/uiState'
-import { allNewsItems, getNewsById, newsCategoryMeta, newsHero } from './newsData'
+import { getPosts, getPostDetail } from '@/client/services/publicApi'
 
 const route = useRoute()
 
-const article = computed(() => getNewsById(route.params.id))
-
-const relatedNews = computed(() => {
-  if (!article.value) {
-    return []
-  }
-
-  return allNewsItems
-    .filter(
-      (item) =>
-        item.category === article.value.category &&
-        item.id !== article.value.id
-    )
-    .slice(0, 3)
-})
+const article = ref(null)
+const relatedNews = ref([])
+const loading = ref(true)
+const error = ref(null)
 
 const breadcrumbs = computed(() => {
   if (!article.value) {
-    return [{ name: 'News', link: newsCategoryMeta.enterprise.route }, { name: 'Article' }]
+    return [{ name: 'News', link: '/news/corporate-news' }, { name: 'Article' }]
   }
-
+  const catSlug = article.value.category?.slug || 'corporate-news'
+  const catName = article.value.category?.name || 'News'
   return [
-    { name: 'News', link: newsCategoryMeta.enterprise.route },
-    {
-      name: newsCategoryMeta[article.value.category].label,
-      link: newsCategoryMeta[article.value.category].route
-    },
+    { name: 'News', link: '/news/corporate-news' },
+    { name: catName, link: `/news/${catSlug}` },
     { name: 'Article' }
   ]
 })
 
-const formatDate = (value) =>
-  new Intl.DateTimeFormat('en-US', {
+const formatDate = (value) => {
+  if (!value) return ''
+  return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   }).format(new Date(value))
+}
+
+const imageUrl = (item) => item?.image?.url || item?.image || ''
+
+async function loadArticle(slug) {
+  loading.value = true
+  error.value = null
+  try {
+    article.value = await getPostDetail(slug)
+    const catSlug = article.value?.category?.slug
+    if (catSlug) {
+      const res = await getPosts({ categorySlug: catSlug, skip: 0, limit: 6 })
+      relatedNews.value = (res?.items || [])
+        .filter((item) => item.slug !== slug)
+        .slice(0, 3)
+    }
+  } catch (err) {
+    error.value = err?.message || 'Failed to load article'
+    article.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(
+  () => route.params.slug,
+  (slug) => {
+    if (slug) loadArticle(slug)
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   uiState.isHeaderHidden = false
@@ -55,20 +74,37 @@ onMounted(() => {
 
 <template>
   <div class="news-detail-page">
-    <template v-if="article">
+    <!-- Loading -->
+    <section v-if="loading" class="detail-empty">
+      <div class="container">
+        <p style="color: #667085; margin-top: 60px">Loading article…</p>
+      </div>
+    </section>
+
+    <!-- Error -->
+    <section v-else-if="error" class="detail-empty">
+      <div class="container">
+        <h1>Article not found</h1>
+        <p>{{ error }}</p>
+        <router-link to="/news/corporate-news" class="empty-link">Back to News Center</router-link>
+      </div>
+    </section>
+
+    <!-- Article -->
+    <template v-else-if="article">
       <section
         class="detail-hero"
-        :style="{ backgroundImage: `url(${article.image || newsHero.bannerImage})` }"
+        :style="{ backgroundImage: `url(${imageUrl(article)})` }"
       >
         <div class="detail-overlay"></div>
         <div class="container detail-hero-inner">
-          <router-link :to="newsCategoryMeta[article.category].route" class="back-link">
+          <router-link :to="`/news/${article.category?.slug || 'corporate-news'}`" class="back-link">
             <ArrowLeft :size="16" />
-            Back to {{ newsCategoryMeta[article.category].label }}
+            Back to {{ article.category?.name || 'News' }}
           </router-link>
-          <span class="detail-category">{{ newsCategoryMeta[article.category].label }}</span>
+          <span class="detail-category">{{ article.category?.name }}</span>
           <h1>{{ article.title }}</h1>
-          <p>{{ formatDate(article.date) }}</p>
+          <p>{{ formatDate(article.published_at) }}</p>
         </div>
       </section>
 
@@ -77,51 +113,42 @@ onMounted(() => {
       <section class="detail-body-section">
         <div class="container detail-grid">
           <article class="article-card">
-            <div v-if="article.image" class="article-image">
-              <img :src="article.image" :alt="article.title" />
+            <div v-if="imageUrl(article)" class="article-image">
+              <img :src="imageUrl(article)" :alt="article.title" />
             </div>
 
             <div class="article-content">
-              <p class="lead">{{ article.excerpt }}</p>
-              <p v-for="(paragraph, index) in article.content" :key="index">
-                {{ paragraph }}
-              </p>
+              <p v-if="article.summary" class="lead">{{ article.summary }}</p>
+              <!-- eslint-disable-next-line vue/no-v-html -->
+              <div v-if="article.body" class="article-body" v-html="article.body"></div>
             </div>
-
-            <a
-              class="source-link"
-              :href="article.sourceUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View original article
-              <ExternalLink :size="16" />
-            </a>
           </article>
 
           <aside class="related-card">
             <h2>More News</h2>
-            <div class="related-list">
+            <div v-if="relatedNews.length" class="related-list">
               <router-link
                 v-for="item in relatedNews"
-                :key="item.id"
-                :to="`/news/${item.id}`"
+                :key="item.slug"
+                :to="`/news/${item.slug}`"
                 class="related-item"
               >
-                <span>{{ formatDate(item.date) }}</span>
+                <span>{{ formatDate(item.published_at) }}</span>
                 <strong>{{ item.title }}</strong>
               </router-link>
             </div>
+            <p v-else style="color: #9a7d69; font-size: 0.9rem">No related articles found.</p>
           </aside>
         </div>
       </section>
     </template>
 
+    <!-- Article không tồn tại -->
     <section v-else class="detail-empty">
       <div class="container">
         <h1>Article not found</h1>
-        <p>The requested news item is not available in the current mirrored dataset.</p>
-        <router-link to="/news/enterprise" class="empty-link">Back to News Center</router-link>
+        <p>The requested article could not be loaded.</p>
+        <router-link to="/news/corporate-news" class="empty-link">Back to News Center</router-link>
       </div>
     </section>
   </div>

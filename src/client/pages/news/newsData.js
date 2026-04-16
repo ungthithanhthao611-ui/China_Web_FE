@@ -15,20 +15,20 @@ const LIST_BACKGROUND =
   `${SITE_ROOT}/repository/portal-local/ngc202304190002/cms/image/dabcc14d-2fa9-4e02-80f3-db7fde9020e0.jpeg`
 
 export const newsCategoryMeta = {
-  enterprise: {
-    key: 'enterprise',
+  'corporate-news': {
+    key: 'corporate-news',
     label: 'Corporate News',
     heading: 'CORPORATE NEWS',
-    route: '/news/enterprise',
+    route: '/news/corporate-news',
     sourceType: 'news_Detail',
     sourceTotalPages: 72,
     sourceTotalItems: 431
   },
-  industry: {
-    key: 'industry',
+  'industry-dynamics': {
+    key: 'industry-dynamics',
     label: 'Industry dynamics',
     heading: 'INDUSTRY DYNAMICS',
-    route: '/news/industry',
+    route: '/news/industry-dynamics',
     sourceType: 'news_Detail2',
     sourceTotalPages: 6,
     sourceTotalItems: 34,
@@ -74,7 +74,7 @@ export const newsHero = {
 export const enterpriseFeaturedNews = [
   buildNewsItem({
     id: '1937323008641404928',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2025-06-24',
     sourceType: 'news_Detail',
     image:
@@ -90,7 +90,7 @@ export const enterpriseFeaturedNews = [
   }),
   buildNewsItem({
     id: '1925373640090783744',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2025-05-13',
     sourceType: 'news_Detail',
     image:
@@ -109,7 +109,7 @@ export const enterpriseFeaturedNews = [
 export const enterpriseNews = [
   buildNewsItem({
     id: '1925367804035534848',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2025-05-12',
     sourceType: 'news_Detail',
     image:
@@ -125,7 +125,7 @@ export const enterpriseNews = [
   }),
   buildNewsItem({
     id: '1910243262246100992',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2025-04-03',
     sourceType: 'news_Detail',
     image:
@@ -141,7 +141,7 @@ export const enterpriseNews = [
   }),
   buildNewsItem({
     id: '1910206620277874688',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2025-03-29',
     sourceType: 'news_Detail',
     image:
@@ -156,7 +156,7 @@ export const enterpriseNews = [
   }),
   buildNewsItem({
     id: '1897088519139172352',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2025-03-05',
     sourceType: 'news_Detail',
     image:
@@ -172,7 +172,7 @@ export const enterpriseNews = [
   }),
   buildNewsItem({
     id: '1895023370253312000',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2025-02-27',
     sourceType: 'news_Detail',
     image:
@@ -188,7 +188,7 @@ export const enterpriseNews = [
   }),
   buildNewsItem({
     id: '1882617251891453952',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2025-01-24',
     sourceType: 'news_Detail',
     image:
@@ -204,7 +204,7 @@ export const enterpriseNews = [
   }),
   buildNewsItem({
     id: '1857342019857489920',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2024-11-07',
     sourceType: 'news_Detail',
     image:
@@ -219,7 +219,7 @@ export const enterpriseNews = [
   }),
   buildNewsItem({
     id: '1857338368002826240',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2024-11-06',
     sourceType: 'news_Detail',
     image:
@@ -235,7 +235,7 @@ export const enterpriseNews = [
   }),
   buildNewsItem({
     id: '1857334801791655936',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2024-10-31',
     sourceType: 'news_Detail',
     image:
@@ -251,7 +251,7 @@ export const enterpriseNews = [
   }),
   buildNewsItem({
     id: '1857326373522317312',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2024-10-30',
     sourceType: 'news_Detail',
     image:
@@ -267,7 +267,7 @@ export const enterpriseNews = [
   }),
   buildNewsItem({
     id: '1836214251883274240',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2024-08-30',
     sourceType: 'news_Detail',
     image:
@@ -283,7 +283,7 @@ export const enterpriseNews = [
   }),
   buildNewsItem({
     id: '1836315371112701952',
-    category: 'enterprise',
+    category: 'corporate-news',
     date: '2024-08-30',
     sourceType: 'news_Detail',
     image:
@@ -302,7 +302,7 @@ export const enterpriseNews = [
 export const industryNews = [
   buildNewsItem({
     id: '1716629569984188416',
-    category: 'industry',
+    category: 'industry-dynamics',
     date: '2019-01-01',
     sourceType: 'news_Detail2',
     title: 'Rise of Artificial Sandstone in Decoration Industry',
@@ -315,7 +315,7 @@ export const industryNews = [
   }),
   buildNewsItem({
     id: '1716629450274557952',
-    category: 'industry',
+    category: 'industry-dynamics',
     date: '2019-01-01',
     sourceType: 'news_Detail2',
     title: 'Boeing Beginning to Try Environmentally-friendly Airplane Paint',
@@ -328,7 +328,7 @@ export const industryNews = [
   }),
   buildNewsItem({
     id: '1716629342535471104',
-    category: 'industry',
+    category: 'industry-dynamics',
     date: '2019-01-01',
     sourceType: 'news_Detail2',
     title: 'Knockoff Kitchen and Bathroom Products Predominate',
@@ -341,7 +341,7 @@ export const industryNews = [
   }),
   buildNewsItem({
     id: '1716629819914375168',
-    category: 'industry',
+    category: 'industry-dynamics',
     date: '2018-01-01',
     sourceType: 'news_Detail2',
     title: 'China Building Decoration Industry Development in the End of 20th Century',
@@ -354,7 +354,7 @@ export const industryNews = [
   }),
   buildNewsItem({
     id: '1716629663206789120',
-    category: 'industry',
+    category: 'industry-dynamics',
     date: '2018-01-01',
     sourceType: 'news_Detail2',
     title: 'False Advertising Still Exists in Decoration Industry',
@@ -367,7 +367,7 @@ export const industryNews = [
   }),
   buildNewsItem({
     id: '1716625603955183616',
-    category: 'industry',
+    category: 'industry-dynamics',
     date: '2014-04-03',
     sourceType: 'news_Detail2',
     title: 'Furniture Industry: Be Vigilant of 3 New National Standards',

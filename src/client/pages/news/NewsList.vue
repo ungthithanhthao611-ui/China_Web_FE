@@ -6,13 +6,8 @@ import { Pagination } from 'swiper/modules'
 import AOS from 'aos'
 import { ChevronLeft, ChevronRight, Home } from 'lucide-vue-next'
 import { uiState } from '@/utils/uiState'
-import {
-  enterpriseFeaturedNews,
-  enterpriseNews,
-  industryNews,
-  newsCategoryMeta,
-  newsHero
-} from './newsData'
+import { newsCategoryMeta, newsHero } from './newsData'
+import { getPosts } from '@/client/services/publicApi'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,55 +17,87 @@ const currentPage = ref(1)
 const breadcrumbSection = ref(null)
 const listSection = ref(null)
 
-const activeCategoryKey = computed(() => (route.path.includes('/industry') ? 'industry' : 'enterprise'))
+// ── API state ─────────────────────────────────────────────────────────────────
+const items = ref([])
+const featured = ref([])
+const total = ref(0)
+const loading = ref(false)
+const error = ref(null)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const activeCategoryKey = computed(() => (route.path.includes('/industry-dynamics') ? 'industry-dynamics' : 'corporate-news'))
 const activeCategory = computed(() => newsCategoryMeta[activeCategoryKey.value])
-const isEnterprise = computed(() => activeCategoryKey.value === 'enterprise')
-const isIndustry = computed(() => activeCategoryKey.value === 'industry')
+const isEnterprise = computed(() => activeCategoryKey.value === 'corporate-news')
+const isIndustry = computed(() => activeCategoryKey.value === 'industry-dynamics')
 const sliderModules = [Pagination]
 
-const featuredItems = computed(() => (isEnterprise.value ? enterpriseFeaturedNews : []))
-const newsItems = computed(() => (isEnterprise.value ? enterpriseNews : industryNews))
-const actualPageCount = computed(() => Math.max(1, Math.ceil(newsItems.value.length / pageSize)))
-const displayTotalPages = computed(() =>
-  isEnterprise.value
-    ? newsCategoryMeta.enterprise.sourceTotalPages
-    : newsCategoryMeta.industry.sourceTotalPages || Math.max(1, Math.ceil(newsItems.value.length / pageSize))
-)
+const featuredItems = computed(() => featured.value)
+const pagedItems = computed(() => items.value)
+const displayTotalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 
-const pagedItems = computed(() => {
-  const safePage =
-    displayTotalPages.value > actualPageCount.value
-      ? ((currentPage.value - 1) % actualPageCount.value) + 1
-      : Math.min(currentPage.value, actualPageCount.value)
-  const start = (safePage - 1) * pageSize
-  return newsItems.value.slice(start, start + pageSize)
-})
+/** Trả về URL ảnh dù API trả object hay string */
+const imageUrl = (item) => item?.image?.url || item?.image || ''
 
 const paginationItems = computed(() => {
-  const total = displayTotalPages.value
+  const t = displayTotalPages.value
   const current = currentPage.value
 
-  if (total <= 6) {
-    return Array.from({ length: total }, (_, index) => index + 1)
+  if (t <= 6) {
+    return Array.from({ length: t }, (_, index) => index + 1)
   }
 
   if (current <= 4) {
-    return [1, 2, 3, 4, 'ellipsis-end', total]
+    return [1, 2, 3, 4, 'ellipsis-end', t]
   }
 
-  if (current >= total - 3) {
-    return [1, 'ellipsis-start', total - 3, total - 2, total - 1, total]
+  if (current >= t - 3) {
+    return [1, 'ellipsis-start', t - 3, t - 2, t - 1, t]
   }
 
-  return [1, 'ellipsis-start', current - 1, current, current + 1, 'ellipsis-end', total]
+  return [1, 'ellipsis-start', current - 1, current, current + 1, 'ellipsis-end', t]
 })
 
-const formatDate = (value) =>
-  new Intl.DateTimeFormat('en-CA', {
+const formatDate = (value) => {
+  if (!value) return ''
+  return new Intl.DateTimeFormat('en-CA', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
   }).format(new Date(value))
+}
+
+async function fetchFeatured() {
+  if (!isEnterprise.value) {
+    featured.value = []
+    return
+  }
+  try {
+    const res = await getPosts({ categorySlug: 'corporate-news', skip: 0, limit: 2 })
+    featured.value = res?.items || []
+  } catch {
+    featured.value = []
+  }
+}
+
+async function fetchPage() {
+  loading.value = true
+  error.value = null
+  try {
+    const res = await getPosts({
+      categorySlug: activeCategoryKey.value,
+      skip: (currentPage.value - 1) * pageSize,
+      limit: pageSize
+    })
+    items.value = res?.items || []
+    total.value = res?.pagination?.total || 0
+  } catch (err) {
+    error.value = err?.message || 'Failed to load news'
+    items.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+  }
+}
 
 const refreshAnimations = async () => {
   await nextTick()
@@ -78,10 +105,7 @@ const refreshAnimations = async () => {
 }
 
 const scrollToSection = (target) => {
-  if (!target) {
-    return
-  }
-
+  if (!target) return
   const top = target.getBoundingClientRect().top + window.scrollY - 16
   window.scrollTo({ top, behavior: 'smooth' })
 }
@@ -99,11 +123,9 @@ const activateCategory = async (key) => {
 }
 
 const goToPage = async (page) => {
-  if (page < 1 || page > displayTotalPages.value || page === currentPage.value) {
-    return
-  }
-
+  if (page < 1 || page > displayTotalPages.value || page === currentPage.value) return
   currentPage.value = page
+  await fetchPage()
   await refreshAnimations()
   scrollToSection(listSection.value)
 }
@@ -115,7 +137,6 @@ const syncHeaderVisibility = () => {
     uiState.isHeaderHidden = window.scrollY > 100
     return
   }
-
   uiState.isHeaderHidden = false
 }
 
@@ -124,6 +145,7 @@ watch(
   async () => {
     currentPage.value = 1
     syncHeaderVisibility()
+    await Promise.all([fetchFeatured(), fetchPage()])
     await refreshAnimations()
   },
   { immediate: true }
@@ -134,7 +156,6 @@ onMounted(async () => {
   uiState.isFooterHidden = false
   syncHeaderVisibility()
   window.addEventListener('scroll', syncHeaderVisibility, { passive: true })
-  await refreshAnimations()
 })
 
 onBeforeUnmount(() => {
@@ -175,16 +196,16 @@ onBeforeUnmount(() => {
           <button
             type="button"
             :class="{ active: isEnterprise }"
-            @click="activateCategory('enterprise')"
+            @click="activateCategory('corporate-news')"
           >
-            {{ newsCategoryMeta.enterprise.label }}
+            {{ newsCategoryMeta['corporate-news'].label }}
           </button>
           <button
             type="button"
             :class="{ active: !isEnterprise }"
-            @click="activateCategory('industry')"
+            @click="activateCategory('industry-dynamics')"
           >
-            {{ newsCategoryMeta.industry.label }}
+            {{ newsCategoryMeta['industry-dynamics'].label }}
           </button>
         </nav>
       </div>
@@ -199,11 +220,11 @@ onBeforeUnmount(() => {
           </router-link>
           <span class="separator">></span>
           <template v-if="isEnterprise">
-            <button type="button" @click="activateCategory('enterprise')">News</button>
+            <button type="button" @click="activateCategory('corporate-news')">News</button>
           </template>
           <template v-else>
-            <router-link :to="newsCategoryMeta.industry.breadcrumbParentRoute">
-              {{ newsCategoryMeta.industry.breadcrumbParentLabel }}
+            <router-link :to="newsCategoryMeta['industry-dynamics'].breadcrumbParentRoute">
+              {{ newsCategoryMeta['industry-dynamics'].breadcrumbParentLabel }}
             </router-link>
           </template>
           <span class="separator">></span>
@@ -238,19 +259,19 @@ onBeforeUnmount(() => {
           :pagination="{ clickable: true }"
           :speed="600"
         >
-          <SwiperSlide v-for="item in featuredItems" :key="item.id">
+          <SwiperSlide v-for="item in featuredItems" :key="item.slug">
             <article class="featured-card" data-aos="fade-up">
-              <router-link :to="`/news/${item.id}`" class="featured-image">
-                <img :src="item.image" :alt="item.title" />
+              <router-link :to="`/news/${item.slug}`" class="featured-image">
+                <img :src="imageUrl(item)" :alt="item.title" />
               </router-link>
 
               <div class="featured-copy">
-                <span class="featured-date">{{ formatDate(item.date) }}</span>
-                <router-link :to="`/news/${item.id}`" class="featured-title">
+                <span class="featured-date">{{ formatDate(item.published_at) }}</span>
+                <router-link :to="`/news/${item.slug}`" class="featured-title">
                   {{ item.title }}
                 </router-link>
                 <div class="featured-divider"></div>
-                <p>{{ item.excerpt }}</p>
+                <p>{{ item.summary }}</p>
               </div>
             </article>
           </SwiperSlide>
@@ -277,44 +298,60 @@ onBeforeUnmount(() => {
           <div class="section-line"></div>
         </header>
 
-        <div v-if="isEnterprise" class="news-grid">
+        <div v-if="loading" class="news-status-card">
+          <p>Loading news...</p>
+        </div>
+
+        <div v-else-if="error" class="news-status-card news-status-card--error">
+          <p>{{ error }}</p>
+        </div>
+
+        <div v-else-if="isEnterprise" class="news-grid">
           <article
             v-for="(item, index) in pagedItems"
-            :key="item.id"
+            :key="item.slug"
             class="news-card"
             data-aos="fade-up"
             :data-aos-delay="animationDelay(index)"
           >
-            <router-link :to="`/news/${item.id}`" class="news-card-image">
-              <img :src="item.image" :alt="item.title" />
+            <router-link :to="`/news/${item.slug}`" class="news-card-image">
+              <img :src="imageUrl(item)" :alt="item.title" />
             </router-link>
 
             <div class="news-card-body">
-              <router-link :to="`/news/${item.id}`" class="news-card-title">
+              <router-link :to="`/news/${item.slug}`" class="news-card-title">
                 {{ item.title }}
               </router-link>
-              <span class="news-card-date">{{ formatDate(item.date) }}</span>
+              <span class="news-card-date">{{ formatDate(item.published_at) }}</span>
               <div class="news-card-line"></div>
             </div>
           </article>
+
+          <div v-if="!pagedItems.length" class="news-status-card news-status-card--empty">
+            <p>No news articles found in this category.</p>
+          </div>
         </div>
 
         <div v-else class="industry-list">
           <article
             v-for="(item, index) in pagedItems"
-            :key="item.id"
+            :key="item.slug"
             class="industry-item"
             data-aos="fade-up"
             :data-aos-delay="animationDelay(index)"
           >
-            <router-link :to="`/news/${item.id}`" class="industry-item-link">
+            <router-link :to="`/news/${item.slug}`" class="industry-item-link">
               <div class="industry-item-topline"></div>
               <div class="industry-item-title">{{ item.title }}</div>
-              <span class="industry-item-date">{{ formatDate(item.date) }}</span>
+              <span class="industry-item-date">{{ formatDate(item.published_at) }}</span>
               <div class="news-card-line"></div>
-              <p>{{ item.excerpt }}</p>
+              <p>{{ item.summary }}</p>
             </router-link>
           </article>
+
+          <div v-if="!pagedItems.length" class="news-status-card news-status-card--empty">
+            <p>No news articles found in this category.</p>
+          </div>
         </div>
 
         <div v-if="displayTotalPages > 1" class="pagination-bar">
@@ -999,6 +1036,35 @@ onBeforeUnmount(() => {
 
 .page-ellipsis {
   border: 1px solid #c7c7c8;
+}
+
+.news-status-card {
+  width: 100%;
+  padding: 28px 24px;
+  margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(215, 0, 15, 0.08);
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.06);
+  text-align: center;
+
+  p {
+    margin: 0;
+    color: #5b6473;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+}
+
+.news-status-card--error {
+  border-color: rgba(215, 0, 15, 0.18);
+
+  p {
+    color: #b42318;
+  }
+}
+
+.news-status-card--empty {
+  margin-top: 10px;
 }
 
 @media (max-width: 1600px) {

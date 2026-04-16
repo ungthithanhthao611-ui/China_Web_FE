@@ -78,6 +78,7 @@ const hasMediaFields = computed(() => formFields.value.some((field) => FIELD_GRO
 const mediaFieldOptions = computed(() => formFields.value.filter((field) => FIELD_GROUPS.media.includes(field)))
 const canCreate = computed(() => config.value?.allowCreate !== false)
 const standaloneUpload = computed(() => Boolean(config.value?.standaloneUpload))
+const isMediaAssetsEntity = computed(() => props.entityKey === 'media_assets')
 
 function normalizedToken() {
   return String(props.token || '').trim()
@@ -148,6 +149,18 @@ function previewUrl(record) {
   const path = previewPath(record)
   if (!path) return ''
   return path.startsWith('http') ? path : path
+}
+
+function isImageMediaRecord(record) {
+  return props.entityKey === 'media_assets' && record?.asset_type === 'image' && record?.url
+}
+
+function mediaAssetPreviewUrl(record) {
+  return isImageMediaRecord(record) ? resolveMediaUrl(record.url) : ''
+}
+
+function mediaAssetLabel(record) {
+  return record?.title || record?.file_name || record?.url || '-'
 }
 
 function formatCell(value) {
@@ -408,7 +421,13 @@ async function uploadMedia() {
     uploadFile.value = null
     uploadTitle.value = ''
     uploadAltText.value = ''
-    notifySuccess(`Uploaded media #${media.id}.`)
+    if (media.storage_backend === 'cloudinary') {
+      notifySuccess(`Uploaded media #${media.id} to Cloudinary.`)
+    } else if (media.fallback_reason) {
+      notifySuccess(`Uploaded media #${media.id} to local storage. Cloudinary was skipped: ${media.fallback_reason}`)
+    } else {
+      notifySuccess(`Uploaded media #${media.id} to local storage.`)
+    }
   } catch (error) {
     notifyError(error.message || 'Failed to upload media.')
   } finally {
@@ -529,10 +548,44 @@ onMounted(() => {
               <td :colspan="tableColumns.length + 2">No records found.</td>
             </tr>
             <tr v-for="record in records" v-else :key="record.id">
-              <td v-for="column in tableColumns" :key="`${record.id}-${column}`">{{ formatCell(record[column]) }}</td>
+              <td v-for="column in tableColumns" :key="`${record.id}-${column}`">
+                <template v-if="isMediaAssetsEntity && column === 'title'">
+                  <div class="media-title-cell">
+                    <img
+                      v-if="isImageMediaRecord(record)"
+                      class="media-title-thumb"
+                      :src="mediaAssetPreviewUrl(record)"
+                      :alt="record.alt_text || mediaAssetLabel(record)"
+                      loading="lazy"
+                    />
+                    <div v-else class="media-title-placeholder">{{ record.asset_type || 'file' }}</div>
+                    <span>{{ mediaAssetLabel(record) }}</span>
+                  </div>
+                </template>
+                <template v-else>
+                  {{ formatCell(record[column]) }}
+                </template>
+              </td>
               <td>
-                <a v-if="previewUrl(record)" :href="previewUrl(record)" target="_blank" rel="noreferrer">Open</a>
-                <span v-else>-</span>
+                <template v-if="isMediaAssetsEntity">
+                  <div v-if="isImageMediaRecord(record)" class="media-preview-cell">
+                    <a :href="mediaAssetPreviewUrl(record)" target="_blank" rel="noreferrer">
+                      <img
+                        class="media-preview-thumb"
+                        :src="mediaAssetPreviewUrl(record)"
+                        :alt="record.alt_text || mediaAssetLabel(record)"
+                        loading="lazy"
+                      />
+                    </a>
+                    <a :href="mediaAssetPreviewUrl(record)" target="_blank" rel="noreferrer">Open</a>
+                  </div>
+                  <a v-else-if="record.url" :href="resolveMediaUrl(record.url)" target="_blank" rel="noreferrer">Open</a>
+                  <span v-else>-</span>
+                </template>
+                <template v-else>
+                  <a v-if="previewUrl(record)" :href="previewUrl(record)" target="_blank" rel="noreferrer">Open</a>
+                  <span v-else>-</span>
+                </template>
               </td>
               <td>
                 <div class="row-actions">
@@ -790,6 +843,49 @@ th {
 td a {
   color: #167aa6;
   font-weight: 700;
+}
+
+.media-title-cell,
+.media-preview-cell {
+  display: grid;
+  gap: 6px;
+}
+
+.media-title-cell {
+  grid-template-columns: 68px minmax(120px, 1fr);
+  align-items: center;
+}
+
+.media-title-thumb,
+.media-preview-thumb {
+  width: 68px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #edf3fa;
+  border: 1px solid #d8e3f0;
+}
+
+.media-title-placeholder {
+  width: 68px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #edf3fa;
+  border: 1px solid #d8e3f0;
+  color: #607893;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.media-title-cell span {
+  overflow-wrap: anywhere;
+}
+
+.media-preview-cell {
+  align-content: start;
 }
 
 .pagination {

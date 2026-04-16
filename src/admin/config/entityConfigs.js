@@ -1,4 +1,4 @@
-﻿export const ENTITY_MANAGER_CONFIGS = {
+export const ENTITY_MANAGER_CONFIGS = {
   pages: {
     label: 'Pages',
     eyebrow: 'Page content',
@@ -157,39 +157,12 @@ export const ADMIN_SECTION_GROUPS = [
   { title: 'Overview', items: [{ key: 'dashboard', label: 'Dashboard' }] },
   { title: 'Navigation', items: [{ key: 'navigation', label: 'Menu Navigation' }] },
   {
-    title: 'Pages',
+    title: 'Content',
     items: [
-      { key: 'pages', label: 'Pages' },
-      { key: 'page_sections', label: 'Page Sections' },
-      { key: 'content_blocks', label: 'Content Blocks' },
-      { key: 'content_block_items', label: 'Block Items' },
-      { key: 'banners', label: 'Banners' },
-      { key: 'site_settings', label: 'Site Settings' },
-    ],
-  },
-  {
-    title: 'News',
-    items: [
-      { key: 'post_categories', label: 'Post Categories' },
-      { key: 'posts', label: 'Posts' },
-    ],
-  },
-  {
-    title: 'Projects',
-    items: [
-      { key: 'project_categories', label: 'Project Categories' },
-      { key: 'projects', label: 'Projects' },
-      { key: 'honors', label: 'Honors' },
-    ],
-  },
-  {
-    title: 'Organization',
-    items: [
-      { key: 'branches', label: 'Branches' },
-      { key: 'contacts', label: 'Contacts' },
+      { key: 'posts', label: 'News Posts' },
       { key: 'videos', label: 'Videos' },
+      { key: 'honors', label: 'Honors' },
       { key: 'media_assets', label: 'Media Library' },
-      { key: 'inquiry_submissions', label: 'Inquiries' },
     ],
   },
 ]

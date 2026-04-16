@@ -71,7 +71,7 @@
     component: () => import('@/client/pages/projects/ProjectCasePage.vue'),
   },
   {
-    path: 'project/:id',
+    path: 'project/:slug',
     name: 'ProjectDetail',
     component: () => import('@/client/pages/projects/ProjectDetail.vue'),
   },
@@ -86,19 +86,19 @@
     component: () => import('@/client/pages/news/NewsList.vue'),
     children: [
       {
-        path: 'enterprise',
-        name: 'EnterpriseNews',
+        path: 'corporate-news',
+        name: 'CorporateNews',
         component: () => import('@/client/pages/news/NewsList.vue'),
       },
       {
-        path: 'industry',
+        path: 'industry-dynamics',
         name: 'IndustryNews',
         component: () => import('@/client/pages/news/NewsList.vue'),
       },
     ],
   },
   {
-    path: 'news/:id',
+    path: 'news/:slug',
     name: 'NewsDetail',
     component: () => import('@/client/pages/news/NewsDetail.vue'),
   },

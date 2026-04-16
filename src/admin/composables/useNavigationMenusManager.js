@@ -443,16 +443,13 @@ export function useNavigationMenusManager(props, emit) {
       return
     }
 
-    const confirmed = window.confirm(`Delete menu "${selectedMenu.value.name}" and all menu items?`)
-    if (!confirmed) return
-
     savingNavigation.value = true
     try {
       await deleteNavigationMenu(selectedMenu.value.id, token)
       selectedNavMenuId.value = ''
+      clearNotifications()
       await loadNavigationMenus()
       publishNavigationMenusUpdated()
-      notifySuccess('Menu deleted.')
     } catch (error) {
       notifyError(error.message || 'Failed to delete menu.')
     } finally {

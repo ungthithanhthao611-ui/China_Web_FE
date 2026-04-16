@@ -48,10 +48,10 @@ const fallbackNavItems = [
   },
   {
     name: 'News Center',
-    path: '/news/enterprise',
+    path: '/news/corporate-news',
     children: [
-      { name: 'Corporate News', path: '/news/enterprise' },
-      { name: 'Industry Dynamics', path: '/news/industry' }
+      { name: 'Corporate News', path: '/news/corporate-news' },
+      { name: 'Industry Dynamics', path: '/news/industry-dynamics' }
     ]
   },
   {

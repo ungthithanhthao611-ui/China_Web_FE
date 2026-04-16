@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue'
 import AddNavigationMenu from './AddNavigationMenu.vue'
 import DeleteNavigationMenu from './DeleteNavigationMenu.vue'
 import EditNavigationMenu from './EditNavigationMenu.vue'
@@ -55,6 +56,27 @@ const {
   handleDeleteMenu,
   handleSaveTree,
 } = useNavigationMenusManager(props, emit)
+
+const deleteConfirmOpen = ref(false)
+
+function openDeleteConfirm() {
+  if (!selectedMenu.value || savingNavigation.value) {
+    return
+  }
+  deleteConfirmOpen.value = true
+}
+
+function closeDeleteConfirm() {
+  if (savingNavigation.value) {
+    return
+  }
+  deleteConfirmOpen.value = false
+}
+
+async function confirmDeleteMenu() {
+  await handleDeleteMenu()
+  deleteConfirmOpen.value = false
+}
 
 defineExpose({
   refreshAll,
@@ -191,13 +213,32 @@ defineExpose({
         <div class="footer-actions">
           <button type="button" class="btn btn-secondary" @click="openCreateRootNodeDrawer">Add Root Entry</button>
           <EditNavigationMenu :disabled="!selectedMenu" @trigger="openEditMenuDrawer" />
-          <DeleteNavigationMenu :disabled="!selectedMenu" @trigger="handleDeleteMenu" />
+          <DeleteNavigationMenu :disabled="!selectedMenu || savingNavigation" @trigger="openDeleteConfirm" />
           <button type="button" class="btn btn-primary" :disabled="!selectedMenu || savingNavigation" @click="handleSaveTree">
             Save Changes
           </button>
         </div>
       </footer>
     </section>
+
+    <div v-if="deleteConfirmOpen" class="confirm-overlay" @click="closeDeleteConfirm"></div>
+    <div v-if="deleteConfirmOpen" class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-menu-title">
+      <div class="confirm-modal__icon">!</div>
+      <h3 id="delete-menu-title">Delete menu?</h3>
+      <p>
+        Bạn có chắc muốn xóa menu
+        <strong>{{ selectedMenu?.name || 'this menu' }}</strong>
+        và toàn bộ menu item bên trong không?
+      </p>
+      <div class="confirm-modal__actions">
+        <button type="button" class="btn btn-ghost" :disabled="savingNavigation" @click="closeDeleteConfirm">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-danger" :disabled="savingNavigation" @click="confirmDeleteMenu">
+          {{ savingNavigation ? 'Deleting...' : 'Delete now' }}
+        </button>
+      </div>
+    </div>
 
     <div v-if="drawerOpen" class="drawer-overlay" @click="closeDrawer"></div>
     <aside class="drawer" :class="{ open: drawerOpen }">
@@ -798,6 +839,100 @@ button:disabled {
   }
 
   .drawer-footer .btn {
+    width: 100%;
+  }
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  background: rgba(16, 24, 40, 0.46);
+  backdrop-filter: blur(4px);
+}
+
+.confirm-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 42;
+  width: min(440px, calc(100vw - 32px));
+  padding: 28px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 30px 80px rgba(22, 38, 70, 0.24);
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.confirm-modal__icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 16px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #ffe3e8 0%, #ffd2db 100%);
+  color: #c43b57;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.confirm-modal h3 {
+  margin: 0;
+  color: #16233f;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.confirm-modal p {
+  margin: 14px 0 0;
+  color: #5d6d85;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.confirm-modal strong {
+  color: #1a2743;
+}
+
+.confirm-modal__actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.btn-danger {
+  border-color: #d64563;
+  background: linear-gradient(135deg, #d93b59 0%, #f0627d 100%);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(217, 59, 89, 0.28);
+}
+
+@media (max-width: 680px) {
+  .confirm-modal {
+    padding: 22px 18px;
+    border-radius: 20px;
+  }
+
+  .confirm-modal h3 {
+    font-size: 24px;
+  }
+
+  .confirm-modal p {
+    font-size: 14px;
+  }
+
+  .confirm-modal__actions {
+    flex-direction: column;
+  }
+
+  .confirm-modal__actions .btn {
     width: 100%;
   }
 }

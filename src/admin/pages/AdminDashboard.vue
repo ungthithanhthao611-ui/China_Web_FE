@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { ADMIN_TOKEN_STORAGE_KEY, ADMIN_USER_STORAGE_KEY } from '@/admin/constants/auth'
@@ -7,7 +7,9 @@ import { ADMIN_SECTION_GROUPS, ADMIN_SECTION_INDEX } from '@/admin/config/entity
 import { getCurrentAdminUser, listAdminEntityRecords, listNavigationMenus } from '@/admin/services/adminApi'
 import { uiState } from '@/utils/uiState'
 import EntityManager from './components/entity-manager/EntityManager.vue'
+import HonorsManager from './components/honors-manager/HonorsManager.vue'
 import NavigationMenusManager from './components/navigation-manager/NavigationMenusManager.vue'
+import PostsManager from './components/posts-manager/PostsManager.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -30,13 +32,13 @@ function readStoredUser() {
 const token = ref(localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || '')
 const currentUser = ref(readStoredUser())
 const activeSection = ref(resolveSection(route.query.section))
+const navigationManagerRef = ref(null)
 const navMenuCount = ref(0)
 const summary = reactive({
-  pages: 0,
   posts: 0,
-  projects: 0,
+  videos: 0,
+  honors: 0,
   media_assets: 0,
-  inquiry_submissions: 0,
 })
 
 const loadingSummary = ref(false)
@@ -76,11 +78,11 @@ const userRole = computed(() => currentUser.value?.role || 'admin')
 
 const statCards = computed(() => [
   {
-    key: 'pages',
-    title: 'Pages',
-    value: summary.pages,
-    subtitle: 'CMS pages',
-    tone: 'cyan',
+    key: 'menus',
+    title: 'Nav menus',
+    value: navMenuCount.value,
+    subtitle: 'Header and footer trees',
+    tone: 'rose',
   },
   {
     key: 'posts',
@@ -90,18 +92,18 @@ const statCards = computed(() => [
     tone: 'blue',
   },
   {
-    key: 'projects',
-    title: 'Projects',
-    value: summary.projects,
-    subtitle: 'Project entries',
+    key: 'videos',
+    title: 'Videos',
+    value: summary.videos,
+    subtitle: 'Published video entries',
     tone: 'yellow',
   },
   {
-    key: 'menus',
-    title: 'Nav menus',
-    value: navMenuCount.value,
-    subtitle: 'Header and footer trees',
-    tone: 'rose',
+    key: 'honors',
+    title: 'Honors',
+    value: summary.honors,
+    subtitle: 'Certificates and awards',
+    tone: 'cyan',
   },
   {
     key: 'media_assets',
@@ -109,13 +111,6 @@ const statCards = computed(() => [
     value: summary.media_assets,
     subtitle: 'Uploaded library items',
     tone: 'cyan',
-  },
-  {
-    key: 'inquiry_submissions',
-    title: 'Inquiries',
-    value: summary.inquiry_submissions,
-    subtitle: 'Incoming contact submissions',
-    tone: 'blue',
   },
 ])
 
@@ -160,24 +155,22 @@ async function loadDashboardSummary() {
 
   loadingSummary.value = true
   try {
-    const [me, menus, pages, posts, projects, mediaAssets, inquiries] = await Promise.all([
+    const [me, menus, posts, videos, honors, mediaAssets] = await Promise.all([
       getCurrentAdminUser(normalizedToken),
       listNavigationMenus(normalizedToken),
-      listAdminEntityRecords('pages', normalizedToken, { skip: 0, limit: 1 }),
       listAdminEntityRecords('posts', normalizedToken, { skip: 0, limit: 1 }),
-      listAdminEntityRecords('projects', normalizedToken, { skip: 0, limit: 1 }),
+      listAdminEntityRecords('videos', normalizedToken, { skip: 0, limit: 1 }),
+      listAdminEntityRecords('honors', normalizedToken, { skip: 0, limit: 1 }),
       listAdminEntityRecords('media_assets', normalizedToken, { skip: 0, limit: 1 }),
-      listAdminEntityRecords('inquiry_submissions', normalizedToken, { skip: 0, limit: 1 }),
     ])
 
     currentUser.value = me
     localStorage.setItem(ADMIN_USER_STORAGE_KEY, JSON.stringify(me))
     navMenuCount.value = (menus.items || []).length
-    summary.pages = pages.pagination?.total || 0
     summary.posts = posts.pagination?.total || 0
-    summary.projects = projects.pagination?.total || 0
+    summary.videos = videos.pagination?.total || 0
+    summary.honors = honors.pagination?.total || 0
     summary.media_assets = mediaAssets.pagination?.total || 0
-    summary.inquiry_submissions = inquiries.pagination?.total || 0
   } catch (error) {
     const message = error?.message || 'Failed to load admin summary.'
 
@@ -202,11 +195,10 @@ async function handleLogout() {
   token.value = ''
   currentUser.value = null
   navMenuCount.value = 0
-  summary.pages = 0
   summary.posts = 0
-  summary.projects = 0
+  summary.videos = 0
+  summary.honors = 0
   summary.media_assets = 0
-  summary.inquiry_submissions = 0
   clearMessages()
   await router.replace({ name: 'AdminLogin' })
 }
@@ -225,6 +217,11 @@ watch(activeSection, async (section) => {
 
   if (section === 'dashboard' && token.value.trim()) {
     await loadDashboardSummary()
+  }
+
+  if (section === 'navigation' && token.value.trim()) {
+    await nextTick()
+    await navigationManagerRef.value?.refreshAll?.()
   }
 })
 
@@ -324,10 +321,10 @@ onBeforeUnmount(() => {
       <section v-if="activeSection === 'dashboard'" class="dashboard-panel">
         <div class="hero-card card-shell">
           <p class="hero-eyebrow">Admin overview</p>
-          <h2>Qu?n lý n?i dung theo t?ng module</h2>
+          <h2>Quản lý nội dung theo từng module</h2>
           <p class="hero-copy">
-            Menu t?ng quát dã du?c b?. B?n di th?ng vào t?ng ph?n riêng nhu Pages, Posts, Projects, Media Library,
-            Contacts ho?c Inquiries d? thao tác dúng ch?c nang.
+            Chọn đúng module bên trái để quản lý từng loại dữ liệu — Pages, Posts, Projects, Media Library,
+            Contacts hoặc Inquiries — và thao tác trực tiếp trên danh sách thật từ database.
           </p>
         </div>
 
@@ -342,6 +339,25 @@ onBeforeUnmount(() => {
 
       <NavigationMenusManager
         v-else-if="activeSection === 'navigation'"
+        ref="navigationManagerRef"
+        :token="token"
+        :active="true"
+        @notify-success="setSuccess"
+        @notify-error="setError"
+        @clear-notify="clearMessages"
+      />
+
+      <HonorsManager
+        v-else-if="activeSection === 'honors'"
+        :token="token"
+        :active="true"
+        @notify-success="setSuccess"
+        @notify-error="setError"
+        @clear-notify="clearMessages"
+      />
+
+      <PostsManager
+        v-else-if="activeSection === 'posts'"
         :token="token"
         :active="true"
         @notify-success="setSuccess"
@@ -374,9 +390,15 @@ onBeforeUnmount(() => {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 272px minmax(0, 1fr);
+  align-items: start;
 }
 
 .sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
   background: linear-gradient(180deg, #23344c 0%, #2b4463 100%);
   color: #fff;
   padding: 20px 18px 24px;
@@ -773,4 +795,3 @@ button:disabled {
   }
 }
 </style>
-

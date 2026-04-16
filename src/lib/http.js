@@ -34,10 +34,20 @@ function buildUrl(path, query) {
 }
 
 async function parseResponse(response) {
+  if (response.status === 204 || response.status === 205) {
+    return null
+  }
+
   const contentType = response.headers.get('content-type') || ''
+  const contentLength = response.headers.get('content-length')
+
+  if (contentLength === '0') {
+    return null
+  }
 
   if (contentType.includes('application/json')) {
-    return response.json()
+    const text = await response.text()
+    return text ? JSON.parse(text) : null
   }
 
   const text = await response.text()
@@ -78,8 +88,26 @@ export async function fetchJson(path, options = {}) {
     const payload = await parseResponse(response)
 
     if (!response.ok) {
+      const detail = payload?.detail
+      const normalizedDetail = Array.isArray(detail)
+        ? detail
+            .map((item) => {
+              if (typeof item === 'string') return item
+              if (item?.msg) {
+                const path = Array.isArray(item.loc) ? item.loc.slice(1).join('.') : ''
+                return path ? `${path}: ${item.msg}` : item.msg
+              }
+              try {
+                return JSON.stringify(item)
+              } catch {
+                return String(item)
+              }
+            })
+            .join('; ')
+        : detail
+
       const message =
-        payload?.detail ||
+        normalizedDetail ||
         payload?.message ||
         `${response.status} ${response.statusText || 'Request failed'}`
 
