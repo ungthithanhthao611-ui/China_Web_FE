@@ -24,6 +24,8 @@ dist-ssr
 *.sw?
 .env
 .venv
+playwright-report
+test-results
 
 
 docs/

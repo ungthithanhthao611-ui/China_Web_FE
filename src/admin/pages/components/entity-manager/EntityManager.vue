@@ -316,6 +316,11 @@ function fieldHelpText(field) {
   return config.value?.helpText?.[field] || ''
 }
 
+function configSelectOptions(field) {
+  const options = config.value?.selectOptions?.[field]
+  return Array.isArray(options) ? options : null
+}
+
 function mediaUploadAccept() {
   return config.value?.mediaUploadAccept || 'image/*,video/*,application/pdf'
 }
@@ -609,10 +614,20 @@ function isBooleanField(field) {
 }
 
 function isSelectField(field) {
-  return field === 'status' || field === 'asset_type' || field === 'banner_type' || field === 'branch_type' || field === 'contact_type'
+  return Boolean(configSelectOptions(field))
+    || field === 'status'
+    || field === 'asset_type'
+    || field === 'banner_type'
+    || field === 'branch_type'
+    || field === 'contact_type'
 }
 
 function selectOptions(field) {
+  const configuredOptions = configSelectOptions(field)
+  if (configuredOptions) {
+    return configuredOptions
+  }
+
   const options = {
     status: statusOptions.value,
     asset_type: ['image', 'video', 'document', 'file'],
@@ -633,6 +648,16 @@ function formatCell(value) {
 function normalizeDatetimeForInput(value) {
   if (!value) return ''
   return String(value).slice(0, 16)
+}
+
+function parseCoordinateValue(value) {
+  const raw = String(value ?? '').trim()
+  if (!raw) {
+    return null
+  }
+
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : null
 }
 
 function setDefaultFormValues(record = {}) {
@@ -726,6 +751,23 @@ function validateForm() {
     errors.push('Video URL must be a valid http/https direct video link, YouTube URL, or Vimeo URL.')
   }
 
+  if (props.entityKey === 'contacts') {
+    const latitude = parseCoordinateValue(form.latitude)
+    const longitude = parseCoordinateValue(form.longitude)
+
+    if (latitude === null) {
+      errors.push('Latitude must be a valid number.')
+    } else if (latitude < -90 || latitude > 90) {
+      errors.push('Latitude must be between -90 and 90.')
+    }
+
+    if (longitude === null) {
+      errors.push('Longitude must be a valid number.')
+    } else if (longitude < -180 || longitude > 180) {
+      errors.push('Longitude must be between -180 and 180.')
+    }
+  }
+
   formFields.value.forEach((field) => {
     if (inputType(field) === 'number' && form[field] !== '' && form[field] !== null && !Number.isFinite(Number(form[field]))) {
       errors.push(`${fieldLabel(field)} must be a number.`)
@@ -750,9 +792,9 @@ async function loadRelationOptions() {
 
   Object.keys(relationOptions).forEach((key) => delete relationOptions[key])
 
-  const relationMap = { ...RELATION_ENTITIES }
-  relationMap.category_id = props.entityKey === 'posts' ? 'post_categories' : props.entityKey === 'projects' ? 'project_categories' : null
-  relationMap.parent_id = props.entityKey === 'pages' ? 'pages' : props.entityKey === 'branches' ? 'branches' : props.entityKey.includes('categor') ? props.entityKey : null
+  const relationMap = { ...RELATION_ENTITIES, ...(config.value?.relationEntities || {}) }
+  relationMap.category_id = relationMap.category_id || (props.entityKey === 'posts' ? 'post_categories' : props.entityKey === 'projects' ? 'project_categories' : null)
+  relationMap.parent_id = relationMap.parent_id || (props.entityKey === 'pages' ? 'pages' : props.entityKey === 'branches' ? 'branches' : props.entityKey.includes('categor') ? props.entityKey : null)
 
   await Promise.all(
     Object.entries(relationMap)
@@ -870,6 +912,7 @@ async function submitForm() {
       closeForm()
     }
   } catch (error) {
+    formErrors.value = [error.message || 'Failed to save record.']
     notifyError(error.message || 'Failed to save record.')
   } finally {
     saving.value = false
