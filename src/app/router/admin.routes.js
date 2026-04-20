@@ -6,12 +6,12 @@ const adminRoutes = [
   {
     path: 'login',
     name: 'AdminLogin',
-    component: () => import('@/admin/pages/AdminLoginPage.vue'),
+    component: () => import('@/views/admin/AdminLoginPage.vue'),
   },
   {
     path: 'dashboard',
     name: 'AdminDashboard',
-    component: () => import('@/admin/pages/AdminDashboardPage.vue'),
+    component: () => import('@/views/admin/AdminDashboardPage.vue'),
     meta: { requiresAdminAuth: true },
   },
 ]

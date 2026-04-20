@@ -1,9 +1,9 @@
 ﻿<script setup>
 import { onBeforeUnmount, onMounted } from 'vue'
 
-import AppFooter from '@/client/layout/AppFooter.vue'
-import AppHeader from '@/client/layout/AppHeader.vue'
-import { useBootstrapStore } from '@/client/stores/bootstrap'
+import AppFooter from '@/views/user/layout/AppFooter.vue'
+import AppHeader from '@/views/user/layout/AppHeader.vue'
+import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { NAVIGATION_MENUS_SYNC_KEY } from '@/shared/utils/navigationSync'
 import { uiState } from '@/shared/utils/uiState'
 
