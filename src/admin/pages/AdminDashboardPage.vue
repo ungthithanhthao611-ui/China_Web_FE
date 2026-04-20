@@ -1,16 +1,14 @@
-﻿<script setup>
+<script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { ADMIN_TOKEN_STORAGE_KEY, ADMIN_USER_STORAGE_KEY } from '@/admin/constants/auth'
 import { ADMIN_SECTION_GROUPS, ADMIN_SECTION_INDEX } from '@/admin/config/entityConfigs'
 import { getCurrentAdminUser, listAdminEntityRecords, listNavigationMenus } from '@/admin/api/adminApi.js'
-import { listAdminNews } from '@/admin/api/newsWorkflowApi.js'
 import { uiState } from '@/shared/utils/uiState'
 import EntityManager from '@/admin/modules/entity-manager/EntityManager.vue'
 import HonorsManager from '@/admin/modules/honors/HonorsManager.vue'
 import NavigationMenusManager from '@/admin/modules/navigation/NavigationMenusManager.vue'
-import NewsWorkflowListPage from '@/admin/pages/news-workflow/NewsWorkflowListPage.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -201,10 +199,10 @@ async function loadDashboardSummary() {
 
   loadingSummary.value = true
   try {
-    const [me, menus, newsPosts, videos, honors, mediaAssets] = await Promise.all([
+    const [me, menus, posts, videos, honors, mediaAssets] = await Promise.all([
       getCurrentAdminUser(normalizedToken),
       listNavigationMenus(normalizedToken),
-      listAdminNews({ page: 1, limit: 1 }),
+      listAdminEntityRecords('posts', normalizedToken, { skip: 0, limit: 1 }),
       listAdminEntityRecords('videos', normalizedToken, { skip: 0, limit: 1 }),
       listAdminEntityRecords('honors', normalizedToken, { skip: 0, limit: 1 }),
       listAdminEntityRecords('media_assets', normalizedToken, { skip: 0, limit: 1 }),
@@ -213,7 +211,7 @@ async function loadDashboardSummary() {
     currentUser.value = me
     localStorage.setItem(ADMIN_USER_STORAGE_KEY, JSON.stringify(me))
     navMenuCount.value = (menus.items || []).length
-    summary.posts = newsPosts.pagination?.total || 0
+    summary.posts = posts.pagination?.total || 0
     summary.videos = videos.pagination?.total || 0
     summary.honors = honors.pagination?.total || 0
     summary.media_assets = mediaAssets.pagination?.total || 0
@@ -398,9 +396,6 @@ onBeforeUnmount(() => {
           <p class="hero-copy">
             Choose a module from the sidebar to manage each data type directly from database-backed records.
           </p>
-          <router-link class="btn btn-primary hero-link" :to="{ name: 'AdminNewsWorkflowList' }">
-            Open News Workflow Editor
-          </router-link>
         </div>
 
         <div class="stats">
@@ -439,11 +434,6 @@ onBeforeUnmount(() => {
         @notify-success="setSuccess"
         @notify-error="setError"
         @clear-notify="clearMessages"
-      />
-
-      <NewsWorkflowListPage
-        v-else-if="activeSection === 'posts'"
-        embedded
       />
 
       <EntityManager

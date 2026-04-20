@@ -1,6 +1,4 @@
-import { projectCaseData } from '@/client/pages/projects/projectCaseData'
-
-const FALLBACK_CATEGORY_ID = '1676767239059300352'
+const FALLBACK_CATEGORY_ID = ''
 
 function normalizeText(value) {
   return String(value || '')
@@ -49,40 +47,16 @@ function normalizeHeroSlide(rawSlide = {}, fallbackCategory = null) {
 }
 
 function buildFallbackState() {
-  const fallbackCategories = (projectCaseData.categories || []).map((category) => {
-    const normalizedId = String(category.id || '')
-    return {
-      id: normalizedId,
-      name: category.name || '',
-      slug: category.slug || normalizeText(category.name || ''),
-      projects: Array.isArray(category.projects)
-        ? category.projects.map((project, index) => normalizeCaseItem(project, index))
-        : [],
-    }
-  })
-
-  const caseMap = Object.fromEntries(
-    fallbackCategories.map((category) => [category.id, category.projects || []])
-  )
-
+  // No static fallback data — return empty state, API is the only source
   return {
     source: 'fallback',
     currentCategoryId: FALLBACK_CATEGORY_ID,
-    categories: fallbackCategories.map(({ projects, ...category }) => category),
-    heroSlides: (projectCaseData.heroSlides || []).map((slide) => ({
-      id: String(
-        fallbackCategories.find(
-          (category) => normalizeText(category.name) === normalizeText(slide.title)
-        )?.id || ''
-      ),
-      title: slide.title || '',
-      subtitle: '',
-      description: '',
-      images: Array.isArray(slide.images) ? slide.images.filter(Boolean) : [],
-    })),
-    caseMap,
+    categories: [],
+    heroSlides: [],
+    caseMap: {},
   }
 }
+
 
 export function adaptProjectCaseResponse(payload) {
   if (!payload || typeof payload !== 'object') {

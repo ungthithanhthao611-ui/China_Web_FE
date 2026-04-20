@@ -19,10 +19,7 @@ const sections = [
 ]
 
 const contactTabs = [
-  { name: 'Contact Us', path: '/contact#ctn2' },
-  { name: 'Subsidiary', path: '/subsidiary' },
-  { name: 'Branch', path: '/branch' },
-  { name: 'Join Us', path: '/join-us' }
+  { name: 'Liên Hệ Chúng Tôi', path: '/contact#ctn2' },
 ]
 
 const fallbackMapEmbed =
@@ -573,8 +570,7 @@ onUnmounted(() => {
 .contact-tabbar__inner {
   width: min(1600px, calc(100% - 12px));
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
   background: rgba(18, 31, 56, 0.88);
   backdrop-filter: blur(12px);
   box-shadow: 0 24px 42px rgba(8, 13, 22, 0.22);

@@ -16,58 +16,55 @@ const bootstrapStore = useBootstrapStore()
 
 const fallbackFooterGroups = [
   {
-    title: 'About Us',
-    titlePath: '/about/company-introduction#page2',
+    title: 'Giới Thiệu',
+    titlePath: '/about/company-introduction',
     links: [
-      { name: 'Company Introduction', path: '/about/company-introduction#page2' },
-      { name: "Chairmanâ€™s Speech", path: '/about/chairman-speech#page3' },
-      { name: 'Organization Chart', path: '/about/organization-chart#page4' },
-      { name: 'Corporate Culture', path: '/about/corporate-culture#page5' },
-      { name: 'Development Course', path: '/about/development-course#page6' },
-      { name: 'Leadership Care', path: '/about/leadership-care#page7' },
-      { name: 'Cooperative Partner', path: '/about/cooperative-partner#page8' }
-    ]
+      { name: 'Tổng Quan Công Ty', path: '/about/company-introduction' },
+      { name: 'Lịch Sử Phát Triển', path: '/about/development-course' },
+      { name: 'Tầm Nhìn & Sứ Mệnh', path: '/about/corporate-culture' },
+      { name: 'Giá Trị Cốt Lõi', path: '/about/corporate-culture' },
+      { name: 'Ban Lãnh Đạo', path: '/about/leadership-care' },
+      { name: 'Sơ Đồ Tổ Chức', path: '/about/organization-chart' },
+    ],
   },
   {
-    title: 'Qualification Honor',
-    titlePath: '/honors#page2',
+    title: 'Năng Lực',
+    titlePath: '/honors',
     links: [
-      { name: 'Qualification Certificate', path: '/honors#page2' },
-      { name: 'Honorary Awards', path: '/honors#page3' }
-    ]
+      { name: 'Hình Ảnh Nhà Máy', path: '/honors' },
+      { name: 'Công Nghệ Sản Xuất', path: '/honors' },
+      { name: 'Chứng Nhận ISO & CE', path: '/honors' },
+    ],
   },
   {
-    title: 'Business Display',
-    titlePath: '/business-areas#ctn1',
+    title: 'Sản Phẩm',
+    titlePath: '/products',
     links: [
-      { name: 'Business Field', path: '/business-areas#ctn1' },
-      { name: 'Project Case', path: '/project-case' },
-      { name: 'Video', path: '/video' }
-    ]
+      { name: 'Danh Mục Sản Phẩm', path: '/products' },
+    ],
   },
   {
-    title: 'News Center',
+    title: 'Dự Án',
+    titlePath: '/project-case',
+    links: [
+      { name: 'Dự Án Tiêu Biểu', path: '/project-case' },
+    ],
+  },
+  {
+    title: 'Tin Tức',
     titlePath: '/news/corporate-news',
     links: [
-      { name: 'Corporate News', path: '/news/corporate-news' },
-      { name: 'Industry Dynamics', path: '/news/industry-dynamics' }
-    ]
+      { name: 'Tin Tức Công Ty', path: '/news/corporate-news' },
+      { name: 'Tin Tức Ngành', path: '/news/industry-dynamics' },
+    ],
   },
   {
-    title: 'Social Responsibility',
-    titlePath: '/social-responsibility',
-    links: [{ name: 'Social Responsibility', path: '/social-responsibility' }]
-  },
-  {
-    title: 'Contact Us',
-    titlePath: '/contact#ctn2',
+    title: 'Liên Hệ',
+    titlePath: '/contact',
     links: [
-      { name: 'Contact Us', path: '/contact#ctn2' },
-      { name: 'Subsidiary', path: '/subsidiary#ctn2' },
-      { name: 'Branch', path: '/branch' },
-      { name: 'Join Us', path: '/join-us' }
-    ]
-  }
+      { name: 'Liên Hệ Chúng Tôi', path: '/contact' },
+    ],
+  },
 ]
 
 const readSetting = (keys, fallback = '') => {
@@ -188,10 +185,7 @@ const contactItems = computed(() => {
 })
 
 const legalLinks = computed(() => [
-  { name: 'Links', path: '/about/cooperative-partner#page8' },
-  { name: 'Copyright Notice', path: '/copyright' },
-  { name: 'Privacy & Security', path: '/privacy' },
-  { name: 'Contact', path: '/contact#ctn2' }
+  { name: 'Liên Hệ', path: '/contact' },
 ])
 
 const copyrightText = computed(

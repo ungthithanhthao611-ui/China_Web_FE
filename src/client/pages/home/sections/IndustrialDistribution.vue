@@ -62,7 +62,7 @@ const activeIndex = ref(null)
           China Decoration has set up a "design general institute ten management centers" and a number of functional departments in the headquarters, and has 7 design branches, 7 branches and 9 sub-companies throughout the country, business throughout more than 30 cities, with a large number of industry experts and technical personnel.
         </p>
 
-        <router-link to="/branch" class="more-link-v2">
+        <router-link to="/contact" class="more-link-v2">
           <div class="icon-box">
             <img src="https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/c517472a-424d-4691-b342-ded300f79e7.png" class="rotate-bg" alt="rotate">
             <div class="red-circle">

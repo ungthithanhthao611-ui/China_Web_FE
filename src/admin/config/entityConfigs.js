@@ -441,16 +441,6 @@ export const ENTITY_MANAGER_CONFIGS = {
       sort_order: 'Controls image order inside the selected media group.',
     },
   },
-  branches: {
-    label: 'Branches',
-    eyebrow: 'Subsidiaries and branches',
-    description: 'Manage subsidiary pages, branch details, contact info, and media.',
-    titleField: 'name',
-    table: ['id', 'name', 'slug', 'branch_type', 'language_id', 'is_active'],
-    required: ['name', 'slug', 'language_id'],
-    fields: ['name', 'slug', 'branch_type', 'address', 'city', 'region', 'phone', 'email', 'map_url', 'parent_id', 'is_active', 'language_id', 'summary', 'body', 'image_id', 'hero_image_id', 'meta_title', 'meta_description'],
-    preview: (record) => `/subsidiary_Detail/${record.slug}.html`,
-  },
   contacts: {
     label: 'Contacts',
     eyebrow: 'Contact information',
@@ -542,76 +532,80 @@ export const ENTITY_MANAGER_CONFIGS = {
 }
 
 export const ADMIN_SECTION_GROUPS = [
-  { title: 'Overview', items: [{ key: 'dashboard', label: 'Dashboard' }] },
-  { title: 'Navigation', items: [{ key: 'navigation', label: 'Menu Navigation' }] },
+  { title: 'Tổng Quan', items: [{ key: 'dashboard', label: 'Dashboard' }] },
+  { title: 'Cấu Hình', items: [
+    { key: 'navigation', label: 'Menu Điều Hướng' },
+    { key: 'site_settings', label: 'Cài Đặt Website' },
+    { key: 'banners', label: 'Banner' },
+  ]},
   {
-    title: 'CMS Pages',
+    title: 'Giới Thiệu Công Ty',
     items: [
       {
         key: 'pages',
-        label: 'Pages',
+        label: 'Trang Nội Dung',
         eyebrow: 'CMS page records',
-        description: 'Manage top-level CMS pages and About page slugs.',
+        description: 'Quản lý các trang CMS: Giới thiệu, Tầm nhìn, Sứ mệnh.',
         children: [
-          {
-            key: 'page_sections',
-            label: 'Page Sections',
-            eyebrow: 'CMS page sections',
-            description: 'Manage hero, intro, chart, partner, and other structural sections inside a page.',
-          },
-          {
-            key: 'content_blocks',
-            label: 'Content Blocks',
-            eyebrow: 'CMS block records',
-            description: 'Manage block-level records attached to a page, including About CMS block keys.',
-          },
-          {
-            key: 'content_block_items',
-            label: 'Content Block Items',
-            eyebrow: 'CMS block items',
-            description: 'Manage child items inside each block, including timeline entries, partner logos, and intro paragraphs.',
-          },
+          { key: 'page_sections', label: 'Phần Trang' },
+          { key: 'content_blocks', label: 'Khối Nội Dung' },
+          { key: 'content_block_items', label: 'Mục Nội Dung' },
         ],
       },
     ],
   },
   {
-    title: 'Content',
+    title: 'Năng Lực',
     items: [
-      { key: 'banners', label: 'Banners' },
-      {
-        key: 'posts',
-        label: 'News Posts',
-        children: [{ key: 'post_categories', label: 'News Category' }],
-      },
-      {
-        key: 'projects',
-        label: 'Projects',
-        eyebrow: 'Project Case content',
-        description: 'Manage public projects, Project Case categories, mappings, and media groups.',
-        children: [
-          { key: 'project_categories', label: 'Project Categories' },
-          { key: 'project_category_items', label: 'Project Case Mapping' },
-          { key: 'entity_media', label: 'Project Media Groups' },
-        ],
-      },
-      { key: 'videos', label: 'Videos' },
       {
         key: 'honors',
-        label: 'Honors',
-        eyebrow: 'Honors records',
-        description: 'Manage honors records, year, issuer, image, and active state.',
+        label: 'Chứng Nhận & Giải Thưởng',
+        eyebrow: 'ISO, CE & Awards',
+        description: 'Quản lý chứng nhận ISO, CE, giải thưởng và hình ảnh nhà máy.',
         children: [
-          {
-            key: 'honor_categories',
-            label: 'Honor Categories',
-            eyebrow: 'Honors taxonomy',
-            description: 'Manage honor categories, hierarchy, and activation status.',
-          },
+          { key: 'honor_categories', label: 'Danh Mục Chứng Nhận' },
         ],
       },
-      { key: 'media_assets', label: 'Media Library' },
-      { key: 'contacts', label: 'Contact Info' },
+    ],
+  },
+  {
+    title: 'Sản Phẩm',
+    items: [
+      { key: 'videos', label: 'Video Sản Phẩm' },
+      { key: 'media_assets', label: 'Thư Viện Ảnh' },
+    ],
+  },
+  {
+    title: 'Dự Án',
+    items: [
+      {
+        key: 'projects',
+        label: 'Dự Án',
+        eyebrow: 'Project content',
+        description: 'Quản lý dự án, danh mục, mapping và hình ảnh.',
+        children: [
+          { key: 'project_categories', label: 'Danh Mục Dự Án' },
+          { key: 'project_category_items', label: 'Gắn Dự Án vào Danh Mục' },
+          { key: 'entity_media', label: 'Hình Ảnh Dự Án' },
+        ],
+      },
+    ],
+  },
+  {
+    title: 'Tin Tức',
+    items: [
+      {
+        key: 'posts',
+        label: 'Bài Viết',
+        children: [{ key: 'post_categories', label: 'Danh Mục Tin Tức' }],
+      },
+    ],
+  },
+  {
+    title: 'Liên Hệ',
+    items: [
+      { key: 'contacts', label: 'Thông Tin Liên Hệ' },
+      { key: 'inquiry_submissions', label: 'Yêu Cầu Gửi Đến' },
     ],
   },
 ]

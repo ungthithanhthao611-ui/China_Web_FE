@@ -1,4 +1,4 @@
-﻿const clientRoutes = [
+const clientRoutes = [
   {
     path: '',
     name: 'Home',
@@ -81,9 +81,15 @@
     component: () => import('@/client/pages/projects/ProjectDetailPage.vue'),
   },
   {
-    path: 'video',
-    name: 'Video',
-    component: () => import('@/client/pages/video/VideoPage.vue'),
+    path: 'products',
+    name: 'Products',
+    component: () => import('@/client/pages/products/ProductListPage.vue'),
+  },
+  {
+    path: 'products/:slug',
+    name: 'ProductDetail',
+    component: () => import('@/client/pages/products/ProductDetailPage.vue'),
+    props: true,
   },
   {
     path: 'news',
@@ -108,57 +114,13 @@
     component: () => import('@/client/pages/news/NewsDetailPage.vue'),
   },
   {
-    path: 'social-responsibility',
-    name: 'SocialResponsibility',
-    component: () => import('@/client/pages/social-responsibility/SocialResponsibilityPage.vue'),
-  },
-  {
     path: 'contact',
     name: 'Contact',
     component: () => import('@/client/pages/contact/ContactPage.vue'),
   },
-  {
-    path: 'subsidiary',
-    name: 'Subsidiary',
-    component: () => import('@/client/pages/subsidiary/SubsidiaryPage.vue'),
-  },
-  {
-    path: 'subsidiary_Detail/:slug.html',
-    name: 'SubsidiaryDetail',
-    component: () => import('@/client/pages/subsidiary/SubsidiaryDetailPage.vue'),
-  },
-  {
-    path: 'branch',
-    name: 'Branch',
-    component: () => import('@/client/pages/branch/BranchPage.vue'),
-  },
-  {
-    path: 'join-us',
-    name: 'JoinUs',
-    component: () => import('@/client/pages/jobs/JobListPage.vue'),
-  },
-  {
-    path: 'join-us/:id',
-    name: 'JobDetail',
-    component: () => import('@/client/pages/jobs/JobDetailPage.vue'),
-  },
-  {
-    path: 'privacy',
-    name: 'Privacy',
-    component: () => import('@/client/pages/privacy/PrivacyPage.vue'),
-  },
-  {
-    path: 'copyright',
-    name: 'Copyright',
-    component: () => import('@/client/pages/copyright/CopyrightPage.vue'),
-  },
-  {
-    path: 'security',
-    name: 'Security',
-    component: () => import('@/client/pages/security/SecurityPage.vue'),
-  },
 ]
 
 export default clientRoutes
+
 
 

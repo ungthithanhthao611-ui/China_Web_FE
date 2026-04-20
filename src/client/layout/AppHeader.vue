@@ -15,55 +15,45 @@ const route = useRoute()
 const bootstrapStore = useBootstrapStore()
 
 const fallbackNavItems = [
-  { name: 'Home', path: '/#ctn1' },
+  { name: 'Trang Chủ', path: '/' },
   {
-    name: 'About Us',
-    path: '/about/company-introduction#page1',
+    name: 'Giới Thiệu',
+    path: '/about/company-introduction',
     children: [
-      { name: 'Company Introduction', path: '/about/company-introduction#page2' },
-      { name: "Chairman's Speech", path: '/about/chairman-speech#page3' },
-      { name: 'Organization Chart', path: '/about/organization-chart#page4' },
-      { name: 'Corporate Culture', path: '/about/corporate-culture#page5' },
-      { name: 'Development Course', path: '/about/development-course#page6' },
-      { name: 'Leadership Care', path: '/about/leadership-care#page7' },
-      { name: 'Cooperative Partner', path: '/about/cooperative-partner#page8' }
-    ]
+      { name: 'Tổng Quan Công Ty', path: '/about/company-introduction' },
+      { name: 'Lịch Sử Phát Triển', path: '/about/development-course' },
+      { name: 'Tầm Nhìn & Sứ Mệnh', path: '/about/corporate-culture' },
+      { name: 'Giá Trị Cốt Lõi', path: '/about/corporate-culture' },
+      { name: 'Ban Lãnh Đạo', path: '/about/leadership-care' },
+      { name: 'Sơ Đồ Tổ Chức', path: '/about/organization-chart' },
+    ],
   },
   {
-    name: 'Qualification Honor',
+    name: 'Năng Lực',
     path: '/honors',
     children: [
-      { name: 'Qualification Certificate', path: '/honors#page2' },
-      { name: 'Honorary Awards', path: '/honors#page3' }
-    ]
+      { name: 'Hình Ảnh Nhà Máy', path: '/honors' },
+      { name: 'Công Nghệ Sản Xuất', path: '/honors' },
+      { name: 'Chứng Nhận ISO & CE', path: '/honors' },
+    ],
   },
   {
-    name: 'Business Display',
-    path: '/business-areas#ctn1',
-    children: [
-      { name: 'Business Field', path: '/business-areas#ctn1' },
-      { name: 'Project Case', path: '/project-case' },
-      { name: 'Video', path: '/video' }
-    ]
+    name: 'Sản Phẩm',
+    path: '/products',
   },
   {
-    name: 'News Center',
+    name: 'Dự Án',
+    path: '/project-case',
+  },
+  {
+    name: 'Tin Tức',
     path: '/news/corporate-news',
     children: [
-      { name: 'Corporate News', path: '/news/corporate-news' },
-      { name: 'Industry Dynamics', path: '/news/industry-dynamics' }
-    ]
+      { name: 'Tin Tức Công Ty', path: '/news/corporate-news' },
+      { name: 'Tin Tức Ngành', path: '/news/industry-dynamics' },
+    ],
   },
-  {
-    name: 'Contact Us',
-    path: '/contact',
-    children: [
-      { name: 'Contact Us', path: '/contact' },
-      { name: 'Subsidiary', path: '/subsidiary' },
-      { name: 'Branch', path: '/branch' },
-      { name: 'Join Us', path: '/join-us' }
-    ]
-  }
+  { name: 'Liên Hệ', path: '/contact' },
 ]
 
 const navItems = computed(() => {
@@ -80,12 +70,12 @@ const siteTagline = computed(() => bootstrapStore.settingsMap.site_tagline || 'C
 const isHomeOverlay = computed(() => route.path === '/' || route.path === '/honors')
 const isContactHero = computed(
   () =>
-    ['/contact', '/subsidiary', '/branch', '/join-us'].includes(route.path) &&
+    route.path === '/contact' &&
     (!route.hash || route.hash === '#ctn1')
 )
 const isAboutPage = computed(() => route.path.startsWith('/about'))
 const isNewsHero = computed(() => route.path.startsWith('/news'))
-const isVideoHero = computed(() => route.path === '/video')
+const isVideoHero = computed(() => false)
 const isProjectCase = computed(
   () =>
     route.path === '/project-case' ||

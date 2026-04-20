@@ -16,13 +16,11 @@ import { Mail, Phone, Globe } from 'lucide-vue-next'
         </div>
       </div>
       <div class="topbar-right">
-        <router-link to="/contact">Contact Us</router-link>
-        <router-link to="/subsidiary">Subsidiary</router-link>
-        <router-link to="/branch">Branch</router-link>
-        <router-link to="/join-us">Join Us</router-link>
+        <router-link to="/contact">Liên Hệ</router-link>
+        <router-link to="/products">Sản Phẩm</router-link>
         <div class="lang-switch">
           <Globe :size="14" />
-          <span>English</span>
+          <span>Tiếng Việt</span>
         </div>
       </div>
     </div>

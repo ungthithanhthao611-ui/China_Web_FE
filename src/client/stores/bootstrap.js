@@ -68,8 +68,14 @@ export const useBootstrapStore = defineStore('bootstrap', {
           return { health, bootstrap }
         })
         .catch((error) => {
+          // ── Graceful degradation: khi BE offline, FE vẫn render với fallback data ──
+          console.warn('[bootstrap] Backend không kết nối được, dùng fallback data:', error?.message)
           this.error = error
-          throw error
+          this.initialized = true  // cho phép FE render với fallbackNavItems / fallbackFooterGroups
+          this.menus = {}
+          this.settings = []
+          this.heroBanners = []
+          // KHÔNG throw để ClientLayout không bị crash
         })
         .finally(() => {
           this.loading = false
