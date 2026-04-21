@@ -144,9 +144,13 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  recordDisplayName: {
+    type: Function,
+    default: (r) => r?.title || r?.block_key || r?.item_key || String(r?.id || ""),
+  },
   editLabel: {
     type: String,
-    default: "Edit",
+    default: "Sửa",
   },
 });
 
@@ -160,19 +164,19 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
   <div class="records-panel">
     <div class="records-panel__header">
       <div>
-        <p class="eyebrow">Records Overview</p>
-        <h3>Content listing</h3>
+        <p class="eyebrow">Tổng quan dữ liệu</p>
+        <h3>Danh sách nội dung</h3>
         <p class="description">
-          Review, preview, and manage every record from a cleaner editorial workspace.
+          Xem lại, xem trước và quản lý mọi bản ghi từ giao diện chuyên nghiệp.
         </p>
       </div>
       <div class="records-panel__summary">
         <div class="records-summary-card">
-          <span>Total</span>
+          <span>Tổng số</span>
           <strong>{{ totalRecords }}</strong>
         </div>
         <div class="records-summary-card">
-          <span>Page</span>
+          <span>Trang</span>
           <strong>{{ currentPage }}/{{ totalPages }}</strong>
         </div>
       </div>
@@ -185,16 +189,16 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
             <th v-for="column in tableColumns" :key="column">
               {{ fieldLabel(column) }}
             </th>
-            <th>Preview</th>
-            <th>Actions</th>
+            <th>Xem nhanh</th>
+            <th>Thao tác</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="loading" class="table-empty-row">
-            <td :colspan="tableColumns.length + 2">Loading records...</td>
+            <td :colspan="tableColumns.length + 2">Đang tải dữ liệu...</td>
           </tr>
           <tr v-else-if="!records.length" class="table-empty-row">
-            <td :colspan="tableColumns.length + 2">No records found.</td>
+            <td :colspan="tableColumns.length + 2">Không tìm thấy bản ghi nào.</td>
           </tr>
           <tr v-for="record in records" v-else :key="record.id" class="entity-row">
             <td
@@ -239,7 +243,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                       loading="lazy"
                     />
                   </template>
-                  <div v-else class="video-table-thumb-cell__empty">No media</div>
+                  <div v-else class="video-table-thumb-cell__empty">Chưa có ảnh</div>
                   <small>{{ column === 'image_url' ? 'URL' : `#${record[column] || '-'}` }}</small>
                 </div>
               </template>
@@ -251,7 +255,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                     :alt="record.title || 'Video thumbnail'"
                     loading="lazy"
                   />
-                  <div v-else class="video-table-thumb-cell__empty">No thumbnail</div>
+                  <div v-else class="video-table-thumb-cell__empty">Trống</div>
                   <small>#{{ record.thumbnail_id || "-" }}</small>
                 </div>
               </template>
@@ -268,6 +272,9 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                     {{ videoUrlHint(record[column]) }}
                   </small>
                 </div>
+              </template>
+              <template v-else-if="column === 'title' || column === 'block_key' || column === 'item_key'">
+                <strong>{{ recordDisplayName(record) }}</strong>
               </template>
               <template v-else>
                 {{ formatCell(record[column]) }}
@@ -293,7 +300,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                       :style="bannerImageStyle(record)"
                       loading="lazy"
                     />
-                    <div v-else class="banner-preview-card__empty">No banner media</div>
+                    <div v-else class="banner-preview-card__empty">Chưa có ảnh/video banner</div>
                     <div class="banner-preview-card__overlay"></div>
                   </div>
                   <div class="banner-preview-card__content">
@@ -303,7 +310,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                     </div>
                     <h4>{{ bannerDisplayTitle(record) }}</h4>
                     <p v-if="record.subtitle">{{ record.subtitle }}</p>
-                    <small>{{ record.button_text || record.link || "No CTA configured" }}</small>
+                    <small>{{ record.button_text || record.link || "Chưa cấu hình nút bấm" }}</small>
                   </div>
                 </div>
               </template>
@@ -326,7 +333,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Open
+                    Xem ảnh
                   </a>
                 </div>
                 <a
@@ -335,7 +342,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Open
+                  Mở tệp
                 </a>
                 <span v-else>-</span>
               </template>
@@ -356,7 +363,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                     target="_blank"
                     rel="noreferrer noopener"
                   >
-                    Preview Link
+                    Xem link video
                   </a>
                   <a
                     v-if="previewRecordUrl(record)"
@@ -364,7 +371,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Public Page
+                    Xem trang công khai
                   </a>
                 </div>
               </template>
@@ -409,7 +416,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                       target="_blank"
                       rel="noreferrer noopener"
                     >
-                      Open external video source
+                      Mở link video ngoài
                     </a>
                     <small class="entity-rich-preview__media-label">
                       {{ richPreviewMedia(record).label }}
@@ -447,7 +454,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Open
+                  Mở xem
                 </a>
                 <span v-else>-</span>
               </template>
@@ -467,7 +474,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
                   :disabled="deletingId === record.id"
                   @click="emit('delete', record)"
                 >
-                  {{ deletingId === record.id ? "Deleting..." : "Delete" }}
+                  {{ deletingId === record.id ? "Đang xóa..." : "Xóa" }}
                 </button>
               </div>
             </td>
@@ -478,20 +485,20 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
 
     <div class="pagination">
       <div class="pagination__meta">
-        <span>{{ totalRecords }} records</span>
+        <span>{{ totalRecords }} bản ghi</span>
         <span class="pagination__divider"></span>
-        <span>Page {{ currentPage }} / {{ totalPages }}</span>
+        <span>Trang {{ currentPage }} / {{ totalPages }}</span>
       </div>
 
       <div class="pagination__actions">
         <select
           :value="pageSize"
-          aria-label="Page size"
+          aria-label="Số bản ghi mỗi trang"
           @change="emit('update:pageSize', Number($event.target.value))"
         >
-          <option :value="10">10 / page</option>
-          <option :value="20">20 / page</option>
-          <option :value="50">50 / page</option>
+          <option :value="10">10 / trang</option>
+          <option :value="20">20 / trang</option>
+          <option :value="50">50 / trang</option>
         </select>
         <button
           type="button"
@@ -499,7 +506,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
           :disabled="currentPage <= 1"
           @click="emit('set-page', currentPage - 1)"
         >
-          Prev
+          Trang trước
         </button>
         <button
           type="button"
@@ -507,7 +514,7 @@ const richPreviewMedia = (record) => props.previewMedia(record) || null;
           :disabled="currentPage >= totalPages"
           @click="emit('set-page', currentPage + 1)"
         >
-          Next
+          Trang tiếp
         </button>
       </div>
     </div>

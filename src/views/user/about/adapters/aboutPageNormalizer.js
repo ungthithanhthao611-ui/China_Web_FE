@@ -3,12 +3,17 @@
  *
  * Map raw API response từ /public/pages/about thành view model
  * dễ render cho AboutPage.vue.
- *
- * Nguyên tắc:
- * - FE không render raw blocks/items trực tiếp
- * - Mọi field đều có fallback an toàn ([], '', null)
- * - Giữ shape tương thích 100% với template cũ
  */
+
+import { env } from '@/shared/config/env'
+
+const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
+
+const resolveUrl = (url) => {
+  if (!url) return ''
+  if (/^https?:\/\//i.test(url)) return url
+  return `${API_ORIGIN}${url.startsWith('/') ? url : `/${url}`}`
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -37,6 +42,17 @@ const itemStr = (item, field = 'title') => (item ? item[field] || '' : '')
 /** Lấy metadata_json an toàn */
 const itemMeta = (item) => (item?.metadata_json ? item.metadata_json : {})
 
+/** Lấy URL ảnh ưu tiên từ media asset (upload) rồi mới đến metadata (link cũ) */
+const itemImage = (item, metaField = 'src') => {
+  if (!item) return ''
+  const mediaUrl = item.media?.url || item.image?.url
+  if (mediaUrl) return resolveUrl(mediaUrl)
+
+  const meta = itemMeta(item)
+  const metaUrl = meta[metaField] || meta.src || meta.image_url || meta.image
+  return metaUrl ? resolveUrl(metaUrl) : ''
+}
+
 // ---------------------------------------------------------------------------
 // Section normalizers
 // ---------------------------------------------------------------------------
@@ -58,6 +74,7 @@ function normalizeHero(blocks) {
 }
 
 function normalizeCompanyIntroduction(blocks) {
+  const block = blocks.find((b) => b.block_key === 'intro_media' || b.block_key === 'intro_paragraphs')
   const coverItem = findItem(blocks, 'intro_media', 'cover_image')
   const videoButtonItem = findItem(blocks, 'intro_video', 'video_button')
   const videoUrlItem = findItem(blocks, 'intro_video', 'video_url')
@@ -66,14 +83,16 @@ function normalizeCompanyIntroduction(blocks) {
   )
 
   return {
-    coverImage: itemMeta(coverItem).src || '',
-    videoButtonLabel: itemStr(videoButtonItem) || 'VIDEO +',
+    title: block?.title || 'Giới thiệu công ty',
+    coverImage: itemImage(coverItem),
+    videoButtonLabel: itemStr(videoButtonItem) || 'XEM VIDEO +',
     videoUrl: videoUrlItem?.link || '',
     paragraphs,
   }
 }
 
 function normalizeChairmanSpeech(blocks) {
+  const block = blocks.find((b) => b.block_key === 'speech_profile' || b.block_key === 'speech_body')
   const portraitItem = findItem(blocks, 'speech_profile', 'portrait')
   const paragraphs = blockItems(blocks, 'speech_body').map(
     (it) => it.content || it.title || '',
@@ -83,35 +102,38 @@ function normalizeChairmanSpeech(blocks) {
   const signatureImage = findItem(blocks, 'speech_signature', 'signature_image')
 
   return {
-    portrait: itemMeta(portraitItem).src || '',
+    title: block?.title || 'Tầm nhìn & Sứ mệnh',
+    portrait: itemImage(portraitItem),
     paragraphs,
     signTitle: itemStr(signTitle),
     signName: itemStr(signName),
-    signatureImage: itemMeta(signatureImage).src || '',
+    signatureImage: itemImage(signatureImage),
   }
 }
 
 function normalizeOrganizationChart(blocks) {
+  const block = blocks.find((b) => b.block_key === 'org_chart_image')
   const chartItem = findItem(blocks, 'org_chart_image', 'main_chart')
   return {
-    chartImage: itemMeta(chartItem).src || '',
+    title: block?.title || 'Sơ đồ tổ chức',
+    chartImage: itemImage(chartItem),
   }
 }
 
 function normalizeCorporateCulture(blocks) {
   const mapBlock = (key) =>
     blockItems(blocks, key).map((it) => ({
-      label: itemStr(it),
+      label: it.title || '',
       text: it.content || '',
     }))
 
   const block = (key) => findBlock(blocks, key)
 
   return [
-    { title: block('culture_purpose')?.title || 'Corporate Purpose', items: mapBlock('culture_purpose') },
-    { title: block('culture_mission')?.title || 'Corporate Mission', items: mapBlock('culture_mission') },
-    { title: block('culture_spirit')?.title || 'Enterprise Spirit', items: mapBlock('culture_spirit') },
-    { title: block('culture_values')?.title || 'Value', items: mapBlock('culture_values') },
+    { title: block('culture_purpose')?.title || 'Mục tiêu doanh nghiệp', items: mapBlock('culture_purpose') },
+    { title: block('culture_mission')?.title || 'Sứ mệnh doanh nghiệp', items: mapBlock('culture_mission') },
+    { title: block('culture_spirit')?.title || 'Tinh thần doanh nghiệp', items: mapBlock('culture_spirit') },
+    { title: block('culture_values')?.title || 'Giá trị cốt lõi', items: mapBlock('culture_values') },
   ]
 }
 
@@ -122,7 +144,7 @@ function normalizeDevelopmentCourse(blocks) {
       year: String(meta.year ?? ''),
       month: String(meta.month ?? '').padStart(2, '0'),
       title: it.title || '',
-      image: meta.image_url || '',
+      image: itemImage(it, 'image_url'),
     }
   })
 }
@@ -131,40 +153,11 @@ function normalizeLeadershipCare(blocks) {
   return blockItems(blocks, 'leadership_care_gallery').map((it) => {
     const meta = itemMeta(it)
     return {
-      year: meta.year || '',
-      image: meta.image_url || '',
+      year: it.subtitle || meta.year || '',
+      image: itemImage(it, 'image_url'),
       text: it.title || '',
     }
   })
-}
-
-function normalizeCooperativePartner(blocks) {
-  // Categories
-  const categoryItems = blockItems(blocks, 'partner_categories')
-  const categories = categoryItems.map((it) => ({
-    key: it.item_key,
-    name: itemStr(it),
-  }))
-
-  // Logos grouped by category
-  const logoItems = blockItems(blocks, 'partner_logos')
-
-  // Build partnerCategories array giống format cũ
-  const partnerCategories = categories.map((cat) => ({
-    key: cat.key,
-    name: cat.name,
-    logos: logoItems
-      .filter((it) => itemMeta(it).category === cat.key)
-      .map((it) => ({
-        href: it.link || itemMeta(it).website || '#',
-        image: itemMeta(it).image_url || '',
-      })),
-  }))
-
-  return {
-    categories,
-    partnerCategories,
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -172,14 +165,13 @@ function normalizeCooperativePartner(blocks) {
 // ---------------------------------------------------------------------------
 
 const SECTION_CONFIG = [
-  { anchor: 'hero', id: 'page1', routeSuffix: 'company-introduction', hash: '#page1' },
-  { anchor: 'company_introduction', id: 'page2', routeSuffix: 'company-introduction', hash: '#page2' },
-  { anchor: 'chairman_speech', id: 'page3', routeSuffix: 'chairman-speech', hash: '#page3' },
-  { anchor: 'organization_chart', id: 'page4', routeSuffix: 'organization-chart', hash: '#page4' },
-  { anchor: 'corporate_culture', id: 'page5', routeSuffix: 'corporate-culture', hash: '#page5' },
-  { anchor: 'development_course', id: 'page6', routeSuffix: 'development-course', hash: '#page6' },
-  { anchor: 'leadership_care', id: 'page7', routeSuffix: 'leadership-care', hash: '#page7' },
-  { anchor: 'cooperative_partner', id: 'page8', routeSuffix: 'cooperative-partner', hash: '#page8' },
+  { anchor: 'hero', id: 'page1', title: 'Trang chủ', routeSuffix: 'company-introduction', hash: '#page1' },
+  { anchor: 'company_introduction', id: 'page2', title: 'Giới thiệu', routeSuffix: 'company-introduction', hash: '#page2' },
+  { anchor: 'chairman_speech', id: 'page3', title: 'Tầm nhìn', routeSuffix: 'chairman-speech', hash: '#page3' },
+  { anchor: 'organization_chart', id: 'page4', title: 'Sơ đồ tổ chức', routeSuffix: 'organization-chart', hash: '#page4' },
+  { anchor: 'corporate_culture', id: 'page5', title: 'Giá trị cốt lõi', routeSuffix: 'corporate-culture', hash: '#page5' },
+  { anchor: 'development_course', id: 'page6', title: 'Lịch sử phát triển', routeSuffix: 'development-course', hash: '#page6' },
+  { anchor: 'leadership_care', id: 'page7', title: 'Ban lãnh đạo', routeSuffix: 'leadership-care', hash: '#page7' },
 ]
 
 function buildSectionMeta(sections) {
@@ -187,7 +179,7 @@ function buildSectionMeta(sections) {
     const section = sections.find((s) => s.anchor === cfg.anchor)
     return {
       id: cfg.id,
-      title: section?.title || cfg.anchor.replace(/_/g, ' '),
+      title: section?.title || cfg.title,
       route: `/about/${cfg.routeSuffix}`,
       hash: cfg.hash,
     }
@@ -215,8 +207,8 @@ export function normalizeAboutPage(raw) {
   return {
     // Page meta
     slug: raw.slug || 'about',
-    title: raw.title || 'About Us',
-    metaTitle: raw.meta_title || raw.title || 'About Us',
+    title: raw.title || 'Giới Thiệu',
+    metaTitle: raw.meta_title || raw.title || 'Giới Thiệu',
     metaDescription: raw.meta_description || raw.summary || '',
 
     // Navigation
@@ -231,6 +223,5 @@ export function normalizeAboutPage(raw) {
     cultureBlocks: normalizeCorporateCulture(blocks),
     timelineEntries: normalizeDevelopmentCourse(blocks),
     leadershipItems: normalizeLeadershipCare(blocks),
-    partnerCategories: normalizeCooperativePartner(blocks).partnerCategories,
   }
 }

@@ -49,12 +49,12 @@ const activeIndex = ref(null)
           </div>
         </div>
         
-        <p class="approval-no">Số phê duyệt: Jing Shen Zi (2024) G số 1765</p>
+        <p class="approval-no">Số phê duyệt: Kinh Thẩm Tự (2024) G số 1765</p>
       </div>
 
       <div class="text-content">
         <div class="title-group">
-          <h2 class="fnt-serif">PHÂN PHỐI <br> CÔNG NGHIỆP <span class="red-stamp">印</span></h2>
+          <h2 class="fnt-serif">PHÂN PHỐI <br> CÔNG NGHIỆP <span class="red-stamp">ẤN</span></h2>
           <div class="red-line-dotted"></div>
         </div>
         

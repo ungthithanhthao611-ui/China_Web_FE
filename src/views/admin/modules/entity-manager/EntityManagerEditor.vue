@@ -441,8 +441,13 @@ const emit = defineEmits([
               :key="option.id"
               :value="String(option.id)"
             >
-              #{{ option.id }} -
-              {{ option.title || option.name || option.slug || option.config_key || option.code }}
+              <template v-if="typeof config.optionLabel === 'function'">
+                {{ config.optionLabel(option, field) }}
+              </template>
+              <template v-else>
+                #{{ option.id }} -
+                {{ option.title || option.name || option.slug || option.config_key || option.code }}
+              </template>
             </option>
           </select>
 
@@ -502,13 +507,13 @@ const emit = defineEmits([
               </small>
               <div class="video-library-select">
                 <select @change="emit('video-library-select', $event.target.value)">
-                  <option value="">-- Select from Media Library --</option>
+                  <option value="">-- Chọn từ Thư viện Media --</option>
                   <option v-for="media in videoLibraryOptions" :key="media.id" :value="media.url">
                     #{{ media.id }} - {{ media.title || media.file_name }}
                   </option>
                 </select>
                 <small v-if="videoLibraryOptions.length">
-                  Or choose from {{ videoLibraryOptions.length }} uploaded videos
+                  Hoặc chọn từ {{ videoLibraryOptions.length }} video đã tải lên
                 </small>
               </div>
             </div>
@@ -522,10 +527,10 @@ const emit = defineEmits([
               }"
             >
               <span>
-                {{ isAllowedVideoUrl(form.video_url) ? "Valid video source" : "Invalid video source" }}
+                {{ isAllowedVideoUrl(form.video_url) ? "Nguồn video hợp lệ" : "Nguồn video không hợp lệ" }}
               </span>
               <small>
-                {{ videoUrlHint(form.video_url) || "Supported: MP4/WebM, YouTube, Vimeo" }}
+                {{ videoUrlHint(form.video_url) || "Hỗ trợ: MP4/WebM, YouTube, Vimeo" }}
               </small>
             </div>
             <video
@@ -544,7 +549,7 @@ const emit = defineEmits([
               target="_blank"
               rel="noreferrer noopener"
             >
-              Open video source
+              Mở nguồn video
             </a>
           </div>
 
@@ -592,7 +597,7 @@ const emit = defineEmits([
         </label>
 
         <div v-if="isBannerEntity" class="banner-form-preview">
-          <p class="eyebrow">Live Preview</p>
+          <p class="eyebrow">Xem trước trực tiếp (Live Preview)</p>
           <div class="banner-preview-card banner-preview-card--editor">
             <div
               class="banner-preview-card__media"
@@ -643,7 +648,7 @@ const emit = defineEmits([
             </div>
           </div>
           <div v-if="canAdjustBannerFocus()" class="banner-focus-tools">
-            <small>Click or drag directly on preview to choose the visible crop area.</small>
+            <small>Nhấp chuột hoặc kéo trực tiếp trên ảnh xem trước để chọn vùng hiển thị (crop area).</small>
             <div class="banner-focus-tools__row">
               <small>
                 X: {{ Math.round(form.focus_x ?? 50) }}% / Y: {{ Math.round(form.focus_y ?? 50) }}%
@@ -653,7 +658,7 @@ const emit = defineEmits([
                 class="btn btn-secondary"
                 @click="emit('reset-banner-focus')"
               >
-                Center
+                Căn giữa
               </button>
             </div>
           </div>
@@ -683,20 +688,20 @@ const emit = defineEmits([
 
         <div v-if="currentFormPreviewUrl()" class="selected-media-preview selected-media-preview--link">
           <div>
-            <strong>Public Preview</strong>
+            <strong>Xem trước Public</strong>
             <small>{{ currentFormPreviewUrl() }}</small>
           </div>
           <a :href="currentFormPreviewUrl()" target="_blank" rel="noreferrer noopener">
-            Open current preview
+            Mở xem trước bản ghi hiện tại
           </a>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" @click="emit('close')">
-            Cancel
+            Hủy bỏ
           </button>
           <button type="submit" class="btn btn-primary" :disabled="saving">
-            {{ saving ? "Saving..." : "Save Record" }}
+            {{ saving ? "Đang lưu..." : "Lưu bản ghi" }}
           </button>
         </div>
       </form>

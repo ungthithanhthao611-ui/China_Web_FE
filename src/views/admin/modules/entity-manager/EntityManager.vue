@@ -174,6 +174,7 @@ const featuredTableFields = computed(
   () => config.value?.featuredTableFields || [],
 );
 const previewMediaOptions = computed(() => {
+  if (config.value?.hideMediaGallery) return [];
   if (!hasMediaFields.value || !mediaOptions.value.length) return [];
   if (!isBannerEntity.value) return mediaOptions.value.slice(0, 8);
 
@@ -343,20 +344,20 @@ async function confirmRecordAction(action, record = null) {
   const label = entityLabelForAction(record);
   if (action === "update") {
     return openActionConfirmDialog({
-      eyebrow: "Update record",
-      title: `Update ${label}?`,
-      message: "Confirm to save the edited information.",
-      confirmText: "Confirm Update",
+      eyebrow: "Cập nhật bản ghi",
+      title: `Cập nhật ${label}?`,
+      message: "Xác nhận để lưu các thông tin đã chỉnh sửa.",
+      confirmText: "Xác nhận cập nhật",
       tone: "primary",
     });
   }
 
   if (action === "delete") {
     return openActionConfirmDialog({
-      eyebrow: "Delete record",
-      title: `Delete ${label}?`,
-      message: "This action cannot be undone.",
-      confirmText: "Confirm Delete",
+      eyebrow: "Xóa bản ghi",
+      title: `Xóa ${label}?`,
+      message: "Hành động này không thể hoàn tác.",
+      confirmText: "Xác nhận xóa",
       tone: "danger",
     });
   }
@@ -597,21 +598,33 @@ async function loadMediaOptions() {
   }
 
   try {
-    const response = await listAdminEntityRecords("media_assets", token, {
-      skip: 0,
-      limit: 100,
-      status: "active",
-    });
+    let allMedia = [];
+    let skip = 0;
+    const limit = 100;
+    let hasMore = true;
 
-    if (
-      !isComponentAlive ||
-      requestId !== mediaLoadRequestId ||
-      requestKey !== entityRequestKey()
-    ) {
-      return;
+    while (hasMore) {
+      const response = await listAdminEntityRecords("media_assets", token, {
+        skip,
+        limit,
+        status: "active",
+      });
+
+      if (
+        !isComponentAlive ||
+        requestId !== mediaLoadRequestId ||
+        requestKey !== entityRequestKey()
+      ) {
+        return;
+      }
+
+      const items = response.items || [];
+      allMedia = [...allMedia, ...items];
+      skip += limit;
+      hasMore = items.length >= limit && allMedia.length < 1000;
     }
 
-    mediaOptions.value = response.items || [];
+    mediaOptions.value = allMedia;
   } catch (error) {
     if (
       !isComponentAlive ||
@@ -621,7 +634,7 @@ async function loadMediaOptions() {
       return;
     }
     mediaOptions.value = [];
-    notifyError(error.message || "Failed to load media options.");
+    notifyError(error.message || "Không thể tải danh sách phương tiện (media).");
   }
 }
 
@@ -932,13 +945,13 @@ async function uploadMedia() {
     uploadTitle.value = "";
     uploadAltText.value = "";
     if (media.storage_backend === "cloudinary") {
-      notifySuccess(`Uploaded media #${media.id} to Cloudinary.`);
+      notifySuccess(`Đã tải ảnh #${media.id} lên Cloudinary thành công.`);
     } else if (media.fallback_reason) {
       notifySuccess(
-        `Uploaded media #${media.id} to local storage. Cloudinary was skipped: ${media.fallback_reason}`,
+        `Đã tải ảnh #${media.id} lên máy chủ local. Cloudinary bị bỏ qua: ${media.fallback_reason}`,
       );
     } else {
-      notifySuccess(`Uploaded media #${media.id} to local storage.`);
+      notifySuccess(`Đã tải ảnh #${media.id} lên hệ thống thành công.`);
     }
   } catch (error) {
     notifyError(error.message || "Failed to upload media.");
@@ -1146,6 +1159,7 @@ onMounted(() => {
         :total-records="totalRecords"
         :page-size="pageSize"
         :edit-label="config.editLabel || undefined"
+        :record-display-name="recordDisplayName"
         @edit="openEditForm"
         @delete="deleteRecord"
         @set-page="setPage"

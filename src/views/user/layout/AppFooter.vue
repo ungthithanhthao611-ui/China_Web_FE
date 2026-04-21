@@ -194,7 +194,7 @@ const copyrightText = computed(
 const technicalSupportText = computed(
   () => readSetting(['technical_support_text'], `Hỗ trợ kỹ thuật: ${siteTagline.value}`)
 )
-const beianText = computed(() => readSetting(['beian_text'], 'äº¬ICPå¤‡12048675å·-1'))
+const beianText = computed(() => readSetting(['beian_text'], ''))
 const beianHref = computed(() =>
   readSetting(['beian_url'], 'https://beian.miit.gov.cn/#/Integrated/index')
 )

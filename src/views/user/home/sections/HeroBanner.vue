@@ -298,7 +298,7 @@ defineExpose({ goToSlide })
           class="hero-copy__cta"
           v-bind="bannerLinkProps(currentSlide.link)"
         >
-          {{ currentSlide.buttonText || 'Discover More' }}
+          {{ currentSlide.buttonText || 'Khám Phá Thêm' }}
         </component>
       </div>
     </div>

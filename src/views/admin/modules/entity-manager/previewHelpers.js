@@ -267,16 +267,11 @@ export function createEntityManagerPreviewHelpers({
   const resolvePreviewMediaUrl = (url) => {
     const normalized = String(url || "").trim();
     if (!normalized) return "";
+    // If it's already absolute, return as is
     if (/^https?:\/\//i.test(normalized)) return normalized;
 
-    if (
-      normalized.startsWith("/images/") ||
-      normalized.startsWith("/videos/") ||
-      normalized.startsWith("/assets/")
-    ) {
-      return normalized;
-    }
-
+    // Even if it starts with common asset paths, it's likely a backend path, so prefix it.
+    // resolveMediaUrl handles the prefixing logic correctly.
     return resolveMediaUrl(normalized);
   };
 
@@ -352,12 +347,16 @@ export function createEntityManagerPreviewHelpers({
       return null;
     }
 
-    const linkedMedia = buildMediaPreviewFromMediaRecord(
-      getMediaOptionById(record?.image_id),
-      "Item media preview",
-    );
-    if (linkedMedia) return linkedMedia;
+    // Prioritize linked media asset if image_id exists
+    if (record?.image_id) {
+      const linkedMedia = buildMediaPreviewFromMediaRecord(
+        getMediaOptionById(record.image_id),
+        "Ảnh đại diện mục",
+      );
+      if (linkedMedia) return linkedMedia;
+    }
 
+    // Fallback to metadata only if no image_id found or it failed to resolve
     const metadata = safeMetadataObject(record?.metadata_json);
     const metadataPreview = buildMediaPreviewFromUrl(
       metadata?.src ||
@@ -365,12 +364,12 @@ export function createEntityManagerPreviewHelpers({
         metadata?.image ||
         metadata?.video_url ||
         metadata?.thumbnail_url,
-      "Metadata media preview",
+      "Xem trước từ metadata",
     );
     if (metadataPreview) return metadataPreview;
 
     if (record?.item_key === "video_url" || isAllowedVideoUrl(record?.link)) {
-      return buildMediaPreviewFromUrl(record?.link, "Video source preview");
+      return buildMediaPreviewFromUrl(record?.link, "Nguồn video");
     }
 
     return null;

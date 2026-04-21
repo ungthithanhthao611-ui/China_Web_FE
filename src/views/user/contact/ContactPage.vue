@@ -49,12 +49,12 @@ const contactIcons = {
 
 const qrItems = [
   {
-    label: 'å®˜æ–¹å¾®åš',
+    label: 'Weibo Chính thức',
     image:
       'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/7bf73994-265a-4dd7-82a5-da95de2d899b.png'
   },
   {
-    label: 'å®˜æ–¹å¾®ä¿¡',
+    label: 'WeChat Chính thức',
     image:
       'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/dd0e6fc9-5acf-455b-9d5b-ab546cee1f2f.png'
   }
@@ -108,7 +108,7 @@ const contactDetails = computed(() => {
   if (selectedContact.address) {
     details.push({
       key: 'address',
-      label: 'Address:',
+      label: 'Địa chỉ:',
       value: selectedContact.address,
       icon: contactIcons.address,
     })
@@ -117,7 +117,7 @@ const contactDetails = computed(() => {
   if (selectedContact.postal_code) {
     details.push({
       key: 'postalCode',
-      label: 'Postal Code:',
+      label: 'Mã bưu điện:',
       value: selectedContact.postal_code,
       icon: contactIcons.postalCode,
     })
@@ -126,7 +126,7 @@ const contactDetails = computed(() => {
   if (selectedContact.phone) {
     details.push({
       key: 'phone',
-      label: 'Tel:',
+      label: 'SĐT:',
       value: selectedContact.phone,
       href: `tel:${selectedContact.phone}`,
       icon: contactIcons.phone,
@@ -242,10 +242,10 @@ const fetchContactData = async () => {
     contacts.value = Array.isArray(response?.items) ? response.items : []
 
     if (!contacts.value.length) {
-      contactError.value = 'ChÆ°a cÃ³ dá»¯ liá»‡u liÃªn há»‡ trong há»‡ thá»‘ng.'
+      contactError.value = 'Chưa có dữ liệu liên hệ trong hệ thống.'
     }
   } catch (error) {
-    contactError.value = error?.message || 'KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u liÃªn há»‡ tá»« mÃ¡y chá»§.'
+    contactError.value = error?.message || 'Không thể tải dữ liệu liên hệ từ máy chủ.'
     contacts.value = []
   } finally {
     isLoadingContacts.value = false
@@ -392,7 +392,7 @@ onUnmounted(() => {
 
         <div class="contact-hero__content" :class="{ 'is-visible': animatedSections.includes('ctn1') }">
           <div class="contact-hero__title">
-            <div class="fnt-hero">CONTACT US</div>
+            <div class="fnt-hero">LIÊN HỆ</div>
             <img
               src="https://omo-oss-image.thefastimg.com/portal-saas/ngc202303290005/cms/image/53e45437-3eaa-453a-87e7-5d86b6f29064.png"
               alt="Accent"
@@ -420,14 +420,14 @@ onUnmounted(() => {
         <div class="contact-info-shell" :class="{ 'is-visible': animatedSections.includes('ctn2') }">
           <div class="contact-breadcrumb">
             <House :size="16" />
-            <span>Home</span>
+            <span>Trang chủ</span>
             <ChevronRight :size="14" />
-            <span class="active">Contact Us</span>
+            <span class="active">Liên hệ</span>
           </div>
 
           <header class="contact-heading">
             <div class="contact-heading__title">
-              <h2>CONTACT US</h2>
+              <h2>LIÊN HỆ</h2>
               <img
                 src="https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/bd97f2ca-79a8-43ee-8efa-5b6056d5b1c1.png"
                 alt="Accent"
@@ -454,7 +454,7 @@ onUnmounted(() => {
               </div>
 
               <div v-if="isLoadingContacts" class="contact-status-card">
-                Äang táº£i dá»¯ liá»‡u liÃªn há»‡...
+                Đang tải dữ liệu liên hệ...
               </div>
 
               <div v-else-if="contactError && !hasContactData" class="contact-status-card contact-status-card--error">
@@ -508,7 +508,7 @@ onUnmounted(() => {
 
           <div class="contact-form-panel">
             <div class="contact-form-panel__header">
-              <p class="contact-form-panel__eyebrow">Contact form</p>
+              <p class="contact-form-panel__eyebrow">Mẫu liên hệ</p>
               <h3 class="contact-form-panel__title">Gửi yêu cầu liên hệ</h3>
               <p class="contact-form-panel__desc">
                 Điền thông tin bên dưới, chúng tôi sẽ phản hồi qua email hoặc số điện thoại của bạn.

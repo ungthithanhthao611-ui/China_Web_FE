@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { Building2, Utensils, Hotel, Hospital, Plane, ShoppingBag } from 'lucide-vue-next'
 
 const fields = [
@@ -25,7 +25,7 @@ const fields = [
         </div>
         <h3>{{ field.title }}</h3>
         <p>{{ field.desc }}</p>
-        <router-link to="/business-areas" class="link-more">Learn More</router-link>
+        <router-link to="/business-areas" class="link-more">Tìm Hiểu Thêm</router-link>
       </div>
     </div>
   </div>

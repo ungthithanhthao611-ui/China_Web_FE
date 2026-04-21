@@ -10,10 +10,8 @@ import { useAboutPage } from "./composables/useAboutPage";
 const route = useRoute();
 const router = useRouter();
 
-// ── API data ──────────────────────────────────────────────────────────────
 const { loading, error, aboutView, refresh } = useAboutPage();
-
-// ── Static decoration assets (not CMS-managed) ───────────────────────────
+// ── Static decoration assets ─────────────────────────────────────────────
 const repositoryImageBase = "https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image";
 const repoImg = (file) => `${repositoryImageBase}/${file}`;
 const speechTitleSeal = "/images/about/chairman-speech-seal.png";
@@ -21,7 +19,7 @@ const timelineTitleIcon = repoImg("bd97f2ca-79a8-43ee-8efa-5b6056d5b1c1.png");
 const timelineHoverBefore = repoImg("e012bd80-11a1-4e5c-b5fa-2eda75b67d66.png");
 const timelineHoverAfter = repoImg("dfc20891-e902-474e-8c93-c374b583041d.png");
 
-// ── Computed data from API ────────────────────────────────────────────────
+// ── Computed data ────────────────────────────────────────────────────────
 const sectionMeta = computed(() => aboutView.value?.sectionMeta ?? []);
 const aboutTabs = computed(() => aboutView.value?.aboutTabs ?? []);
 const companyIntroduction = computed(() => aboutView.value?.companyIntroduction?.paragraphs ?? []);
@@ -29,20 +27,21 @@ const chairmanSpeech = computed(() => aboutView.value?.chairmanSpeech?.paragraph
 const cultureBlocks = computed(() => aboutView.value?.cultureBlocks ?? []);
 const timelineEntries = computed(() => aboutView.value?.timelineEntries ?? []);
 const leadershipItems = computed(() => aboutView.value?.leadershipItems ?? []);
-const partnerCategories = computed(() => aboutView.value?.partnerCategories ?? []);
 const speechPortrait = computed(() => aboutView.value?.chairmanSpeech?.portrait ?? "");
 const speechSignature = computed(() => aboutView.value?.chairmanSpeech?.signatureImage ?? "");
 const introImage = computed(() => aboutView.value?.companyIntroduction?.coverImage ?? "");
 const introVideoUrl = computed(() => aboutView.value?.companyIntroduction?.videoUrl ?? "");
 const orgChartImage = computed(() => aboutView.value?.organizationChart?.chartImage ?? "");
-const heroHeadline = computed(() => aboutView.value?.hero?.headline ?? "ABOUT US");
+const heroHeadline = computed(() => aboutView.value?.hero?.headline ?? "VỀ CHÚNG TÔI");
 const heroDescription = computed(() => aboutView.value?.hero?.description ?? "");
 const speechSignTitle = computed(() => aboutView.value?.chairmanSpeech?.signTitle ?? "");
 const speechSignName = computed(() => aboutView.value?.chairmanSpeech?.signName ?? "");
+const introTitle = computed(() => aboutView.value?.companyIntroduction?.title ?? "Giới thiệu công ty");
+const speechTitle = computed(() => aboutView.value?.chairmanSpeech?.title ?? "Tầm nhìn & Sứ mệnh");
+const orgChartTitle = computed(() => aboutView.value?.organizationChart?.title ?? "Sơ đồ tổ chức");
 
 const activeSection = ref("page1");
-const activePartnerCategory = ref("strategic");
-const activeCultureTitle = ref("Corporate Purpose");
+const activeCultureTitle = ref("Giá trị cốt lõi");
 const visibleSections = ref(new Set(["page1"]));
 const videoOpen = ref(false);
 const chartOpen = ref(false);
@@ -56,24 +55,12 @@ const syncingRouteFromSection = ref(false);
 
 let observer;
 
-// Dynamically set initial active partner category from API data
-const activePartnerCategoryInit = computed(() => partnerCategories.value?.[0]?.key ?? "strategic_cooperation");
-watch(activePartnerCategoryInit, (val) => {
-  if (val && activePartnerCategory.value === "strategic") {
-    activePartnerCategory.value = val;
-  }
-}, { immediate: true });
-
 const activeCultureTitleInit = computed(() => cultureBlocks.value?.[0]?.title ?? "");
 watch(activeCultureTitleInit, (val) => {
   if (val && !cultureBlocks.value.some((item) => item.title === activeCultureTitle.value)) {
     activeCultureTitle.value = val;
   }
 }, { immediate: true });
-
-const currentPartnerLogos = computed(
-  () => partnerCategories.value.find((item) => item.key === activePartnerCategory.value)?.logos ?? []
-);
 
 const currentCultureBlock = computed(
   () => cultureBlocks.value.find((item) => item.title === activeCultureTitle.value) ?? cultureBlocks.value[0] ?? { title: '', items: [] }
@@ -348,7 +335,7 @@ onBeforeUnmount(() => {
     <section id="page2" :class="['about-section intro-section', { 'is-visible': isSectionVisible('page2') }]">
       <div class="section-shell">
         <div class="section-heading intro-heading">
-          <h2>Company Introduction</h2>
+          <h2>{{ introTitle }}</h2>
         </div>
 
         <div class="intro-layout">
@@ -378,7 +365,7 @@ onBeforeUnmount(() => {
       <div class="section-shell speech-shell">
         <div class="speech-heading">
           <p class="speech-title">
-            <span>Chairman's Speech</span>
+            <span>{{ speechTitle }}</span>
             <img :src="speechTitleSeal" alt="" aria-hidden="true" />
           </p>
         </div>
@@ -409,10 +396,10 @@ onBeforeUnmount(() => {
 
     <section id="page4" :class="['about-section chart-section', { 'is-visible': isSectionVisible('page4') }]">
       <div class="section-shell chart-shell">
-        <div class="chart-heading">
+        <div class="section-heading chart-heading">
           <p class="chart-title">
-            <span>Organization Chart</span>
-            <img :src="speechTitleSeal" alt="" aria-hidden="true" />
+            <span>{{ orgChartTitle }}</span>
+            <img src="/images/daumoc.png" alt="" aria-hidden="true" />
           </p>
         </div>
 
@@ -425,8 +412,8 @@ onBeforeUnmount(() => {
     <section id="page5" :class="['about-section culture-section', { 'is-visible': isSectionVisible('page5') }]">
       <div class="section-shell">
         <div class="section-heading">
-          <span class="eyebrow">ABOUT US</span>
-          <h2>Corporate Culture</h2>
+          <span class="eyebrow">CHINNA GROUP</span>
+          <h2>Giá trị cốt lõi</h2>
         </div>
 
         <div class="culture-layout">
@@ -465,7 +452,7 @@ onBeforeUnmount(() => {
       <div class="section-shell timeline-shell">
         <div class="timeline-heading">
           <p class="timeline-title">
-            <i>Development Course</i>
+            <i>Lịch sử phát triển</i>
             <img :src="timelineTitleIcon" class="timeline-title-icon" alt="" />
           </p>
           <span class="timeline-heading-rule" />
@@ -546,7 +533,7 @@ onBeforeUnmount(() => {
       <div class="section-shell leadership-shell">
         <div class="leadership-heading">
           <h2 class="leadership-title">
-            <span>Leadership Care</span>
+            <span>Ban lãnh đạo</span>
             <img :src="timelineTitleIcon" alt="" />
           </h2>
         </div>
@@ -592,39 +579,6 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section id="page8" :class="['about-section partner-section', { 'is-visible': isSectionVisible('page8') }]">
-      <div class="section-shell">
-        <div class="section-heading partner-heading">
-          <span class="eyebrow">ABOUT US</span>
-          <h2>Cooperative Partner</h2>
-        </div>
-
-        <div class="partner-tabs">
-          <button
-            v-for="category in partnerCategories"
-            :key="category.key"
-            :class="['partner-tab', { active: activePartnerCategory === category.key }]"
-            type="button"
-            @click="activePartnerCategory = category.key"
-          >
-            {{ category.name }}
-          </button>
-        </div>
-
-        <div class="partner-grid">
-          <a
-            v-for="logo in currentPartnerLogos"
-            :key="logo.image"
-            class="partner-card"
-            :href="logo.href"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img :src="logo.image" alt="Partner logo" />
-          </a>
-        </div>
-      </div>
-    </section>
 
     <div v-if="videoOpen" class="about-modal" @click.self="videoOpen = false">
       <button class="close-button" type="button" @click="videoOpen = false">

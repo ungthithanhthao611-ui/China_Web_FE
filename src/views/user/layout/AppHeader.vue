@@ -270,7 +270,7 @@ onBeforeUnmount(() => {
           :title="siteTagline"
         >
           <Globe :size="28" stroke-width="1.7" />
-          <span>CN</span>
+          <span>Trung Quốc</span>
         </a>
 
         <button class="mobile-toggle" @click="toggleMobileMenu" type="button" aria-label="Toggle menu">

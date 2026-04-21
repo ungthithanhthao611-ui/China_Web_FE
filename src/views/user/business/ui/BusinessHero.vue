@@ -18,9 +18,9 @@ const handleNavigate = (label) => {
   <div class="business-hero" :class="{ 'is-active': active }">
     <div class="content-wrapper">
       <div class="title-group animate-text">
-        <h1 class="fnt-serif">BUSINESS FIELD <span class="red-stamp">印</span></h1>
+        <h1 class="fnt-serif">LĨNH VỰC KINH DOANH <span class="red-stamp">ẤN</span></h1>
         <div class="red-line"></div>
-        <p class="slogan">Innovate industry model, lead green development, decorate a better life</p>
+        <p class="slogan">Đổi mới mô hình ngành, dẫn dắt phát triển xanh, kiến tạo cuộc sống tốt đẹp hơn</p>
       </div>
     </div>
     

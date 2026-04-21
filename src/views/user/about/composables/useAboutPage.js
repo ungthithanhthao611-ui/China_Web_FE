@@ -13,9 +13,9 @@ import { getPageDetail } from '@/views/user/services/publicApi'
 import { normalizeAboutPage } from '../adapters/aboutPageNormalizer'
 
 function applySeo(view) {
-  const fallbackTitle = 'About Us | China Decor'
+  const fallbackTitle = 'Giới Thiệu | China Decor'
   const fallbackDescription =
-    'Learn more about China Decor, our company background, corporate culture, development journey, leadership care, and cooperative partners.'
+    'Tìm hiểu thêm về China Decor, lịch sử phát triển, văn hóa doanh nghiệp, ban lãnh đạo và các giá trị cốt lõi của chúng tôi.'
 
   document.title = view?.metaTitle || view?.title || fallbackTitle
 

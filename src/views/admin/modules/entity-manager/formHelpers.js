@@ -185,7 +185,7 @@ export function createEntityManagerFormHelpers({
       return `${entityMediaTargetTypeLabel()}: ${label}`;
     }
 
-    return `Selected: ${label}`;
+    return `Đã chọn: ${label}`;
   };
 
   const relationPreviewPath = (field) => {
@@ -226,15 +226,15 @@ export function createEntityManagerFormHelpers({
 
   const relationPreviewLabel = (field) => {
     if (field === "entity_id" && isEntityMediaEntity.value) {
-      return "Open selected target";
+      return "Xem trang đích đã chọn";
     }
     if (props.entityKey === "project_category_items" && field === "category_id") {
-      return "Open category preview";
+      return "Xem trước chuyên mục";
     }
     if (props.entityKey === "project_category_items" && field === "project_id") {
-      return "Open project detail";
+      return "Xem chi tiết dự án";
     }
-    return "Open preview";
+    return "Mở xem trước";
   };
 
   const mediaUploadAccept = () =>
@@ -341,7 +341,7 @@ export function createEntityManagerFormHelpers({
 
   const formatCell = (value) => {
     if (value === null || value === undefined || value === "") return "-";
-    if (typeof value === "boolean") return value ? "Yes" : "No";
+    if (typeof value === "boolean") return value ? "Bật/Phát" : "Tắt/Ẩn";
     if (typeof value === "string" && value.length > 80) {
       return `${value.slice(0, 80)}...`;
     }
@@ -457,23 +457,23 @@ export function createEntityManagerFormHelpers({
         form[field] === undefined ||
         String(form[field]).trim() === ""
       ) {
-        errors.push(`${fieldLabel(field)} is required.`);
+        errors.push(`Trường "${fieldLabel(field)}" là bắt buộc.`);
       }
     });
 
     if (form.slug && !SLUG_PATTERN.test(String(form.slug))) {
       errors.push(
-        "Slug must be lowercase, use numbers or hyphen, and cannot contain spaces.",
+        "Slug (đường dẫn) phải là chữ thường, chỉ chứa số, chữ cái không dấu hoặc dấu gạch ngang, không chứa dấu cách.",
       );
     }
 
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(form.email))) {
-      errors.push("Email format is invalid.");
+      errors.push("Định dạng email không hợp lệ.");
     }
 
     if (isVideosEntity.value && form.video_url && !isAllowedVideoUrl(form.video_url)) {
       errors.push(
-        "Video URL must be a valid http/https direct video link, YouTube URL, or Vimeo URL.",
+        "URL video phải là liên kết trực tiếp (http/https), hoặc link YouTube/Vimeo hợp lệ.",
       );
     }
 
@@ -482,15 +482,15 @@ export function createEntityManagerFormHelpers({
       const longitude = parseCoordinateValue(form.longitude);
 
       if (latitude === null) {
-        errors.push("Latitude must be a valid number.");
+        errors.push("Vĩ độ (Latitude) phải là một con số.");
       } else if (latitude < -90 || latitude > 90) {
-        errors.push("Latitude must be between -90 and 90.");
+        errors.push("Vĩ độ phải nằm trong khoảng từ -90 đến 90.");
       }
 
       if (longitude === null) {
-        errors.push("Longitude must be a valid number.");
+        errors.push("Kinh độ (Longitude) phải là một con số.");
       } else if (longitude < -180 || longitude > 180) {
-        errors.push("Longitude must be between -180 and 180.");
+        errors.push("Kinh độ phải nằm trong khoảng từ -180 đến 180.");
       }
     }
 
@@ -502,7 +502,7 @@ export function createEntityManagerFormHelpers({
         form[field] !== null &&
         !Number.isFinite(Number(form[field]))
       ) {
-        errors.push(`${fieldLabel(field)} must be a number.`);
+        errors.push(`Trường "${fieldLabel(field)}" phải là một con số.`);
       }
     });
 
@@ -510,7 +510,7 @@ export function createEntityManagerFormHelpers({
       try {
         JSON.parse(form.metadata_json);
       } catch {
-        errors.push("Metadata JSON must be valid JSON.");
+        errors.push("Dữ liệu Metadata JSON không đúng định dạng JSON.");
       }
     }
 
