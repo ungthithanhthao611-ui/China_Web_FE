@@ -147,11 +147,9 @@ export function createEntityManagerFormHelpers({
     };
     relationMap.category_id =
       relationMap.category_id ||
-      (props.entityKey === "posts"
-        ? "post_categories"
-        : props.entityKey === "projects"
-          ? "project_categories"
-          : null);
+      (props.entityKey === "projects"
+        ? "project_categories"
+        : null);
     relationMap.parent_id =
       relationMap.parent_id ||
       (props.entityKey === "pages"

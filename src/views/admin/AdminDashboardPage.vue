@@ -9,6 +9,7 @@ import { uiState } from '@/shared/utils/uiState'
 import EntityManager from '@/views/admin/modules/entity-manager/EntityManager.vue'
 import HonorsManager from '@/views/admin/modules/honors/HonorsManager.vue'
 import NavigationMenusManager from '@/views/admin/modules/navigation/NavigationMenusManager.vue'
+import NewsManager from '@/views/admin/modules/news/NewsManager.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -38,7 +39,6 @@ const activeSection = ref(resolveSection(route.query.section))
 const navigationManagerRef = ref(null)
 const navMenuCount = ref(0)
 const summary = reactive({
-  posts: 0,
   videos: 0,
   honors: 0,
   products: 0,
@@ -96,13 +96,6 @@ const statCards = computed(() => [
     value: navMenuCount.value,
     subtitle: 'Header and footer trees',
     tone: 'rose',
-  },
-  {
-    key: 'posts',
-    title: 'Posts',
-    value: summary.posts,
-    subtitle: 'News records',
-    tone: 'blue',
   },
   {
     key: 'videos',
@@ -217,10 +210,9 @@ async function loadDashboardSummary() {
 
   loadingSummary.value = true
   try {
-    const [me, menus, posts, videos, honors, products, mediaAssets] = await Promise.all([
+    const [me, menus, videos, honors, products, mediaAssets] = await Promise.all([
       getCurrentAdminUser(normalizedToken),
       listNavigationMenus(normalizedToken),
-      listAdminEntityRecords('posts', normalizedToken, { skip: 0, limit: 1 }),
       listAdminEntityRecords('videos', normalizedToken, { skip: 0, limit: 1 }),
       listAdminEntityRecords('honors', normalizedToken, { skip: 0, limit: 1 }),
       listAdminEntityRecords('products', normalizedToken, { skip: 0, limit: 1 }),
@@ -234,7 +226,6 @@ async function loadDashboardSummary() {
     currentUser.value = me
     localStorage.setItem(ADMIN_USER_STORAGE_KEY, JSON.stringify(me))
     navMenuCount.value = (menus.items || []).length
-    summary.posts = posts.pagination?.total || 0
     summary.videos = videos.pagination?.total || 0
     summary.honors = honors.pagination?.total || 0
     summary.products = products.pagination?.total || 0
@@ -269,7 +260,6 @@ async function handleLogout() {
   token.value = ''
   currentUser.value = null
   navMenuCount.value = 0
-  summary.posts = 0
   summary.videos = 0
   summary.honors = 0
   summary.media_assets = 0
@@ -466,6 +456,11 @@ onBeforeUnmount(() => {
         @notify-success="setSuccess"
         @notify-error="setError"
         @clear-notify="clearMessages"
+      />
+
+      <NewsManager
+        v-else-if="activeSection === 'news_posts'"
+        :embedded="true"
       />
 
       <section v-else-if="isUnsupportedSection" class="unsupported-panel card-shell">

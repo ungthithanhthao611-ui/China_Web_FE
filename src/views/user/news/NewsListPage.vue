@@ -6,24 +6,23 @@ import { Pagination } from 'swiper/modules'
 import AOS from 'aos'
 import { ChevronLeft, ChevronRight, Home } from 'lucide-vue-next'
 import { uiState } from '@/shared/utils/uiState'
+import { getNewsList } from '@/views/user/services/publicApi'
 import { newsCategoryMeta, newsHero } from './data/newsData'
-import { getPublicNews } from '@/views/user/services/publicApi'
 
 const route = useRoute()
 const router = useRouter()
 
 const pageSize = 6
+const featuredSize = 2
 const currentPage = ref(1)
 const breadcrumbSection = ref(null)
 const listSection = ref(null)
 
-// ── API state ─────────────────────────────────────────────────────────────────
 const items = ref([])
 const featured = ref([])
 const total = ref(0)
 const loading = ref(false)
 const error = ref(null)
-// ─────────────────────────────────────────────────────────────────────────────
 
 const activeCategoryKey = computed(() => (route.path.includes('/industry-dynamics') ? 'industry-dynamics' : 'corporate-news'))
 const activeCategory = computed(() => newsCategoryMeta[activeCategoryKey.value])
@@ -35,7 +34,6 @@ const featuredItems = computed(() => featured.value)
 const pagedItems = computed(() => items.value)
 const displayTotalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 
-/** Trả về URL ảnh dù API trả object hay string */
 const imageUrl = (item) => item?.thumbnail_url || item?.image?.url || item?.image || ''
 
 const paginationItems = computed(() => {
@@ -66,14 +64,19 @@ const formatDate = (value) => {
   }).format(new Date(value))
 }
 
-async function fetchFeatured() {
-  if (!isEnterprise.value) {
-    featured.value = []
-    return
+function normalizeNewsItem(item = {}) {
+  return {
+    ...item,
+    category: item?.category || null,
+    content_html: item?.content_html || item?.content || '',
+    body: item?.body || item?.content || '',
   }
+}
+
+async function fetchFeatured() {
   try {
-    const res = await getPublicNews({ categorySlug: 'corporate-news', skip: 0, limit: 2 })
-    featured.value = res?.items || []
+    const res = await getNewsList({ skip: 0, limit: featuredSize })
+    featured.value = Array.isArray(res?.items) ? res.items.map(normalizeNewsItem) : []
   } catch {
     featured.value = []
   }
@@ -82,14 +85,12 @@ async function fetchFeatured() {
 async function fetchPage() {
   loading.value = true
   error.value = null
+
   try {
-    const res = await getPublicNews({
-      categorySlug: activeCategoryKey.value,
-      skip: (currentPage.value - 1) * pageSize,
-      limit: pageSize
-    })
-    items.value = res?.items || []
-    total.value = res?.pagination?.total || 0
+    const skip = (currentPage.value - 1) * pageSize
+    const res = await getNewsList({ skip, limit: pageSize })
+    items.value = Array.isArray(res?.items) ? res.items.map(normalizeNewsItem) : []
+    total.value = Number(res?.total || 0)
   } catch (err) {
     error.value = err?.message || 'Failed to load news'
     items.value = []

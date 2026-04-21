@@ -9,12 +9,6 @@ export const DEFAULT_STATUS_OPTIONS = [
   { value: 'resolved', label: 'Resolved' },
 ]
 
-export const POST_STATUS_OPTIONS = [
-  { value: 'draft', label: 'Bản nháp' },
-  { value: 'published', label: 'Xuất bản chính thức' },
-  { value: 'archived', label: 'Lưu trữ' },
-]
-
 export const CATEGORY_STATUS_OPTIONS = [
   { value: 'active', label: 'Active' },
   { value: 'inactive', label: 'Inactive' },
@@ -249,30 +243,6 @@ export const ENTITY_MANAGER_CONFIGS = {
       is_active: 'Only active banners are shown on the public site.',
     },
     featuredTableFields: ['image_id', 'banner_type', 'is_active'],
-  },
-  post_categories: {
-    label: 'Post Categories',
-    eyebrow: 'News taxonomy',
-    description: 'Manage categories used by posts and news pages.',
-    titleField: 'name',
-    editorPresentation: 'modal',
-    table: ['id', 'name', 'slug', 'status', 'sort_order'],
-    required: ['name', 'slug'],
-    fields: ['name', 'slug', 'description', 'parent_id', 'sort_order', 'status'],
-    statusOptions: CATEGORY_STATUS_OPTIONS,
-    defaultStatus: 'active',
-  },
-  posts: {
-    label: 'Posts',
-    eyebrow: 'News content',
-    description: 'Manage post content, category, slug, publish date, SEO, and main image.',
-    titleField: 'title',
-    table: ['id', 'title', 'slug', 'category_id', 'status', 'published_at'],
-    required: ['title', 'slug', 'language_id'],
-    fields: ['title', 'slug', 'category_id', 'summary', 'body', 'published_at', 'author', 'image_id', 'language_id', 'status', 'meta_title', 'meta_description'],
-    statusOptions: POST_STATUS_OPTIONS,
-    defaultStatus: 'draft',
-    preview: (record) => `/news/${record.slug}`,
   },
   project_categories: {
     label: 'Project Categories',
@@ -594,6 +564,70 @@ export const ENTITY_MANAGER_CONFIGS = {
       admin_response: 'Thông tin này hiện chỉ hiển thị trong quản trị để bạn theo dõi lịch sử xử lý yêu cầu.',
     },
   },
+  // ─── News ─────────────────────────────────────────────────────────────────
+  news_categories: {
+    label: 'Danh Mục Tin Tức',
+    eyebrow: 'News taxonomy',
+    description: 'Quản lý danh mục tin tức.',
+    titleField: 'name',
+    editorPresentation: 'modal',
+    table: ['id', 'name', 'slug', 'sort_order', 'status'],
+    required: ['name', 'slug'],
+    fields: ['name', 'slug', 'description', 'parent_id', 'sort_order', 'status'],
+    statusOptions: CATEGORY_STATUS_OPTIONS,
+    defaultStatus: 'active',
+    fieldLabels: {
+      name: 'Tên Danh Mục',
+      slug: 'Slug (URL)',
+      description: 'Mô Tả',
+      parent_id: 'Danh Mục Cha',
+      sort_order: 'Thứ Tự',
+      status: 'Trạng Thái',
+    },
+    placeholders: {
+      name: 'Ví dụ: Tin Công Ty',
+      slug: 'Ví dụ: corporate-news',
+      description: 'Mô tả ngắn cho danh mục.',
+    },
+  },
+  news_posts: {
+    label: 'Quản Lý Bài Viết',
+    eyebrow: 'News management',
+    description: 'Quản lý bài viết tin tức. Có thể tạo, chỉnh sửa, xuất bản, và xóa bài viết.',
+    titleField: 'title',
+    table: ['id', 'title', 'slug', 'status', 'is_featured', 'published_at', 'created_at'],
+    required: ['title', 'slug'],
+    fields: [
+      'title', 'slug', 'summary', 'content', 'content_json',
+      'thumbnail_url', 'image_id', 'category_id', 'author',
+      'status', 'is_featured', 'published_at',
+      'meta_title', 'meta_description', 'sort_order',
+    ],
+    statusOptions: CONTENT_STATUS_OPTIONS,
+    defaultStatus: 'draft',
+    fieldLabels: {
+      title: 'Tiêu Đề',
+      slug: 'Slug (URL)',
+      summary: 'Tóm Tắt',
+      content: 'Nội Dung',
+      content_json: 'Nội Dung (Block Editor)',
+      thumbnail_url: 'Ảnh Thumbnail (URL)',
+      image_id: 'Ảnh Thumbnail (Media)',
+      category_id: 'Danh Mục',
+      author: 'Tác Giả',
+      status: 'Trạng Thái',
+      is_featured: 'Nổi Bật',
+      published_at: 'Ngày Xuất Bản',
+      meta_title: 'SEO Title',
+      meta_description: 'SEO Description',
+      sort_order: 'Thứ Tự',
+    },
+    placeholders: {
+      title: 'Nhập tiêu đề bài viết...',
+      slug: 'tu-dong-tao-tu-tieu-de',
+      summary: 'Mô tả ngắn cho bài viết...',
+    },
+  },
   product_categories: {
     label: 'Danh Mục Sản Phẩm',
     eyebrow: 'Product taxonomy',
@@ -746,20 +780,22 @@ export const ADMIN_SECTION_GROUPS = [
     ],
   },
   {
-    title: 'TIN TỨC',
-    items: [
-      {
-        key: 'posts',
-        label: 'Bài Viết & Tin Tức',
-        children: [{ key: 'post_categories', label: 'Danh Mục Tin Tức' }],
-      },
-    ],
-  },
-  {
     title: 'LIÊN HỆ',
     items: [
       { key: 'contacts', label: 'Thông Tin Liên Hệ' },
       { key: 'inquiry_submissions', label: 'Phản Hồi Từ Form' },
+    ],
+  },
+  {
+    title: 'TIN TỨC',
+    items: [
+      {
+        key: 'news_posts',
+        label: 'Quản Lý Bài Viết',
+        children: [
+          { key: 'news_categories', label: 'Danh Mục Tin Tức' },
+        ],
+      },
     ],
   },
 ]

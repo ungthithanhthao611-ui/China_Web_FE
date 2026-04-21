@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import Breadcrumb from '@/views/user/news/ui/Breadcrumb.vue'
 import { uiState } from '@/shared/utils/uiState'
-import { getPublicNews, getPublicNewsDetail } from '@/views/user/services/publicApi'
+import { getNewsDetail, getNewsList } from '@/views/user/services/publicApi'
 
 const route = useRoute()
 
@@ -13,16 +13,16 @@ const relatedNews = ref([])
 const loading = ref(true)
 const error = ref(null)
 
+const defaultNewsRoute = '/news/corporate-news'
+
 const breadcrumbs = computed(() => {
   if (!article.value) {
-    return [{ name: 'News', link: '/news/corporate-news' }, { name: 'Article' }]
+    return [{ name: 'News', link: defaultNewsRoute }, { name: 'Article' }]
   }
-  const catSlug = article.value.category?.slug || 'corporate-news'
-  const catName = article.value.category?.name || 'News'
+
   return [
-    { name: 'News', link: '/news/corporate-news' },
-    { name: catName, link: `/news/${catSlug}` },
-    { name: 'Article' }
+    { name: 'News', link: defaultNewsRoute },
+    { name: article.value.title || 'Article' },
   ]
 })
 
@@ -36,21 +36,29 @@ const formatDate = (value) => {
 }
 
 const imageUrl = (item) => item?.thumbnail_url || item?.image?.url || item?.image || ''
+const contentHtml = computed(() => article.value?.content_html || article.value?.body || article.value?.content || '')
+
+function normalizeNewsItem(item = {}) {
+  return {
+    ...item,
+    category: item?.category || null,
+    content_html: item?.content_html || item?.content || '',
+    body: item?.body || item?.content || '',
+  }
+}
 
 async function loadArticle(slug) {
   loading.value = true
   error.value = null
+
   try {
-    article.value = await getPublicNewsDetail(slug)
-    const catSlug = article.value?.category?.slug || article.value?.categories?.[0]?.slug
-    if (catSlug) {
-      const res = await getPublicNews({ categorySlug: catSlug, skip: 0, limit: 6 })
-      relatedNews.value = (res?.items || [])
-        .filter((item) => item.slug !== slug)
-        .slice(0, 3)
-    } else {
-      relatedNews.value = []
-    }
+    const foundArticle = normalizeNewsItem(await getNewsDetail(slug))
+    article.value = foundArticle
+
+    const relatedResponse = await getNewsList({ skip: 0, limit: 4 })
+    relatedNews.value = Array.isArray(relatedResponse?.items)
+      ? relatedResponse.items.map(normalizeNewsItem).filter((item) => item.slug !== slug).slice(0, 3)
+      : []
   } catch (err) {
     error.value = err?.message || 'Failed to load article'
     article.value = null
@@ -101,11 +109,11 @@ onMounted(() => {
       >
         <div class="detail-overlay"></div>
         <div class="container detail-hero-inner">
-          <router-link :to="`/news/${article.category?.slug || 'corporate-news'}`" class="back-link">
+          <router-link :to="defaultNewsRoute" class="back-link">
             <ArrowLeft :size="16" />
-            Back to {{ article.category?.name || 'News' }}
+            Back to News
           </router-link>
-          <span class="detail-category">{{ article.category?.name }}</span>
+          <span class="detail-category">News</span>
           <h1>{{ article.title }}</h1>
           <p>{{ formatDate(article.published_at) }}</p>
         </div>
@@ -124,9 +132,9 @@ onMounted(() => {
               <p v-if="article.summary" class="lead">{{ article.summary }}</p>
               <!-- eslint-disable-next-line vue/no-v-html -->
               <div
-                v-if="article.content_html || article.body"
+                v-if="contentHtml"
                 class="article-body"
-                v-html="article.content_html || article.body"
+                v-html="contentHtml"
               ></div>
             </div>
           </article>

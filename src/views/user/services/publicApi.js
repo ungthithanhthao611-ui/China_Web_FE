@@ -29,40 +29,6 @@ export function getPageDetail(slug, query = {}) {
   return fetchJson(`/public/pages/${slug}`, { query: withLanguage(query) })
 }
 
-export function getPublicNews({ categorySlug, skip, limit, page, ...query } = {}) {
-  return fetchJson('/news', {
-    query: {
-      category_slug: categorySlug,
-      skip,
-      limit,
-      page,
-      ...query,
-    },
-  }).then((payload) => {
-    // News workflow public API wraps data as { success, data, message }.
-    if (payload && payload.success && payload.data) {
-      return payload.data
-    }
-    return payload
-  })
-}
-
-export function getPublicNewsDetail(slug, query = {}) {
-  return fetchJson(`/news/${slug}`, {
-    query,
-  }).then((payload) => {
-    // Keep backward-compatible shape for current NewsDetail page.
-    const data = payload && payload.success && payload.data ? payload.data : payload
-    if (data && !data.category && Array.isArray(data.categories) && data.categories.length) {
-      return {
-        ...data,
-        category: data.categories[0],
-      }
-    }
-    return data
-  })
-}
-
 export function getProjects({ categorySlug, year, skip, limit, ...query } = {}) {
   return fetchJson('/public/projects', {
     query: withLanguage({
@@ -123,4 +89,26 @@ export function getContacts(query = {}) {
 
 export function getVideos(query = {}) {
   return fetchJson('/public/videos', { query: withLanguage(query) })
+}
+
+// ─── News ─────────────────────────────────────────────────────────────────
+
+export function getNewsList({ skip, limit, keyword, categorySlug, ...query } = {}) {
+  return fetchJson('/public/news', {
+    query: withLanguage({
+      skip,
+      limit,
+      keyword,
+      category_slug: categorySlug,
+      ...query,
+    }),
+  })
+}
+
+export function getNewsDetail(slug, query = {}) {
+  return fetchJson(`/public/news/${slug}`, { query: withLanguage(query) })
+}
+
+export function getNewsCategories(query = {}) {
+  return fetchJson('/public/news/categories', { query: withLanguage(query) })
 }
