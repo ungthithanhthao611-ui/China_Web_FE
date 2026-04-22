@@ -206,12 +206,12 @@ export function useProjectCasePage() {
   }
 
   function updateSeo() {
-    const title = activeCategory.value?.name || 'Project Case'
-    document.title = `${title}_China Decor`
+    const title = activeCategory.value?.name || 'Dự Án'
+    document.title = `${title} | THIÊN ĐỒNG VIỆT NAM`
 
     const metaPairs = [
-      ['description', `Project case showcase for ${title} on China Decor.`],
-      ['keywords', `China Decor, project case, ${title}`],
+      ['description', `Khám phá các dự án tiêu biểu của THIÊN ĐỒNG VIỆT NAM trong lĩnh vực ${title}.`],
+      ['keywords', `THIÊN ĐỒNG VIỆT NAM, dự án, ${title}`],
     ]
 
     metaPairs.forEach(([name, content]) => {

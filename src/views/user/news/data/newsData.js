@@ -24,7 +24,7 @@ export const newsHero = {
     'https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/30cc965d-b3b3-47dc-b85e-112c5b3cc8e1.jpg',
   mobileBannerImage:
     'https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/30cc965d-b3b3-47dc-b85e-112c5b3cc8e1.jpg',
-  stampImage: '/images/daumoc.png',
+  stampImage: '',
   breadcrumbImage:
     'https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/7d17e26f-bec1-4cb7-96e8-fabf7ae52d75.png',
   featuredBackground:

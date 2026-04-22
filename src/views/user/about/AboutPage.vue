@@ -14,7 +14,7 @@ const { loading, error, aboutView, refresh } = useAboutPage();
 // ── Static decoration assets ─────────────────────────────────────────────
 const repositoryImageBase = "https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image";
 const repoImg = (file) => `${repositoryImageBase}/${file}`;
-const speechTitleSeal = "/images/about/chairman-speech-seal.png";
+// const speechTitleSeal = "/images/about/chairman-speech-seal.png";
 const timelineTitleIcon = repoImg("bd97f2ca-79a8-43ee-8efa-5b6056d5b1c1.png");
 const timelineHoverBefore = repoImg("e012bd80-11a1-4e5c-b5fa-2eda75b67d66.png");
 const timelineHoverAfter = repoImg("dfc20891-e902-474e-8c93-c374b583041d.png");
@@ -29,6 +29,7 @@ const timelineEntries = computed(() => aboutView.value?.timelineEntries ?? []);
 const leadershipItems = computed(() => aboutView.value?.leadershipItems ?? []);
 const speechPortrait = computed(() => aboutView.value?.chairmanSpeech?.portrait ?? "");
 const speechSignature = computed(() => aboutView.value?.chairmanSpeech?.signatureImage ?? "");
+const heroBannerImage = computed(() => aboutView.value?.hero?.coverImage || "");
 const introImage = computed(() => aboutView.value?.companyIntroduction?.coverImage ?? "");
 const introVideoUrl = computed(() => aboutView.value?.companyIntroduction?.videoUrl ?? "");
 const orgChartImage = computed(() => aboutView.value?.organizationChart?.chartImage ?? "");
@@ -304,14 +305,13 @@ onBeforeUnmount(() => {
     </div>
 
     <section id="page1" class="about-hero">
-      <img class="hero-image hero-image-pc" src="/images/banner/banner3.jpg" alt="About us banner" />
-      <img class="hero-image hero-image-mobile" src="https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/56ead49a-6cdb-449f-8b43-704d1c75d1f6.jpeg" alt="About us mobile banner" />
+      <img class="hero-image hero-image-pc" :src="heroBannerImage || '/images/banner/banner3.jpg'" alt="About us banner" />
+      <img class="hero-image hero-image-mobile" :src="heroBannerImage || '/images/banner/banner3.jpg'" alt="About us mobile banner" />
       <div class="hero-overlay" />
 
       <div :class="['hero-content', { 'is-visible': isSectionVisible('page1') }]">
         <div class="hero-title-row">
           <h1>{{ heroHeadline }}</h1>
-          <img src="/images/daumoc.png" alt="Seal" />
         </div>
         <div class="hero-line" />
         <p class="hero-description">
@@ -366,7 +366,6 @@ onBeforeUnmount(() => {
         <div class="speech-heading">
           <p class="speech-title">
             <span>{{ speechTitle }}</span>
-            <img :src="speechTitleSeal" alt="" aria-hidden="true" />
           </p>
         </div>
 
@@ -389,7 +388,7 @@ onBeforeUnmount(() => {
             <img :src="speechPortrait" alt="Chairman's speech" />
           </div>
 
-          <img class="signature-mark speech-signature-outside" :src="speechSignature" alt="Signature" />
+          <!-- <img class="signature-mark speech-signature-outside" :src="speechSignature" alt="Signature" /> -->
         </div>
       </div>
     </section>
@@ -399,7 +398,6 @@ onBeforeUnmount(() => {
         <div class="section-heading chart-heading">
           <p class="chart-title">
             <span>{{ orgChartTitle }}</span>
-            <img src="/images/daumoc.png" alt="" aria-hidden="true" />
           </p>
         </div>
 
@@ -412,7 +410,7 @@ onBeforeUnmount(() => {
     <section id="page5" :class="['about-section culture-section', { 'is-visible': isSectionVisible('page5') }]">
       <div class="section-shell">
         <div class="section-heading">
-          <span class="eyebrow">CHINNA GROUP</span>
+          <span class="eyebrow">THIÊN ĐỒNG VIỆT NAM</span>
           <h2>Giá trị cốt lõi</h2>
         </div>
 
@@ -453,7 +451,6 @@ onBeforeUnmount(() => {
         <div class="timeline-heading">
           <p class="timeline-title">
             <i>Lịch sử phát triển</i>
-            <img :src="timelineTitleIcon" class="timeline-title-icon" alt="" />
           </p>
           <span class="timeline-heading-rule" />
         </div>
@@ -483,11 +480,14 @@ onBeforeUnmount(() => {
             <Swiper
               class="timeline-swiper"
               :modules="timelineModules"
-              :slides-per-view="2"
+              :slides-per-view="1"
               :speed="700"
-              :space-between="0"
+              :space-between="30"
               :autoplay="{ delay: 3200, disableOnInteraction: false, pauseOnMouseEnter: true }"
-              :breakpoints="{ 1025: { slidesPerView: 5 } }"
+              :breakpoints="{ 
+                768: { slidesPerView: 2, spaceBetween: 50 },
+                1025: { slidesPerView: timelineSlides.length <= 2 ? 2 : 5, spaceBetween: 80 } 
+              }"
               :grab-cursor="true"
               @swiper="bindTimelineSwiper"
               @slideChange="updateTimelineSwiperState"
@@ -513,8 +513,8 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div class="sw-f">
-                      <p class="year">{{ item.year }}.</p>
-                      <p class="month">{{ item.month }}</p>
+                       <p class="year">{{ item.year }}{{ item.month ? '.' : '' }}</p>
+                       <p v-if="item.month" class="month">{{ item.month }}</p>
                     </div>
 
                     <div class="sw-i">
@@ -534,12 +534,11 @@ onBeforeUnmount(() => {
         <div class="leadership-heading">
           <h2 class="leadership-title">
             <span>Ban lãnh đạo</span>
-            <img :src="timelineTitleIcon" alt="" />
           </h2>
         </div>
 
         <div class="leadership-stage">
-          <div class="leadership-nav">
+          <div v-if="leadershipItems.length > 1" class="leadership-nav">
             <button type="button" class="is-prev" @click="slideLeadership(-1)">
               <ChevronLeft :size="34" />
             </button>
@@ -694,7 +693,7 @@ onBeforeUnmount(() => {
   h1 {
     margin: 0;
     color: #fff;
-    font-size: clamp(48px, 4vw, 82px);
+    font-size: clamp(40px, 3.5vw, 68px);
     line-height: 0.96;
     font-weight: 500;
     letter-spacing: 0.02em;
@@ -775,7 +774,9 @@ onBeforeUnmount(() => {
 
 .about-section {
   min-height: 100vh;
-  padding: 108px 0;
+  padding: 80px 0;
+  display: flex;
+  align-items: center;
   opacity: 0;
   transform: translateY(48px);
   transition: opacity 0.78s ease, transform 0.78s ease;
@@ -808,18 +809,18 @@ onBeforeUnmount(() => {
     gap: 18px;
     margin: 12px 0 0;
     color: #1f2430;
-    font-size: clamp(34px, 2.8vw, 54px);
+    font-size: clamp(28px, 2.2vw, 42px);
     line-height: 1.06;
     font-weight: 500;
     font-family: "Times New Roman", Georgia, serif;
 
-    &::after {
-      content: "";
-      width: 44px;
-      height: 44px;
-      background: url("/images/daumoc.png") center/contain no-repeat;
-      flex: none;
-    }
+    // &::after {
+    //   content: "";
+    //   width: 44px;
+    //   height: 44px;
+    //   background: url("/images/daumoc.png") center/contain no-repeat;
+    //   flex: none;
+    // }
   }
 
   &::after {
@@ -932,7 +933,7 @@ onBeforeUnmount(() => {
   right: 0;
   bottom: 0;
   width: min(44vw, 830px);
-  height: 95vh;
+  height: 85vh;
   z-index: 1;
   transform: translateX(0);
 }
@@ -1266,7 +1267,8 @@ onBeforeUnmount(() => {
 
 .split-media img {
   width: 100%;
-  min-height: 760px;
+  min-height: 500px;
+  max-height: 75vh;
   object-fit: cover;
   border-radius: 0;
   box-shadow: none;
@@ -1446,7 +1448,8 @@ onBeforeUnmount(() => {
 
 .culture-image img {
   width: 100%;
-  min-height: 760px;
+  min-height: 500px;
+  max-height: 70vh;
   object-fit: cover;
   border-radius: 0;
 }
@@ -1464,11 +1467,11 @@ onBeforeUnmount(() => {
   box-shadow: none;
 
   h3 {
-    margin: 0 0 24px;
+    margin: 0 0 16px;
     color: #292c32;
-    font-size: 26px;
+    font-size: 20px;
     font-weight: 500;
-    padding-bottom: 18px;
+    padding-bottom: 12px;
     border-bottom: 2px solid #d21a28;
   }
 
@@ -1482,10 +1485,10 @@ onBeforeUnmount(() => {
 
   li {
     display: grid;
-    gap: 6px;
+    gap: 1px;
     color: #6f6f6f;
-    font-size: 19px;
-    line-height: 1.75;
+    font-size: 15px;
+    line-height: 1.4;
   }
 
   strong {
@@ -1501,12 +1504,12 @@ onBeforeUnmount(() => {
 
 .culture-tab {
   text-align: left;
-  padding: 0 0 18px;
+  padding: 0 0 12px;
   border: 0;
   border-bottom: 1px solid rgba(179, 179, 179, 0.4);
   background: transparent;
   color: #a3a3a3;
-  font-size: 28px;
+  font-size: 18px;
   cursor: pointer;
   transition: color 0.24s ease;
 
@@ -1650,6 +1653,7 @@ onBeforeUnmount(() => {
 
 .timeline-swiper :deep(.swiper-wrapper) {
   align-items: flex-start;
+  justify-content: center;
 }
 
 .timeline-swiper :deep(.swiper-slide) {
@@ -2090,6 +2094,12 @@ onBeforeUnmount(() => {
   opacity: 0;
   transform: translateY(34px);
   transition: opacity 0.85s ease 0.12s, transform 0.85s ease 0.12s;
+
+  &:not(:has(.swiper-slide:nth-child(2))) {
+    padding-left: 0;
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .leadership-section.is-visible .leadership-carousel {
@@ -2162,15 +2172,22 @@ onBeforeUnmount(() => {
 
   img {
     width: 100%;
-    max-width: 298px;
-    height: 136px;
-    object-fit: contain;
+    max-width: 400px;
+    height: auto;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    transition: transform 0.4s ease;
   }
+}
+
+.leadership-card:hover .leadership-photo img {
+  transform: scale(1.05);
 }
 
 .leadership-year {
   display: block;
-  margin: 10px 0 6px 38px;
+  margin: 14px 0 10px 0;
+  text-align: center;
   color: #b08961;
   font-family: "Times New Roman", Georgia, serif;
   font-size: clamp(26px, 1.9vw, 34px);
@@ -2181,9 +2198,11 @@ onBeforeUnmount(() => {
 .leadership-copy {
   margin: 0;
   max-width: 520px;
-  padding: 0 18px 0 24px;
+  width: 100%;
+  text-align: center;
   color: #7d7d7d;
-  font-size: clamp(13px, 0.92vw, 15px);
+  font-size: clamp(16px, 1.1vw, 20px);
+  font-weight: 500;
   line-height: 1.58;
   letter-spacing: 0.03em;
 }
@@ -2738,6 +2757,11 @@ onBeforeUnmount(() => {
 
   .leadership-carousel {
     padding: 0 26px 10px 26px;
+
+    &:not(:has(.swiper-slide:nth-child(2))) {
+      padding-left: 18px;
+      padding-right: 18px;
+    }
   }
 
   .leadership-swiper :deep(.swiper-slide) {

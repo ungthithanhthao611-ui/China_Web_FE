@@ -140,18 +140,16 @@ const socialItems = [
   }
 ]
 
-const siteName = computed(() => bootstrapStore.settingsMap.site_name || 'China Decor')
-const siteTagline = computed(() => bootstrapStore.settingsMap.site_tagline || 'Corporate Website API')
+const siteName = computed(() => bootstrapStore.settingsMap.site_name || 'CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ THIÊN ĐỒNG VIỆT NAM')
+const siteTagline = computed(() => bootstrapStore.settingsMap.site_tagline || 'UY TÍN TỪ NHỮNG ĐIỀU NHỎ NHẤT')
 
 const contactItems = computed(() => {
   const fallbackAddressLines = [
-    'Địa chỉ: Tầng 5, Block C,',
-    'Tòa nhà Hehuamingcheng, Số 7',
-    'Phố Jianguomen South,',
-    'Quận Dongcheng, Bắc Kinh'
+    'Địa chỉ: 52 Ấp Đồng Chinh, Phước Hòa,',
+    'Huyện Phú Giáo, Tỉnh Bình Dương'
   ]
-  const fallbackPhone = '(86)010-65269998'
-  const fallbackEmail = 'CNDC@sinodecor.com'
+  const fallbackPhone = '0948.929.744'
+  const fallbackEmail = 'thiendongintl@gmail.com'
 
   const address = readSetting(['company_address', 'address'], '')
   const addressUrl = readSetting(
@@ -214,7 +212,7 @@ const getLinkProps = (item) => toLinkProps(item)
           <div class="foot_left">
             <router-link id="footer-logo-link" class="foot_logo" to="/">
               <img
-                src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/5287e5c5-e561-4bfc-80fb-dd45ce6b8191.png"
+                src="https://res.cloudinary.com/db1b15yn4/image/upload/v1776826808/logo-thien-dong.jpg-removebg-preview_ckqep4.png"
                 :alt="siteName"
               />
             </router-link>

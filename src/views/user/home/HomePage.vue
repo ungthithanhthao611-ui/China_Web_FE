@@ -6,7 +6,6 @@ import StatsSection from './sections/StatsSection.vue'
 import BusinessDisplay from './sections/BusinessDisplay.vue'
 import ProjectSection from './sections/ProjectSection.vue'
 import NewsSection from './sections/NewsSection.vue'
-import IndustrialDistribution from './sections/IndustrialDistribution.vue'
 import HomeNav from './sections/HomeNav.vue'
 import AppFooter from '@/views/user/layout/AppFooter.vue'
 import { useBootstrapStore } from '@/views/user/stores/bootstrap'
@@ -41,8 +40,7 @@ const sections = [
   { label: 'Lĩnh Vực Hoạt Động', id: 'ctn3' },
   { label: 'Dự Án', id: 'ctn4' },
   { label: 'Trung Tâm Tin Tức', id: 'ctn5' },
-  { label: 'Phân Phối Công Nghiệp', id: 'ctn6' },
-  { label: 'Đối Tác', id: 'ctn7' }
+  { label: 'Đối Tác', id: 'ctn6' }
 ]
 
 const isScrolling = ref(false)
@@ -160,23 +158,19 @@ onUnmounted(() => {
 
       <section id="ctn4" class="section-full bg-light">
         <div class="section-inner projects-full">
-          <ProjectSection :active="activeSection === 4" />
+          <ProjectSection :active="activeSection === 3" />
         </div>
       </section>
 
       <section id="ctn5" class="section-full">
         <div class="section-inner">
-          <NewsSection :active="activeSection === 5" />
+          <NewsSection :active="activeSection === 4" />
         </div>
       </section>
 
-      <section id="ctn6" class="section-full">
-        <IndustrialDistribution :active="activeSection === 6" />
-      </section>
-
-      <section id="ctn7" class="section-full last-section">
+      <section id="ctn6" class="last-section">
         <div class="section-inner partner-section">
-          <AppFooter :force-visible="true" />
+          <AppFooter :force-visible="activeSection === 5" />
         </div>
       </section>
     </div>
@@ -246,12 +240,12 @@ onUnmounted(() => {
 
 .last-section {
   background-color: #f9f9f9;
-  height: auto !important;
+  scroll-snap-align: end;
+  height: auto;
   min-height: auto;
   
   .partner-section {
     padding: 0 !important;
-    justify-content: flex-start !important;
     flex: 0 0 auto;
   }
 

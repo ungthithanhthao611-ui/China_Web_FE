@@ -1,6 +1,5 @@
 <script setup>
-import { ArrowRight, Play } from 'lucide-vue-next'
-import CountUp from '@/views/user/home/widgets/CountUp.vue'
+import { ArrowRight } from 'lucide-vue-next'
 
 defineProps({
   active: {
@@ -19,7 +18,7 @@ defineProps({
       <div class="building-layer" :class="{ 'reveal-building': active }">
         <img
           class="building-img"
-          src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/f1225086-4996-4f1d-88f9-08f4228a378e.png"
+          src="https://res.cloudinary.com/db1b15yn4/image/upload/v1776694061/Image_20260418142414_10_3_rj9klh.jpg"
           alt="Building"
         />
         <div class="building-mask"></div>
@@ -31,60 +30,15 @@ defineProps({
           <div class="tit">
             <div class="tit-row">
               <h2>VỀ CHÚNG TÔI</h2>
-              <img
-                src="https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/bd97f2ca-79a8-43ee-8efa-5b6056d5b1c1.png"
-                alt="About icon"
-                class="title-icon"
-              />
             </div>
             <div class="title-line"></div>
           </div>
 
           <div class="des">
-            Công ty TNHH Trang trí Quốc gia Trung Quốc (China Decor) được thành lập năm 1984.
-            Đây là một trong những đơn vị đầu tiên thuộc nhóm doanh nghiệp trang trí quy mô lớn
-            và cao cấp sở hữu chứng chỉ Hạng A về thi công và thiết kế trang trí công trình nội ngoại thất.
-            Là doanh nghiệp nòng cốt trong lĩnh vực trang trí, xây dựng lắp ghép kỹ thuật số, hoạt động liên ngành và xuyên khu vực.
+            CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ THIÊN ĐỒNG VIỆT NAM chuyên cung cấp các dòng đá mềm – tấm ốp linh hoạt cao cấp, ứng dụng trong trang trí nội thất và ngoại thất hiện đại. Chúng tôi cam kết mang đến những giải pháp vật liệu ốp lát bền đẹp, tối ưu chi phí, giúp khách hàng nâng tầm không gian sống và công trình xây dựng.
           </div>
 
-          <div class="two_btn">
-            <router-link class="more more-red" to="/about">
-              <div class="me_btn">
-                <img
-                  src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/4407f1e1-9209-4baa-9a9b-52e2e8262e37.png"
-                  alt="Button bg"
-                />
-                <div class="ic">
-                  <ArrowRight :size="14" color="#ffffff" />
-                </div>
-              </div>
-              <span>XEM THÊM +</span>
-            </router-link>
 
-            <a class="more more-gold" href="javascript:;">
-              <div class="me_btn">
-                <img
-                  src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/4407f1e1-9209-4baa-9a9b-52e2e8262e37.png"
-                  alt="Button bg"
-                />
-                <div class="ic">
-                  <Play :size="13" color="#ffffff" fill="currentColor" />
-                </div>
-              </div>
-              <span>VIDEO +</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- YEAR -->
-        <div v-if="active" class="numCount">
-          <div class="cloud-bg"></div>
-          <CountUp
-            class="numCX"
-            :startValue="2023"
-            :endValue="1984"
-            :duration="2200"
-          />
         </div>
       </div>
 
@@ -103,7 +57,7 @@ defineProps({
   overflow: hidden;
   background:
     linear-gradient(to right, rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.93)),
-    #f5f5f3;
+    #ffffff;
   font-family: "Segoe UI", Arial, sans-serif;
 }
 
@@ -151,7 +105,7 @@ defineProps({
   height: 98%;
   object-fit: contain;
   object-position: right top;
-  filter: grayscale(100%);
+
   opacity: 0; /* Start hidden */
   transform: translateX(120px); /* Slide from further right */
   transition:
@@ -161,7 +115,7 @@ defineProps({
 }
 
 .reveal-building .building-img {
-  opacity: 0.75;
+  opacity: 0.95;
   transform: translateX(0);
 }
 
@@ -171,20 +125,20 @@ defineProps({
   background:
     linear-gradient(
       to right,
-      #f5f5f3 0%,
-      rgba(245, 245, 243, 0.985) 12%,
-      rgba(245, 245, 243, 0.93) 22%,
-      rgba(245, 245, 243, 0.82) 32%,
-      rgba(245, 245, 243, 0.58) 42%,
-      rgba(245, 245, 243, 0.20) 55%,
-      rgba(245, 245, 243, 0) 68%
+      #ffffff 0%,
+      rgba(255, 255, 255, 0.985) 12%,
+      rgba(255, 255, 255, 0.93) 22%,
+      rgba(255, 255, 255, 0.82) 32%,
+      rgba(255, 255, 255, 0.58) 42%,
+      rgba(255, 255, 255, 0.2) 55%,
+      rgba(255, 255, 255, 0) 68%
     ),
     linear-gradient(
       to bottom,
-      rgba(245, 245, 243, 0.16) 0%,
-      rgba(245, 245, 243, 0.04) 18%,
-      rgba(245, 245, 243, 0) 56%,
-      rgba(245, 245, 243, 0.10) 100%
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.04) 18%,
+      rgba(255, 255, 255, 0) 56%,
+      rgba(255, 255, 255, 0.10) 100%
     );
 }
 
@@ -265,58 +219,11 @@ defineProps({
   margin-bottom: 62px;
 }
 
-/* YEAR */
-.numCount {
-  position: absolute;
-  left: 43%;
-  top: 28%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
-  opacity: 0;
-  animation: floatReveal 1.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-  animation-delay: 0.3s;
-}
 
-@keyframes floatReveal {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -44%);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%);
-  }
-}
 
-.cloud-bg {
-  position: absolute;
-  left: 50%;
-  top: 54%;
-  transform: translate(-50%, -50%);
-  width: 340px;
-  height: 210px;
-  background: radial-gradient(
-    circle at center,
-    rgba(160, 160, 160, 0.16),
-    rgba(160, 160, 160, 0.06) 58%,
-    transparent 72%
-  );
-  filter: blur(8px);
-}
 
-.numCX {
-  position: relative;
-  z-index: 2;
-  font-family: "Arial Black", "Segoe UI", sans-serif;
-  font-size: clamp(100px, 8vw, 145px);
-  line-height: 0.9;
-  font-weight: 900;
-  letter-spacing: -4px;
-  color: #c59a69;
-}
 
-/* BUTTONS */
-.two_btn {
+.one_btn {
   display: flex;
   align-items: center;
   gap: 72px;
@@ -351,10 +258,6 @@ defineProps({
   background: #d91f26;
 }
 
-.more-gold::after {
-  background: #c59a69;
-}
-
 .me_btn {
   position: relative;
   width: 42px;
@@ -372,10 +275,6 @@ defineProps({
 
 .more-red .me_btn {
   filter: hue-rotate(0deg) saturate(1.2);
-}
-
-.more-gold .me_btn {
-  filter: sepia(0.65) saturate(0.7) brightness(1.02);
 }
 
 .ic {
@@ -450,20 +349,20 @@ defineProps({
     height: 56%;
     object-fit: contain;
     object-position: center bottom;
-    opacity: 0.18;
+    opacity: 0.85;
     transform: none; /* No transform on mobile */
   }
 
   .reveal-building .building-img {
-    opacity: 0.18;
+    opacity: 0.85;
     transform: none;
   }
 
   .building-mask {
     background: linear-gradient(
       to top,
-      rgba(245, 245, 243, 0.10),
-      #f5f5f3 72%
+      rgba(255, 255, 255, 0.10),
+      #ffffff 72%
     );
   }
 
@@ -483,16 +382,7 @@ defineProps({
     transform: none;
   }
 
-  .numCount {
-    left: 50%;
-    top: 80px;
-    transform: translateX(-50%);
-  }
 
-  .numCX {
-    font-size: 76px;
-    letter-spacing: -2px;
-  }
 
   .tit h2 {
     font-size: 28px;

@@ -84,8 +84,8 @@ const navItems = computed(() => {
   return fallbackNavItems.value
 })
 
-const siteName = computed(() => bootstrapStore.settingsMap.site_name || 'China Decor')
-const siteTagline = computed(() => bootstrapStore.settingsMap.site_tagline || 'Corporate Website API')
+const siteName = computed(() => bootstrapStore.settingsMap.site_name || 'THIÊN ĐỒNG VIỆT NAM')
+const siteTagline = computed(() => bootstrapStore.settingsMap.site_tagline || 'UY TÍN TỪ NHỮNG ĐIỀU NHỎ NHẤT')
 
 const isHomeOverlay = computed(() => route.path === '/' || route.path === '/honors')
 const isContactHero = computed(
@@ -234,7 +234,7 @@ onBeforeUnmount(() => {
     <div class="header-trigger" v-if="uiState.isHeaderHidden"></div>
     <div class="header_flx">
       <router-link to="/" class="logo-link">
-        <img src="/images/logo.png" :alt="`${siteName} logo`" />
+        <img src="https://res.cloudinary.com/db1b15yn4/image/upload/v1776826808/logo-thien-dong.jpg-removebg-preview_ckqep4.png" :alt="`${siteName} logo`" />
       </router-link>
 
       <div class="header_r">
@@ -262,15 +262,17 @@ onBeforeUnmount(() => {
           <Search :size="28" stroke-width="1.7" />
         </button>
 
-        <a
-          href="https://www.sinodecor.com"
-          class="lang"
-          target="_blank"
-          rel="noopener noreferrer"
-          :title="siteTagline"
-        >
-          <Globe :size="28" stroke-width="1.7" />
-          <span>Trung Quốc</span>
+        <a href="mailto:thiendongintl@gmail.com" class="contact-item">
+          <div class="contact-icon">
+            <Mail class="w-4 h-4" />
+          </div>
+          <span class="text-sm font-medium">thiendongintl@gmail.com</span>
+        </a>
+        <a href="tel:0948929744" class="contact-item">
+          <div class="contact-icon">
+            <Phone class="w-4 h-4" />
+          </div>
+          <span class="text-sm font-medium">0948.929.744</span>
         </a>
 
         <button class="mobile-toggle" @click="toggleMobileMenu" type="button" aria-label="Toggle menu">
@@ -375,11 +377,11 @@ onBeforeUnmount(() => {
               opacity 0.6s ease,
               height 0.4s ease;
   padding: 0 40px;
-  background: transparent; /* HoÃ n toÃ n trong suá»‘t */
+  background: transparent; 
   backdrop-filter: none;
   border-bottom: none;
   box-shadow: none;
-  opacity: 0; /* áº¨n máº·c Ä‘á»‹nh */
+  opacity: 0; 
 
   &.is-home {
     position: fixed;
@@ -387,7 +389,7 @@ onBeforeUnmount(() => {
     border-bottom-color: transparent;
     box-shadow: none;
     backdrop-filter: none;
-    opacity: 0; /* áº¨n cáº£ á»Ÿ trang Home cho sáº¡ch */
+    opacity: 0; 
 
     &::before {
       content: '';

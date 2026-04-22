@@ -57,9 +57,36 @@ const itemImage = (item, metaField = 'src') => {
 // Section normalizers
 // ---------------------------------------------------------------------------
 
-function normalizeHero(blocks) {
+function normalizeHero(blocks, banners = []) {
   const headline = findItem(blocks, 'hero_summary', 'headline')
   const description = findItem(blocks, 'hero_summary', 'description')
+  // Priority: 1. Banner from Banners module, 2. Item in hero_summary
+  let coverImage = ''
+
+  if (banners.length > 0) {
+    const banner = banners.find(b => b.banner_type === 'hero') || banners[0]
+    coverImage = banner.image?.url || banner.image_url || ''
+    if (coverImage && !coverImage.startsWith('http')) {
+      coverImage = resolveUrl(coverImage)
+    }
+  }
+
+  if (!coverImage) {
+    const coverItem = findItem(blocks, 'hero_summary', 'cover_image')
+    coverImage = itemImage(coverItem)
+  }
+  
+  if (!coverImage) {
+    const allHeroItems = blockItems(blocks, 'hero_summary')
+    for (const it of allHeroItems) {
+      const img = itemImage(it)
+      if (img) {
+        coverImage = img
+        break
+      }
+    }
+  }
+
   const navItems = blockItems(blocks, 'hero_nav').map((item) => ({
     key: item.item_key,
     title: itemStr(item),
@@ -69,6 +96,7 @@ function normalizeHero(blocks) {
   return {
     headline: itemStr(headline),
     description: itemStr(description, 'content'),
+    coverImage,
     navItems,
   }
 }
@@ -142,12 +170,14 @@ function normalizeDevelopmentCourse(blocks) {
     const meta = itemMeta(it)
     return {
       year: String(meta.year ?? ''),
-      month: String(meta.month ?? '').padStart(2, '0'),
+      month: (meta.month && String(meta.month).trim() !== '') ? String(meta.month).padStart(2, '0') : '',
       title: it.title || '',
       image: itemImage(it, 'image_url'),
     }
   })
 }
+
+
 
 function normalizeLeadershipCare(blocks) {
   return blockItems(blocks, 'leadership_care_gallery').map((it) => {
@@ -194,7 +224,7 @@ function buildSectionMeta(sections) {
  * @param {object} raw - Raw API response từ /public/pages/about
  * @returns {object} View model cho AboutPage.vue
  */
-export function normalizeAboutPage(raw) {
+export function normalizeAboutPage(raw, banners = []) {
   if (!raw) {
     return null
   }
@@ -216,7 +246,7 @@ export function normalizeAboutPage(raw) {
     aboutTabs: sectionMeta.slice(1),
 
     // Section data
-    hero: normalizeHero(blocks),
+    hero: normalizeHero(blocks, banners),
     companyIntroduction: normalizeCompanyIntroduction(blocks),
     chairmanSpeech: normalizeChairmanSpeech(blocks),
     organizationChart: normalizeOrganizationChart(blocks),

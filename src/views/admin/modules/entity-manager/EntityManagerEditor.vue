@@ -40,6 +40,10 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  isProductsEntity: {
+    type: Boolean,
+    default: false,
+  },
   isBannerEntity: {
     type: Boolean,
     required: true,
@@ -71,6 +75,14 @@ const props = defineProps({
   uploading: {
     type: Boolean,
     required: true,
+  },
+  uploadFileName: {
+    type: String,
+    default: "",
+  },
+  uploadFileExists: {
+    type: Boolean,
+    default: false,
   },
   visibleFormFields: {
     type: Array,
@@ -308,68 +320,81 @@ const emit = defineEmits([
         <p v-for="error in formErrors" :key="error">{{ error }}</p>
       </div>
 
-      <div v-if="hasMediaFields" class="upload-box">
-        <div class="upload-box__head">
-          <div>
-            <p class="eyebrow">Direct upload</p>
-            <strong>{{ isVideosEntity ? "Thumbnail uploader" : "Media uploader" }}</strong>
-            <p class="upload-box__copy">
-              {{
-                isVideosEntity
-                  ? "Upload the thumbnail directly here and it will be assigned to the Thumbnail field automatically."
-                  : isBannerEntity
-                    ? "Upload banner media here. The uploaded file will be assigned automatically and shown in Live Preview."
-                    : "Upload media and assign it to the selected form field."
-              }}
-            </p>
+      <div v-if="hasMediaFields" class="upload-panel-minimal">
+        <div class="upload-panel-minimal__header">
+          <div class="upload-panel-minimal__title">
+            <span class="upload-panel-badge">QUẢN LÝ MEDIA</span>
+            <strong>Tải Ảnh/Video Lên Cloudinary</strong>
           </div>
+          <p v-if="isProductsEntity" class="upload-panel-help">
+            Chọn mục cần tải lên (Ảnh chính, Video, hoặc Catalog) rồi chọn file từ máy tính.
+          </p>
         </div>
-        <div class="upload-row">
-          <label v-if="!isBannerEntity" class="editor-field editor-field--compact">
-            <span>Target field</span>
-            <select
-              :value="uploadTargetField"
-              aria-label="Upload target field"
-              @change="emit('update:uploadTargetField', $event.target.value)"
-            >
-              <option v-for="field in mediaFieldOptions" :key="field" :value="field">
-                {{ fieldLabel(field) }}
-              </option>
-            </select>
-          </label>
-          <label class="editor-field editor-field--compact">
-            <span>Source file</span>
-            <input type="file" :accept="mediaUploadAccept()" @change="emit('file-change', $event)" />
-          </label>
-        </div>
-        <div class="upload-row">
-          <label class="editor-field editor-field--compact">
-            <span>Media title</span>
-            <input
-              :value="uploadTitle"
-              type="text"
-              placeholder="Media title"
-              @input="emit('update:uploadTitle', $event.target.value)"
-            />
-          </label>
-          <label class="editor-field editor-field--compact">
-            <span>Alt text</span>
-            <input
-              :value="uploadAltText"
-              type="text"
-              placeholder="Alt text"
-              @input="emit('update:uploadAltText', $event.target.value)"
-            />
-          </label>
-          <div class="editor-field editor-field--compact editor-field--action">
-            <span>Upload</span>
+
+        <div class="upload-panel-grid">
+          <!-- Col 1: Target & File -->
+          <div class="upload-panel-section">
+            <div class="upload-input-group">
+              <label>Bạn muốn tải lên cho mục nào?</label>
+              <select
+                :value="uploadTargetField"
+                class="minimal-select"
+                @change="emit('update:uploadTargetField', $event.target.value)"
+              >
+                <option v-for="field in mediaFieldOptions" :key="field" :value="field">
+                  {{ fieldLabel(field) }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="upload-input-group">
+              <label>Chọn tệp từ máy tính</label>
+              <div class="file-input-wrapper">
+                <input 
+                  type="file" 
+                  :accept="mediaUploadAccept()" 
+                  id="minimal-file-input"
+                  @change="emit('file-change', $event)" 
+                />
+                <label for="minimal-file-input" class="file-input-proxy">
+                  <span v-if="uploadFileName">{{ uploadFileName }}</span>
+                  <span v-else>Nhấn để chọn file...</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Col 2: Info & Action -->
+          <div class="upload-panel-section">
+            <div class="upload-input-row">
+              <div class="upload-input-group">
+                <label>Tiêu đề ảnh (Tùy chọn)</label>
+                <input
+                  :value="uploadTitle"
+                  type="text"
+                  placeholder="Ví dụ: Ảnh sản phẩm OS.01"
+                  @input="emit('update:uploadTitle', $event.target.value)"
+                />
+              </div>
+              <div class="upload-input-group">
+                <label>Mô tả Alt (SEO)</label>
+                <input
+                  :value="uploadAltText"
+                  type="text"
+                  placeholder="Mô tả cho công cụ tìm kiếm"
+                  @input="emit('update:uploadAltText', $event.target.value)"
+                />
+              </div>
+            </div>
+
             <button
               type="button"
-              class="btn btn-secondary"
-              :disabled="uploading"
+              class="minimal-upload-btn"
+              :disabled="uploading || !uploadFileExists"
               @click="emit('upload-media')"
             >
-              {{ uploading ? "Uploading..." : isVideosEntity ? "Upload Thumbnail" : "Upload" }}
+              <div v-if="uploading" class="spinner-tiny"></div>
+              <span>{{ uploading ? "Đang tải lên..." : "Bắt đầu tải lên" }}</span>
             </button>
           </div>
         </div>
@@ -474,7 +499,7 @@ const emit = defineEmits([
             @input="emit('update:field', field, $event.target.value)"
           ></textarea>
 
-          <div v-else-if="isVideosEntity && field === 'video_url'" class="field-stack">
+          <div v-else-if="(isVideosEntity || isProductsEntity) && field === 'video_url'" class="field-stack">
             <div class="video-url-section">
               <div class="video-url-row">
                 <input
@@ -665,7 +690,7 @@ const emit = defineEmits([
         </div>
 
         <div
-          v-if="!isBannerEntity && !isVideosEntity && previewMediaOptions.length"
+          v-if="!isBannerEntity && !isVideosEntity && !isProductsEntity && previewMediaOptions.length"
           class="media-preview-list"
         >
           <article v-for="media in previewMediaOptions" :key="media.id">
@@ -1308,6 +1333,171 @@ button:disabled {
 
   .form-actions .btn {
     width: 100%;
+  }
+}
+/* ── Minimal Upload Panel ── */
+.upload-panel-minimal {
+  background: #f8fbff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.upload-panel-minimal__header {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.upload-panel-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #ebf4ff;
+  color: #3182ce;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.upload-panel-minimal__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.upload-panel-minimal__title strong {
+  color: #2d3748;
+  font-size: 16px;
+}
+
+.upload-panel-help {
+  color: #718096;
+  font-size: 13px;
+  margin: 0;
+}
+
+.upload-panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.upload-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.upload-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upload-input-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.upload-input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.minimal-select, .upload-input-group input {
+  padding: 10px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+  background: #fff;
+}
+
+.minimal-select:focus, .upload-input-group input:focus {
+  border-color: #3182ce;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+.file-input-wrapper {
+  position: relative;
+}
+
+.file-input-wrapper input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.file-input-proxy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  background: #fff;
+  border: 1.5px dashed #cbd5e0;
+  border-radius: 8px;
+  color: #718096;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.file-input-wrapper:hover .file-input-proxy {
+  border-color: #3182ce;
+  background: #ebf4ff;
+  color: #3182ce;
+}
+
+.minimal-upload-btn {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  background: #3182ce;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.minimal-upload-btn:hover:not(:disabled) {
+  background: #2b6cb0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(49, 130, 206, 0.25);
+}
+
+.minimal-upload-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.spinner-tiny {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: rotate 0.8s linear infinite;
+}
+
+@keyframes rotate { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .upload-panel-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

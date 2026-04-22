@@ -128,12 +128,20 @@ const totalPages = computed(() =>
   Math.max(1, Math.ceil(totalRecords.value / pageSize.value)),
 );
 const hasStatusFilter = computed(() => formFields.value.includes("status"));
-const hasMediaFields = computed(() =>
-  formFields.value.some((field) => FIELD_GROUPS.media.includes(field)),
-);
-const mediaFieldOptions = computed(() =>
-  formFields.value.filter((field) => FIELD_GROUPS.media.includes(field)),
-);
+const hasMediaFields = computed(() => {
+  if (config.value?.cloudinaryAssetFolder) return true;
+  return formFields.value.some((field) => FIELD_GROUPS.media.includes(field));
+});
+const mediaFieldOptions = computed(() => {
+  const mediaFields = formFields.value.filter((field) => FIELD_GROUPS.media.includes(field));
+  
+  if (config.value?.cloudinaryAssetFolder) {
+    const urlFields = formFields.value.filter(f => f.endsWith('_url') || f.endsWith('_pdf_url'));
+    return [...new Set([...mediaFields, ...urlFields])];
+  }
+  
+  return mediaFields;
+});
 const canCreate = computed(() => config.value?.allowCreate !== false);
 const standaloneUpload = computed(() =>
   Boolean(config.value?.standaloneUpload),
@@ -142,12 +150,16 @@ const isMediaAssetsEntity = computed(() => props.entityKey === "media_assets");
 const isVideosEntity = computed(() => props.entityKey === "videos");
 const isBannerEntity = computed(() => props.entityKey === "banners");
 const isEntityMediaEntity = computed(() => props.entityKey === "entity_media");
+const isProductsEntity = computed(() => props.entityKey === "products");
 const isConfigModalEntity = computed(
   () => config.value?.editorPresentation === "modal",
 );
 const isFormModalEntity = computed(
   () =>
-    isBannerEntity.value || isVideosEntity.value || isConfigModalEntity.value,
+    isBannerEntity.value ||
+    isVideosEntity.value ||
+    isProductsEntity.value ||
+    isConfigModalEntity.value,
 );
 const isFormModalOpen = computed(
   () => formOpen.value && isFormModalEntity.value,
@@ -890,7 +902,7 @@ async function uploadVideoFile() {
     ) {
       mediaOptions.value = [media, ...mediaOptions.value];
     }
-    if (isVideosEntity.value && media.url) {
+    if ((isVideosEntity.value || isProductsEntity.value) && media.url) {
       form.video_url = media.url;
     }
     videoUploadFile.value = null;
@@ -939,7 +951,11 @@ async function uploadMedia() {
     } else if (isBannerEntity.value && "image_id" in form) {
       form.image_id = media.id;
     } else if (uploadTargetField.value && uploadTargetField.value in form) {
-      form[uploadTargetField.value] = media.id;
+      if (uploadTargetField.value.endsWith("_url") || uploadTargetField.value.endsWith("_pdf_url")) {
+        form[uploadTargetField.value] = media.url;
+      } else {
+        form[uploadTargetField.value] = media.id;
+      }
     }
     uploadFile.value = null;
     uploadTitle.value = "";
@@ -1178,6 +1194,7 @@ onMounted(() => {
       :form-errors="formErrors"
       :has-media-fields="hasMediaFields"
       :is-videos-entity="isVideosEntity"
+      :is-products-entity="isProductsEntity"
       :is-banner-entity="isBannerEntity"
       :upload-target-field="uploadTargetField"
       :media-field-options="mediaFieldOptions"
@@ -1186,6 +1203,8 @@ onMounted(() => {
       :upload-title="uploadTitle"
       :upload-alt-text="uploadAltText"
       :uploading="uploading"
+      :upload-file-name="uploadFile?.name || ''"
+      :upload-file-exists="!!uploadFile"
       :visible-form-fields="visibleFormFields"
       :is-textarea="isTextarea"
       :form="form"

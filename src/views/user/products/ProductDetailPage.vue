@@ -19,14 +19,34 @@ const showInquiry = ref(false)
 
 const gallery = computed(() => {
   const imgs = []
+  // Main image
   if (product.value?.image_url) {
     imgs.push({ url: product.value.image_url, alt: product.value.name })
   }
+  
+  // Gallery from items (API structured)
   if (product.value?.images?.length) {
     imgs.push(...product.value.images)
+  } 
+  // Fallback: Gallery from raw string (each line is a URL)
+  else if (product.value?.gallery_urls) {
+    const urls = product.value.gallery_urls
+      .split('\n')
+      .map(s => s.trim())
+      .filter(s => s && s.startsWith('http'))
+    
+    urls.forEach(url => {
+      imgs.push({ url, alt: product.value.name })
+    })
   }
+
   return imgs
 })
+
+const isDirectVideo = (url) => {
+  if (!url) return false
+  return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(url)
+}
 
 const mediaItems = computed(() => {
   const items = gallery.value.map((item) => ({
@@ -36,9 +56,11 @@ const mediaItems = computed(() => {
   }))
 
   if (product.value?.video_url) {
+    const isDirect = isDirectVideo(product.value.video_url)
     items.push({
       type: 'video',
       url: product.value.video_url,
+      isDirect,
       alt: `${product.value?.name || 'Product'} video demo`,
     })
   }
@@ -140,7 +162,17 @@ onMounted(() => {
             <div class="prod-gallery__zoom-hint"><ZoomIn :size="20" />Nhấn để phóng to</div>
           </div>
           <div v-else class="prod-gallery__main prod-gallery__main--video">
+            <video
+              v-if="currentMedia?.isDirect"
+              :src="currentMedia?.url"
+              controls
+              autoplay
+              muted
+              playsinline
+              class="prod-gallery__direct-video"
+            />
             <iframe
+              v-else
               :src="currentMedia?.url"
               title="Product Demo Video"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -355,6 +387,10 @@ onMounted(() => {
 .prod-gallery__main img {
   width: 100%; height: 100%; object-fit: cover;
   transition: transform 0.4s ease;
+}
+.prod-gallery__direct-video {
+  width: 100%; height: 100%; object-fit: contain;
+  background: #000;
 }
 .prod-gallery__main:hover img { transform: scale(1.03); }
 .prod-gallery__main--video {

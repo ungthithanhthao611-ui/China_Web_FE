@@ -9,13 +9,13 @@
  */
 
 import { onMounted, readonly, ref } from 'vue'
-import { getPageDetail } from '@/views/user/services/publicApi'
+import { getPageDetail, getBanners } from '@/views/user/services/publicApi'
 import { normalizeAboutPage } from '../adapters/aboutPageNormalizer'
 
 function applySeo(view) {
-  const fallbackTitle = 'Giới Thiệu | China Decor'
+  const fallbackTitle = 'Giới Thiệu | THIÊN ĐỒNG VIỆT NAM'
   const fallbackDescription =
-    'Tìm hiểu thêm về China Decor, lịch sử phát triển, văn hóa doanh nghiệp, ban lãnh đạo và các giá trị cốt lõi của chúng tôi.'
+    'Tìm hiểu về Công ty TNHH Thương mại Quốc tế Thiên Đông Việt Nam, lịch sử phát triển, văn hóa doanh nghiệp và tầm nhìn chiến lược của chúng tôi.'
 
   document.title = view?.metaTitle || view?.title || fallbackTitle
 
@@ -38,8 +38,11 @@ export function useAboutPage() {
     error.value = null
 
     try {
-      const raw = await getPageDetail('about')
-      aboutView.value = normalizeAboutPage(raw)
+      const [raw, banners] = await Promise.all([
+        getPageDetail('about'),
+        getBanners({ bannerType: 'hero' })
+      ])
+      aboutView.value = normalizeAboutPage(raw, banners)
 
       if (!aboutView.value) {
         error.value = 'About page data is empty'

@@ -29,18 +29,18 @@ const defaultSlides = [
   {
     type: 'image',
     src: '/images/5b410cd6-2314-4dd5-bf3c-0a947c63008f.png',
-    alt: 'China Decor banner chính',
-    eyebrow: 'China Decor',
-    title: 'Trang Trí Trung Hoa',
-    subtitle: 'Nội thất doanh nghiệp cao cấp với giải pháp trọn gói.',
-    body: 'Từ không gian văn phòng trụ sở đến các công trình công cộng biểu tượng, China Decor biến những ý tưởng táo bạo thành hiện thực với tiêu chuẩn cao nhất.',
+    alt: 'THIÊN ĐỒNG VIỆT NAM banner chính',
+    eyebrow: 'THIÊN ĐỒNG VIỆT NAM',
+    title: 'Thương Mại Quốc Tế',
+    subtitle: 'UY TÍN TỪ NHỮNG ĐIỀU NHỎ NHẤT',
+    body: 'CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ THIÊN ĐỒNG VIỆT NAM chuyên cung cấp các dòng đá mềm – tấm ốp linh hoạt cao cấp cho trang trí nội ngoại thất hiện đại.',
     buttonText: 'Khám Phá Dịch Vụ',
     link: '/business-areas#ctn1',
   },
   {
     type: 'image',
     src: '/images/banner/banner2.jpg',
-    alt: 'China Decor banner 2',
+    alt: 'THIÊN ĐỒNG VIỆT NAM banner 2',
     eyebrow: 'Lĩnh Vực Hoạt Động',
     title: 'Dự Án Phức Tạp, Kiểm Soát Chặt Chẽ',
     subtitle: 'Thiết kế, kỹ thuật và thực thi được đồng bộ ngay từ ngày đầu.',
@@ -51,7 +51,7 @@ const defaultSlides = [
   {
     type: 'image',
     src: '/images/banner/banner3.jpg',
-    alt: 'China Decor banner 3',
+    alt: 'THIÊN ĐỒNG VIỆT NAM banner 3',
     eyebrow: 'Hệ Thống Nội Thất',
     title: 'Không Gian Doanh Nghiệp Bền Vững',
     subtitle: 'Nơi làm việc đẳng cấp được tạo hình cho thương hiệu, công năng và tốc độ.',
@@ -62,7 +62,7 @@ const defaultSlides = [
   {
     type: 'image',
     src: '/images/banner/banner4.jpg',
-    alt: 'China Decor banner 4',
+    alt: 'THIÊN ĐỒNG VIỆT NAM banner 4',
     eyebrow: 'Năng Lực & Danh Hiệu',
     title: 'Năng Lực Được Chứng Nhận Trong Các Lĩnh Vực Then Chốt',
     subtitle: 'Xây dựng trên sự tuân thủ, chất lượng thực thi và kinh nghiệm quy mô quốc gia.',
@@ -73,11 +73,11 @@ const defaultSlides = [
   {
     type: 'image',
     src: '/images/banner/banner5.jpg',
-    alt: 'China Decor banner 5',
+    alt: 'THIÊN ĐỒNG VIỆT NAM banner 5',
     eyebrow: 'Trung Tâm Tin Tức',
     title: 'Theo Dõi Các Dự Án Hiện Tại Và Cập Nhật Doanh Nghiệp',
     subtitle: 'Cái nhìn rõ nét hơn về những gì đội ngũ đang xây dựng.',
-    body: 'Theo dõi các mốc quan trọng của dự án, sự phát triển của công ty và các thông báo ngành từ China Decor.',
+    body: 'Theo dõi các mốc quan trọng của dự án, sự phát triển của công ty và các thông báo ngành từ THIÊN ĐỒNG VIỆT NAM.',
     buttonText: 'Đọc Tin Tức',
     link: '/news/corporate-news',
   },
@@ -85,7 +85,7 @@ const defaultSlides = [
     type: 'video',
     src: '/images/banner/vd.banner6.mp4',
     poster: '/images/banner/banner5.jpg',
-    alt: 'China Decor video banner',
+    alt: 'THIÊN ĐỒNG VIỆT NAM video banner',
     eyebrow: 'Thư Viện Video',
     title: 'Xem Các Tác Phẩm Đặc Sắc Chuyển Động',
     subtitle: 'Câu chuyện dự án, cảnh quay hiện trường và trình chiếu hình ảnh cao cấp.',
@@ -282,7 +282,7 @@ defineExpose({ goToSlide })
         <p v-if="currentSlide.eyebrow" class="hero-copy__eyebrow">{{ currentSlide.eyebrow }}</p>
         <div v-if="currentSlide.eyebrow" class="hero-copy__crest">
           <span class="hero-copy__crest-line"></span>
-          <span>China Decor</span>
+          <span>THIÊN ĐỒNG VIỆT NAM</span>
         </div>
         <h1 v-if="currentSlide.title">{{ currentSlide.title }}</h1>
         <p v-if="currentSlide.subtitle" class="hero-copy__subtitle">{{ currentSlide.subtitle }}</p>
