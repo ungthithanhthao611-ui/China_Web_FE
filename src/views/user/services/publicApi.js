@@ -8,6 +8,26 @@ function withLanguage(query = {}) {
   }
 }
 
+async function fetchWithLanguageFallback(path, queryBuilder, fallbackLanguages = ['vi']) {
+  const languages = [env.languageCode, ...fallbackLanguages]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+
+  let lastError = null
+
+  for (const languageCode of languages) {
+    try {
+      return await fetchJson(path, {
+        query: queryBuilder(languageCode),
+      })
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError
+}
+
 export function getHealth() {
   return fetchJson('/health')
 }
@@ -17,12 +37,14 @@ export function getBootstrap(query = {}) {
 }
 
 export function getBanners({ bannerType, ...query } = {}) {
-  return fetchJson('/public/banners', {
-    query: withLanguage({
+  return fetchWithLanguageFallback(
+    '/public/banners',
+    (languageCode) => ({
+      language_code: languageCode,
       banner_type: bannerType,
       ...query,
-    }),
-  })
+    })
+  )
 }
 
 export function getPageDetail(slug, query = {}) {
@@ -94,14 +116,16 @@ export function getVideos(query = {}) {
 // ─── News ─────────────────────────────────────────────────────────────────
 
 export function getNewsList({ skip, limit, keyword, ...query } = {}) {
-  return fetchJson('/public/news', {
-    query: withLanguage({
+  return fetchWithLanguageFallback(
+    '/public/news',
+    (languageCode) => ({
+      language_code: languageCode,
       skip,
       limit,
       keyword,
       ...query,
-    }),
-  })
+    })
+  )
 }
 
 export function getNewsDetail(slug, query = {}) {

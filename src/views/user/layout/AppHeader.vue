@@ -1,7 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ChevronDown, Globe, Menu, Search, X } from 'lucide-vue-next'
+import { ChevronDown, Globe, Mail, Menu, Phone, Search, X } from 'lucide-vue-next'
 import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { findMenuItems, normalizeMenuItems, toLinkProps } from '@/shared/utils/navigation'
 import { uiState } from '@/shared/utils/uiState'

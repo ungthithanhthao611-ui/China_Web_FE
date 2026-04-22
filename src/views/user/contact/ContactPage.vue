@@ -393,10 +393,6 @@ onUnmounted(() => {
         <div class="contact-hero__content" :class="{ 'is-visible': animatedSections.includes('ctn1') }">
           <div class="contact-hero__title">
             <div class="fnt-hero">LIÊN HỆ</div>
-            <img
-              src="https://omo-oss-image.thefastimg.com/portal-saas/ngc202303290005/cms/image/53e45437-3eaa-453a-87e7-5d86b6f29064.png"
-              alt="Accent"
-            />
           </div>
           <div class="contact-hero__line"></div>
           <div class="contact-hero__subtitle">Work together to win the future</div>
@@ -428,10 +424,6 @@ onUnmounted(() => {
           <header class="contact-heading">
             <div class="contact-heading__title">
               <h2>LIÊN HỆ</h2>
-              <img
-                src="https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/bd97f2ca-79a8-43ee-8efa-5b6056d5b1c1.png"
-                alt="Accent"
-              />
             </div>
             <div class="contact-heading__line"></div>
           </header>
@@ -439,12 +431,6 @@ onUnmounted(() => {
           <div class="contact-card">
             <div class="contact-card__text">
               <div class="contact-card__intro">
-                <div class="contact-card__logo">
-                  <img
-                    src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/2e50aaed-5aa3-47dd-9440-414b3ee2128c.png"
-                    alt="China Decor mark"
-                  />
-                </div>
                 <div class="contact-card__intro-copy">
                   <div v-for="(line, index) in companyNameLines" :key="`${line}-${index}`" class="contact-card__company">
                     {{ line }}
@@ -598,12 +584,15 @@ onUnmounted(() => {
   height: 100vh;
   overflow-y: auto;
   scroll-behavior: smooth;
-  scroll-snap-type: y mandatory;
+  /* Hide scrollbar */
+  scrollbar-width: none; /* Firefox */
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
 }
 
 .contact-section {
   position: relative;
-  scroll-snap-align: start;
 }
 
 .contact-dots {

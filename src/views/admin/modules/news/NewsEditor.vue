@@ -308,6 +308,7 @@ import { ADMIN_TOKEN_STORAGE_KEY } from '@/views/admin/constants/auth'
 import {
   createAdminEntityRecord,
   getAdminEntityRecord,
+  listAdminEntityRecords,
   updateAdminEntityRecord,
 } from '@/views/admin/api/adminApi'
 
@@ -326,6 +327,8 @@ const token = localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || ''
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 const isEdit = computed(() => !!route.params.id)
+const sourceRecordId = computed(() => route.params.id || route.query.id || '')
+const sourceRecordSlug = computed(() => route.query.slug || '')
 const isCrawling = ref(false)
 const saveStatus = ref('idle')
 const postImageInputRef = ref(null)
@@ -1024,9 +1027,22 @@ function renderBlocksToHtml(blocks = []) {
 }
 
 async function loadPost() {
-  if (!isEdit.value) return
+  const recordId = String(sourceRecordId.value || '').trim()
+  const recordSlug = String(sourceRecordSlug.value || '').trim()
+
+  if (!recordId && !recordSlug) return
+
   try {
-    const data = await getAdminEntityRecord('news_posts', route.params.id, token)
+    const data = recordId
+      ? await getAdminEntityRecord('news_posts', recordId, token)
+      : await listAdminEntityRecords('news_posts', token, { slug: recordSlug })
+          .then((res) => {
+            const items = Array.isArray(res?.items) ? res.items : []
+            return items.find((item) => item.slug === recordSlug) || null
+          })
+
+    if (!data) return
+
     store.setPost({
       title: data.title || '',
       slug: data.slug || '',
@@ -1219,7 +1235,7 @@ onMounted(async () => {
   store.resetEditor()
   store.setPageConfig({ width: 1000, background: '#ffffff' })
 
-  if (isEdit.value) {
+  if (sourceRecordId.value || sourceRecordSlug.value) {
     await loadPost()
   } else {
     const crawlUrl = route.query.crawl

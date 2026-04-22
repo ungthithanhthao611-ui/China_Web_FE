@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
@@ -302,11 +302,11 @@ onMounted(() => {
 .detail-hero-inner {
   position: relative;
   z-index: 1;
-  min-height: 560px;
+  min-height: 620px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding-top: 190px;
+  padding-top: 240px;
   padding-bottom: 82px;
 }
 
@@ -622,8 +622,8 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .detail-hero-inner {
-    min-height: 500px;
-    padding-top: 156px;
+    min-height: 520px;
+    padding-top: 180px;
     padding-bottom: 44px;
   }
 

@@ -1,4 +1,9 @@
 <script setup>
+import { onMounted, ref } from 'vue'
+import { getNewsList } from '@/views/user/services/publicApi'
+import { useRouter } from 'vue-router'
+import { ArrowRight, ChevronRight } from 'lucide-vue-next'
+
 defineProps({
   active: {
     type: Boolean,
@@ -6,326 +11,472 @@ defineProps({
   }
 })
 
-const newsList = [
-  {
-    day: '24', month: 'June', year: '2025',
-    title: 'Jointly Building a Green and Smart New Ecosystem | The Green Construction Supply Chain Innovation Cooperation Exchange Conference (Beijing Station) was Successfully Held...',
-    image: 'https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/3d34e801-904d-427f-be5b-4c0abbd3a62b.png',
-    link: '#'
-  },
-  {
-    day: '13', month: 'May', year: '2025',
-    title: 'Strong Alliance Sketches a New Chapter for the City Shanghai Linli · China Decoration Urban Renewal Research Institute was Inaugurated and Set Sail',
-    link: '#'
-  },
-  {
-    day: '12', month: 'May', year: '2025',
-    title: 'China Decoration Shines with Two Stars on the Wanjiang River Drawing a New Blueprint for Green and Intelligent Manufacturing',
-    link: '#'
-  },
-  {
-    day: '03', month: 'April', year: '2025',
-    image: 'https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/2aefd35d-5f7f-4e2e-bd1d-e48906416c97.jpg',
-    link: '#'
-  }
-]
+const router = useRouter()
+const newsList = ref([])
+const loading = ref(true)
 
-const goTo = (url) => { window.location.href = url }
+const formatDate = (dateStr) => {
+  if (!dateStr) return { day: '', month: '', year: '' }
+  const d = new Date(dateStr)
+  return {
+    day: d.getDate().toString().padStart(2, '0'),
+    month: d.toLocaleString('en-US', { month: 'long' }),
+    year: d.getFullYear().toString()
+  }
+}
+
+const goTo = (path) => {
+  if (path) router.push(path)
+}
+
+const fetchNews = async () => {
+  try {
+    const res = await getNewsList({ skip: 0, limit: 4 })
+    const items = Array.isArray(res?.items) ? res.items : (Array.isArray(res) ? res : [])
+    
+    newsList.value = items.map(item => {
+      const dateParts = formatDate(item.published_at || item.created_at)
+      return {
+        ...item,
+        ...dateParts,
+        image: item.thumbnail_url || item.image?.url || item.image || '',
+        link: `/news/${item.slug}`
+      }
+    })
+  } catch (error) {
+    console.error('Failed to fetch news for home:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchNews()
+})
 </script>
 
 <template>
   <section class="news-section" :class="{ 'is-active': active }">
-    <div class="top-red-bar" :class="{ 'is-active': active }"></div>
-    <div class="bg-shape-overlay"></div>
+    <div class="bg-decoration">
+      <div class="circle circle-1"></div>
+      <div class="circle circle-2"></div>
+    </div>
 
     <div class="container main-content">
-      <header class="news-header" :class="{ 'is-active': active }">
+      <header class="section-header" :class="{ 'is-active': active }">
         <div class="title-group">
-          <h2 class="fnt-serif">NEWS <img src="https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/012ad584-f3a1-4ceb-a342-1936a1bf6ff2.png" alt="stamp"></h2>
-          <div class="title-underline"></div>
+          <span class="eyebrow">Latest Updates</span>
+          <h2 class="fnt-serif">Trung Tâm Tin Tức</h2>
+          <div class="title-line"></div>
         </div>
         
-        <div class="more-btn" @click="goTo('/news')">
-          <div class="icon-circle">
-            <div class="red-dot"><svg viewBox="0 0 1024 1024" width="12" height="12"><path d="M312.88 995.55c-17.06 0-28.44-5.68-39.82-17.06-22.75-22.75-17.06-56.88 5.68-79.64l364.08-329.95c11.37-11.37 17.06-22.75 17.06-34.13 0-11.37-5.68-22.75-17.06-34.13L273.06 187.73c-22.75-22.75-28.44-56.88-5.68-79.64 22.75-22.75 56.88-28.44 79.64-5.68l364.08 312.88c34.13 28.44 56.88 73.95 56.88 119.46s-17.06 85.33-51.2 119.46l-364.08 329.95c-11.37 5.68-28.44 11.37-39.82 11.37z" fill="#fff"></path></svg></div>
+        <button class="view-all-link" @click="goTo('/news')">
+          <span>Xem tất cả tin tức</span>
+          <div class="icon-box">
+            <ChevronRight :size="18" />
           </div>
-          <span class="text">MORE +</span>
-        </div>
+        </button>
       </header>
 
-      <div class="news-grid" :class="{ 'is-active': active }">
-        <div class="grid-col">
-          <article class="card-feature-img" @click="goTo(newsList[0].link)">
-            <div class="img-wrapper">
-              <img :src="newsList[0].image" :alt="newsList[0].title">
-              <div class="img-overlay"></div>
-              <div class="info-box">
-                <div class="date-row">
-                  <span class="day">{{ newsList[0].day }}</span>
-                  <div class="month-year"><span>{{ newsList[0].month }}</span><span>{{ newsList[0].year }}</span></div>
-                  <div class="line-red"></div>
-                </div>
-                <h3 class="title-white">{{ newsList[0].title }}</h3>
+      <div v-if="newsList.length > 0" class="news-grid-modern" :class="{ 'is-active': active }">
+        <div 
+          v-for="(item, index) in newsList" 
+          :key="item.id" 
+          class="news-card-col"
+          :style="{ transitionDelay: `${0.2 + index * 0.1}s` }"
+        >
+          <article class="news-card-premium" @click="goTo(item.link)">
+            <div class="card-media">
+              <img :src="item.image" :alt="item.title">
+              <div class="media-overlay"></div>
+              <div class="date-tag">
+                <span class="day">{{ item.day }}</span>
+                <span class="month">{{ item.month }}</span>
               </div>
             </div>
-            <div class="hover-border-bottom"></div>
-          </article>
-
-          <article class="card-text" @click="goTo(newsList[2].link)">
-            <div class="date-row dark">
-              <span class="day-red">{{ newsList[2].day }}</span>
-              <div class="month-year"><span>{{ newsList[2].month }}</span><span>{{ newsList[2].year }}</span></div>
-              <div class="line-red visible"></div>
-            </div>
-            <h3 class="title-dark">{{ newsList[2].title }}</h3>
-            <div class="hover-border-bottom"></div>
-          </article>
-        </div>
-
-        <div class="grid-col">
-          <article class="card-text" @click="goTo(newsList[1].link)">
-            <div class="date-row dark">
-              <span class="day-red">{{ newsList[1].day }}</span>
-              <div class="month-year"><span>{{ newsList[1].month }}</span><span>{{ newsList[1].year }}</span></div>
-              <div class="line-red visible"></div>
-            </div>
-            <h3 class="title-dark">{{ newsList[1].title }}</h3>
-            <div class="hover-line-short"></div>
-          </article>
-
-          <article class="card-certificate" @click="goTo(newsList[3].link)">
-            <div class="cert-img-container">
-              <img :src="newsList[3].image" alt="Certificate">
-              <div class="cert-date-tag">
-                <span class="day-red">{{ newsList[3].day }}</span>
-                <div class="month-year"><span>{{ newsList[3].month }}</span><span>{{ newsList[3].year }}</span></div>
-                <div class="line-red visible"></div>
+            <div class="card-body">
+              <h3 class="card-title">{{ item.title }}</h3>
+              <div class="card-action">
+                <span class="action-text">Xem chi tiết</span>
+                <div class="action-line"></div>
+                <ArrowRight :size="16" class="action-icon" />
               </div>
             </div>
-            <div class="hover-border-bottom"></div>
           </article>
         </div>
+      </div>
+
+      <div v-else-if="!loading" class="news-empty-modern">
+        <div class="empty-content">
+          <p>Hiện tại chưa có tin tức mới nào.</p>
+          <button @click="goTo('/news')" class="btn-minimal">Truy cập trung tâm tin tức</button>
+        </div>
+      </div>
+      
+      <div v-else class="news-loading-modern">
+        <div class="loading-shimmer"></div>
       </div>
     </div>
   </section>
 </template>
 
 <style lang="scss" scoped>
+@use "@/assets/scss/variables" as *;
+
 .news-section {
   position: relative;
   width: 100%;
   height: 100vh;
-  background-color: #f7f7f7;
+  background: #ffffff;
   overflow: hidden;
   display: flex;
-  align-items: flex-start;
-  padding-top: 0; /* Removing the top gap */
+  align-items: center;
 }
 
-.top-red-bar {
-  position: absolute;
-  top: 0; left: 0;
-  width: 25%; height: 35px;
-  background: #cd0000;
-  transform: translateX(-100%);
-  transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
-  z-index: 5;
-
-  &.is-active {
-    transform: translateX(0);
-  }
-}
-
-.bg-shape-overlay {
+.bg-decoration {
   position: absolute;
   inset: 0;
-  background: url('https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/bg_shape.png') no-repeat center;
-  background-size: cover;
-  opacity: 0.4;
+  overflow: hidden;
   pointer-events: none;
+  
+  .circle {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.05;
+  }
+  
+  .circle-1 {
+    top: -10%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: #cd0000;
+  }
+  
+  .circle-2 {
+    bottom: -10%;
+    left: -10%;
+    width: 500px;
+    height: 500px;
+    background: #10243c;
+  }
 }
 
 .main-content {
-  width: 85%;
-  max-width: 1400px;
-  margin: 0 auto;
+  position: relative;
   z-index: 10;
-  padding-top: 100px; /* Offset the text from the top so it doesn't touch the edge */
+  padding: 0 40px;
+  width: 90%;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
-/* Header Styles */
-.news-header {
+.section-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 50px;
-  /* Entry animation */
+  align-items: flex-end;
+  margin-bottom: 60px;
   opacity: 0;
-  transform: translateY(60px);
-  transition: all 1s cubic-bezier(0.19, 1, 0.22, 1);
-  transition-delay: 0.2s;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
 
   &.is-active {
     opacity: 1;
     transform: translateY(0);
   }
 
-  .fnt-serif {
-    font-family: "Times New Roman", serif;
-    font-size: 36px;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    img { height: 30px; }
+  .eyebrow {
+    display: block;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #cd0000;
+    margin-bottom: 12px;
+    font-weight: 600;
   }
 
-  .title-underline {
-    width: 160px; height: 1px;
+  h2 {
+    font-size: clamp(2.2rem, 3.5vw, 3.2rem);
+    color: #1a1a1a;
+    line-height: 1.1;
+  }
+
+  .title-line {
+    width: 80px;
+    height: 3px;
     background: #cd0000;
-    margin-top: 10px;
+    margin-top: 20px;
   }
 }
 
-.more-btn {
+.view-all-link {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 15px;
+  border: none;
+  background: transparent;
   cursor: pointer;
-  
-  .icon-circle {
-    width: 46px; height: 46px;
-    background: rgba(0,0,0,0.05);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    .red-dot {
-      width: 32px; height: 32px;
-      background: #cd0000;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-    }
-  }
-  .text {
-    font-size: 13px; font-weight: bold;
-    border-bottom: 1px solid #333;
+  padding: 0;
+  color: #666;
+  font-weight: 500;
+  transition: color 0.3s ease;
+
+  span {
+    font-size: 1rem;
+    border-bottom: 1px solid transparent;
     padding-bottom: 2px;
+  }
+
+  .icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s ease;
+  }
+
+  &:hover {
+    color: #cd0000;
+    
+    .icon-box {
+      background: #cd0000;
+      color: #fff;
+      transform: translateX(5px);
+    }
   }
 }
 
-/* Grid Layout */
-.news-grid {
+.news-grid-modern {
   display: flex;
-  gap: 80px;
-  height: 600px;
-  /* Entry animation */
-  opacity: 0;
-  transform: translateY(80px);
-  transition: all 1.2s cubic-bezier(0.19, 1, 0.22, 1);
-  transition-delay: 0.35s;
-
-  &.is-active {
+  gap: 30px;
+  justify-content: center;
+  
+  &.is-active .news-card-col {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-.grid-col {
+.news-card-col {
+  flex: 1;
+  max-width: 400px;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.news-card-premium {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    transform: translateY(-12px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+
+    .card-media img {
+      transform: scale(1.1);
+    }
+    
+    .action-text {
+      color: #cd0000;
+    }
+    
+    .action-line {
+      width: 40px;
+      background: #cd0000;
+    }
+    
+    .action-icon {
+      transform: translateX(5px);
+      color: #cd0000;
+    }
+  }
+}
+
+.card-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .media-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.3) 100%);
+  }
+
+  .date-tag {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: #fff;
+    padding: 8px 15px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+
+    .day {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #cd0000;
+      line-height: 1;
+    }
+
+    .month {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: #999;
+      margin-top: 2px;
+    }
+  }
+}
+
+.card-body {
+  padding: 30px;
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-/* Card Styles */
-.card-feature-img {
-  position: relative;
-  height: 60%;
-  margin-bottom: 40px;
-  cursor: pointer;
+.card-title {
+  font-size: 1.25rem;
+  color: #1a1a1a;
+  line-height: 1.5;
+  margin-bottom: 25px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-
-  .img-wrapper {
-    width: 100%; height: 100%;
-    position: relative;
-    img { width: 100%; height: 100%; object-fit: cover; }
-    .img-overlay {
-      position: absolute; inset: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,0.8));
-    }
-  }
-
-  .info-box {
-    position: absolute; bottom: 30px; left: 30px; right: 30px;
-    .title-white { color: #fff; font-size: 18px; line-height: 1.5; margin-top: 15px; }
-  }
-}
-
-.card-text {
-  position: relative;
-  padding: 30px 0;
-  cursor: pointer;
-  .title-dark {
-    font-size: 16px; color: #333; line-height: 1.6;
-    margin-top: 15px; transition: color 0.3s;
-  }
-  &:hover .title-dark { color: #cd0000; }
-}
-
-.card-certificate {
+  font-weight: 600;
   flex: 1;
+}
+
+.card-action {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  gap: 12px;
+  
+  .action-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #999;
+    transition: color 0.3s ease;
+  }
+
+  .action-line {
+    width: 20px;
+    height: 1px;
+    background: #ddd;
+    transition: all 0.3s ease;
+  }
+
+  .action-icon {
+    color: #ddd;
+    transition: all 0.3s ease;
+  }
+}
+
+.news-empty-modern,
+.news-loading-modern {
+  width: 100%;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.empty-content {
+  p {
+    font-size: 1.2rem;
+    color: #999;
+    margin-bottom: 20px;
+  }
+}
+
+.btn-minimal {
+  background: #cd0000;
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 30px;
+  font-weight: 600;
   cursor: pointer;
-  .cert-img-container {
-    position: relative;
-    width: 90%;
-    img { width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-    .cert-date-tag {
-      position: absolute; bottom: -10px; left: -20px;
-      background: #f7f7f7; padding: 10px;
-      display: flex; align-items: center; gap: 10px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #a30000;
+    transform: translateY(-2px);
+  }
+}
+
+.loading-shimmer {
+  width: 100%;
+  max-width: 1200px;
+  height: 400px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 12px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (max-width: 1200px) {
+  .news-grid-modern {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 992px) {
+  .news-section {
+    height: auto;
+    padding: 80px 0;
+  }
+
+  .news-grid-modern {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .news-card-col {
+    width: 100%;
+    max-width: 500px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    
+    .view-all-link {
+      width: 100%;
+      justify-content: space-between;
     }
   }
-}
-
-/* Hiệu ứng gạch đỏ khi Hover */
-.hover-border-bottom {
-  position: absolute; bottom: 0; left: 0;
-  width: 0; height: 2px;
-  background: #cd0000;
-  transition: width 0.5s ease;
-}
-.card-feature-img:hover .hover-border-bottom,
-.card-text:hover .hover-border-bottom,
-.card-certificate:hover .hover-border-bottom {
-  width: 100%;
-}
-
-.hover-line-short {
-  position: absolute; bottom: 20px; left: 0;
-  width: 0; height: 2px;
-  background: #cd0000;
-  transition: width 0.5s ease;
-}
-.col-right .card-text:hover .hover-line-short { width: 80px; }
-
-/* Date Components */
-.date-row {
-  display: flex; align-items: center; gap: 10px;
-  .day { font-size: 36px; font-weight: 300; color: #fff; }
-  .day-red { font-size: 36px; font-weight: 300; color: #cd0000; }
-  .month-year {
-    display: flex; flex-direction: column;
-    font-size: 11px; color: #888; text-transform: uppercase;
-  }
-  .line-red {
-    width: 0; height: 1px; background: #cd0000; transition: width 0.3s;
-    &.visible { width: 40px; }
-  }
-}
-.card-feature-img:hover .line-red { width: 40px; background: #fff; }
-
-@media (max-width: 1024px) {
-  .news-section { height: auto; padding: 100px 0; }
-  .news-grid { flex-direction: column; height: auto; }
 }
 </style>

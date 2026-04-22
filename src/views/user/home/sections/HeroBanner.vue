@@ -37,17 +37,7 @@ const defaultSlides = [
     buttonText: 'Khám Phá Dịch Vụ',
     link: '/business-areas#ctn1',
   },
-  {
-    type: 'image',
-    src: '/images/banner/banner2.jpg',
-    alt: 'THIÊN ĐỒNG VIỆT NAM banner 2',
-    eyebrow: 'Lĩnh Vực Hoạt Động',
-    title: 'Dự Án Phức Tạp, Kiểm Soát Chặt Chẽ',
-    subtitle: 'Thiết kế, kỹ thuật và thực thi được đồng bộ ngay từ ngày đầu.',
-    body: 'Phối hợp phạm vi, tiến độ và tiêu chuẩn hoàn thiện cao cấp thông qua quy trình quản lý dự án kỷ luật.',
-    buttonText: 'Xem Dự Án',
-    link: '/project-case',
-  },
+
   {
     type: 'image',
     src: '/images/banner/banner3.jpg',

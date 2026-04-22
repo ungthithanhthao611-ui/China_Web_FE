@@ -5,7 +5,7 @@ import { Pagination } from "swiper/modules";
 import AOS from "aos";
 import { ChevronLeft, ChevronRight, Home } from "lucide-vue-next";
 import { uiState } from "@/shared/utils/uiState";
-import { getNewsList } from "@/views/user/services/publicApi";
+import { getBanners, getNewsList } from "@/views/user/services/publicApi";
 import { newsHero } from "./data/newsData";
 
 const pageSize = 6;
@@ -15,9 +15,15 @@ const listSection = ref(null);
 
 const items = ref([]);
 const featured = ref([]);
+const dynamicBanner = ref(null);
 const total = ref(0);
 const loading = ref(false);
 const error = ref(null);
+
+const bannerImage = computed(() => dynamicBanner.value?.image?.url || newsHero.bannerImage);
+const mobileBannerImage = computed(() => dynamicBanner.value?.image?.url || newsHero.mobileBannerImage);
+const pageTitle = computed(() => dynamicBanner.value?.title || newsHero.title);
+const pageSubtitle = computed(() => dynamicBanner.value?.subtitle || dynamicBanner.value?.body || newsHero.subtitle);
 
 const sliderModules = [Pagination];
 const featuredItems = computed(() => featured.value);
@@ -84,6 +90,17 @@ async function fetchFeatured() {
   }
 }
 
+async function fetchBanner() {
+  try {
+    const res = await getBanners({ placement: "news" });
+    if (res?.items?.length) {
+      dynamicBanner.value = res.items[0];
+    }
+  } catch (err) {
+    console.error("Failed to fetch news banner:", err);
+  }
+}
+
 async function fetchPage() {
   loading.value = true;
   error.value = null;
@@ -121,7 +138,6 @@ const goToPage = async (page) => {
   currentPage.value = page;
   await fetchPage();
   await refreshAnimations();
-  scrollToSection(listSection.value);
 };
 
 const animationDelay = (index) => `${index * 100}`;
@@ -130,7 +146,8 @@ onMounted(async () => {
   uiState.isHeaderHovered = false;
   uiState.isHeaderHidden = false;
   uiState.isFooterHidden = false;
-  await Promise.all([fetchFeatured(), fetchPage()]);
+  await Promise.all([fetchBanner(), fetchFeatured(), fetchPage()]);
+  await nextTick();
   await refreshAnimations();
 });
 
@@ -140,62 +157,56 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="news-center-page">
-    <section class="news-hero">
-      <div class="hero-media">
-        <img
-          class="hero-banner hero-banner--pc"
-          :src="newsHero.bannerImage"
-          :alt="newsHero.title"
-        />
-        <img
-          class="hero-banner hero-banner--mobile"
-          :src="newsHero.mobileBannerImage"
-          :alt="newsHero.title"
-        />
-      </div>
+  <div class="news-center-page full-page-wrapper">
+    <section class="section-full news-hero">
+        <div class="hero-media">
+          <img
+            class="hero-banner hero-banner--pc"
+            :src="bannerImage"
+            :alt="pageTitle"
+          />
+          <img
+            class="hero-banner hero-banner--mobile"
+            :src="mobileBannerImage"
+            :alt="pageTitle"
+          />
+        </div>
 
-      <div class="hero-info">
-        <div class="news-shell hero-shell">
-          <div class="hero-copy" data-aos="fade-up">
-            <div class="hero-title-row">
-              <h1>{{ newsHero.title }}</h1>
-              <img :src="newsHero.stampImage" alt="News Center decoration" />
+        <div class="hero-info">
+          <div class="news-shell hero-shell">
+            <div class="hero-copy" data-aos="fade-up">
+              <div class="hero-title-row">
+                <h1>{{ pageTitle }}</h1>
+              </div>
+              <div class="hero-line"></div>
+              <p>{{ pageSubtitle }}</p>
             </div>
-            <div class="hero-line"></div>
-            <p>{{ newsHero.subtitle }}</p>
           </div>
         </div>
-      </div>
-    </section>
 
-    <section class="news-breadcrumb">
-      <div class="news-shell breadcrumb-shell">
-        <div class="breadcrumb-list">
-          <router-link to="/">
-            <Home :size="15" />
-            <span>Home</span>
-          </router-link>
-          <span class="separator">></span>
-          <span class="current">News</span>
+        <div class="news-breadcrumb">
+          <div class="news-shell breadcrumb-shell">
+            <div class="breadcrumb-list">
+              <router-link to="/">
+                <Home :size="15" />
+                <span>Home</span>
+              </router-link>
+              <span class="separator">></span>
+              <span class="current">News</span>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div class="breadcrumb-decoration">
-        <img :src="newsHero.breadcrumbImage" alt="News decoration" />
-      </div>
-    </section>
+      </section>
 
     <section
       v-if="featuredItems.length"
-      class="featured-section"
+      class="section-full featured-section"
       :style="{ backgroundImage: `url(${newsHero.featuredBackground})` }"
     >
       <div class="news-shell featured-shell">
         <header class="section-heading" data-aos="fade-down">
           <div class="section-heading-top">
             <h2>News Center</h2>
-            <img :src="newsHero.sectionDecoration" alt="Section decoration" />
           </div>
           <p>Latest updates</p>
           <div class="section-line"></div>
@@ -230,8 +241,7 @@ onBeforeUnmount(() => {
     </section>
 
     <section
-      ref="listSection"
-      class="news-list-section"
+      class="section-full news-list-section"
       :style="{ backgroundImage: `url(${newsHero.listBackground})` }"
     >
       <div class="news-shell list-shell">
@@ -319,15 +329,26 @@ onBeforeUnmount(() => {
   background: #fff;
 }
 
+.full-page-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.section-full {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
 .news-shell {
   width: 1440px;
   margin: 0 auto;
 }
 
 .news-hero {
-  position: relative;
-  min-height: 100vh;
-  overflow: hidden;
+  background: #10243c;
 }
 
 .hero-media,

@@ -3,8 +3,6 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import HeroBanner from './sections/HeroBanner.vue'
 import HomeAbout from './sections/HomeAbout.vue'
 import StatsSection from './sections/StatsSection.vue'
-import BusinessDisplay from './sections/BusinessDisplay.vue'
-import ProjectSection from './sections/ProjectSection.vue'
 import NewsSection from './sections/NewsSection.vue'
 import HomeNav from './sections/HomeNav.vue'
 import AppFooter from '@/views/user/layout/AppFooter.vue'
@@ -37,9 +35,7 @@ const bannerCount = computed(() => {
 const sections = [
   { label: 'Trang Chủ', id: 'ctn1' },
   { label: 'Giới Thiệu', id: 'ctn2' },
-  { label: 'Lĩnh Vực Hoạt Động', id: 'ctn3' },
-  { label: 'Dự Án', id: 'ctn4' },
-  { label: 'Trung Tâm Tin Tức', id: 'ctn5' },
+  { label: 'Tin Tức', id: 'ctn5' },
   { label: 'Đối Tác', id: 'ctn6' }
 ]
 
@@ -151,26 +147,15 @@ onUnmounted(() => {
         <HomeAbout :active="activeSection === 1" />
       </section>
 
-      <section id="ctn3" class="section-full">
-        <BusinessDisplay :active="activeSection === 2" />
-      </section>
-
-
-      <section id="ctn4" class="section-full bg-light">
-        <div class="section-inner projects-full">
-          <ProjectSection :active="activeSection === 3" />
-        </div>
-      </section>
-
       <section id="ctn5" class="section-full">
         <div class="section-inner">
-          <NewsSection :active="activeSection === 4" />
+          <NewsSection :active="activeSection === 2" />
         </div>
       </section>
 
       <section id="ctn6" class="last-section">
         <div class="section-inner partner-section">
-          <AppFooter :force-visible="activeSection === 5" />
+          <AppFooter :force-visible="activeSection === 3" />
         </div>
       </section>
     </div>
