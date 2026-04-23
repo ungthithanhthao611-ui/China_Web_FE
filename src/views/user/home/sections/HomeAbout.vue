@@ -61,7 +61,7 @@ defineProps({
   font-family: "Segoe UI", Arial, sans-serif;
 }
 
-/* texture ná»n nháº¹ */
+/* texture nền nhẹ */
 .grain {
   position: absolute;
   inset: 0;
@@ -89,7 +89,7 @@ defineProps({
   isolation: isolate;
 }
 
-/* BUILDING - chÃ¬m vÃ o ná»n thay vÃ¬ thÃ nh 1 block riÃªng */
+/* BUILDING - chìm vào nền thay vì thành 1 block riêng */
 .building-layer {
   position: absolute;
   inset: 0;
@@ -294,7 +294,7 @@ defineProps({
   width: 72px;
 }
 
-/* gÃ³c trÃ¡i dÆ°á»›i phÃ¡c há»a nháº¹ */
+/* góc trái dưới phác họa nhẹ */
 .corner-sketch {
   position: absolute;
   left: -30px;

@@ -7,6 +7,16 @@ function normalizeText(value) {
     .replace(/\s+/g, '-')
 }
 
+function normalizeUsedProduct(item = {}) {
+  return {
+    id: String(item.id || ''),
+    name: item.name || '',
+    slug: item.slug || '',
+    note: item.note || '',
+    href: item.href || (item.slug ? `/products/${item.slug}` : ''),
+  }
+}
+
 function normalizeCaseItem(rawCase = {}, index = 0) {
   const anchor = String(rawCase.anchor || rawCase.id || `ctn${index + 2}`)
   const leftImages = Array.isArray(rawCase.leftGallery)
@@ -21,14 +31,22 @@ function normalizeCaseItem(rawCase = {}, index = 0) {
       : []
 
   return {
-    id: anchor,
+    id: String(rawCase.id || anchor),
+    slug: rawCase.slug || '',
+    anchor,
     title: rawCase.title || '',
     summary: rawCase.summary || '',
+    coverImage: rawCase.coverImage || leftImages[0] || rightImages[0] || '',
     leftImages,
     rightImages,
     moreLink: rawCase.detailHref || rawCase.moreLink || '',
     legacyMoreLink: rawCase.legacyDetailHref || '',
     layoutVariant: rawCase.layoutVariant || '',
+    projectYear: rawCase.projectYear || null,
+    location: rawCase.location || '',
+    usedProducts: Array.isArray(rawCase.usedProducts)
+      ? rawCase.usedProducts.map(normalizeUsedProduct)
+      : [],
   }
 }
 
@@ -47,7 +65,6 @@ function normalizeHeroSlide(rawSlide = {}, fallbackCategory = null) {
 }
 
 function buildFallbackState() {
-  // No static fallback data — return empty state, API is the only source
   return {
     source: 'fallback',
     currentCategoryId: FALLBACK_CATEGORY_ID,
@@ -56,7 +73,6 @@ function buildFallbackState() {
     caseMap: {},
   }
 }
-
 
 export function adaptProjectCaseResponse(payload) {
   if (!payload || typeof payload !== 'object') {
@@ -73,6 +89,8 @@ export function adaptProjectCaseResponse(payload) {
     id: String(category.id),
     name: category.name || '',
     slug: category.slug || '',
+    description: category.description || '',
+    projectCount: Number(category.projectCount || 0),
   }))
   const categoryById = Object.fromEntries(normalizedCategories.map((category) => [category.id, category]))
   const caseMap = {}
@@ -84,24 +102,6 @@ export function adaptProjectCaseResponse(payload) {
   const heroSlides = (Array.isArray(payload.heroSlides) ? payload.heroSlides : []).map((slide) =>
     normalizeHeroSlide(slide, categoryById[String(slide.categoryId)])
   )
-
-  if (!heroSlides.length) {
-    normalizedCategories.forEach((category) => {
-      const firstProject = caseMap[category.id]?.[0]
-      const images = [
-        firstProject?.leftImages?.[0] || firstProject?.rightImages?.[0] || '',
-        firstProject?.rightImages?.[0] || firstProject?.leftImages?.[0] || '',
-      ].filter(Boolean)
-
-      heroSlides.push({
-        id: category.id,
-        title: category.name,
-        subtitle: '',
-        description: '',
-        images,
-      })
-    })
-  }
 
   return {
     source: 'api',

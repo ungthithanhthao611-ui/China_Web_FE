@@ -29,7 +29,7 @@ const image = "/images/BUSINESS FIELD/8ca87fd0-cd7e-4487-a834-d03293f1539c.jpg"
         <div class="title-group entrance-up" :style="{ transitionDelay: '0.2s' }">
           <h2 class="fnt-serif">
             {{ title }}
-            <span class="red-stamp">è£å›½ <br> é¥°å›½</span>
+            <span class="red-stamp">裝国 <br> 饰国</span>
           </h2>
           <div class="red-horizontal-line entrance-expand"></div>
         </div>
@@ -63,7 +63,7 @@ const image = "/images/BUSINESS FIELD/8ca87fd0-cd7e-4487-a834-d03293f1539c.jpg"
 
 .content-grid {
   display: flex;
-  width: 90%; // Má»Ÿ rá»™ng container
+  width: 90%; // Mở rộng container
   margin: 0 auto;
   align-items: center;
   gap: 60px;
@@ -71,7 +71,7 @@ const image = "/images/BUSINESS FIELD/8ca87fd0-cd7e-4487-a834-d03293f1539c.jpg"
 }
 
 .text-side {
-  flex: 0.7; // Thu nhá» cá»™t chá»¯
+  flex: 0.7; // Thu nhỏ cột chữ
   z-index: 2;
   
   .title-group {
@@ -121,19 +121,19 @@ const image = "/images/BUSINESS FIELD/8ca87fd0-cd7e-4487-a834-d03293f1539c.jpg"
 }
 
 .image-side {
-  flex: 1.5; // Má»Ÿ rá»™ng cá»™t áº£nh
+  flex: 1.5; // Mở rộng cột ảnh
   display: flex;
   justify-content: flex-start;
 
   .image-box {
     position: relative;
     width: 100%;
-    max-width: 850px; // TÄƒng chiá»u rá»™ng tá»‘i Ä‘a
+    max-width: 850px; // Tăng chiều rộng tối đa
 
     .main-img {
       width: 100%;
-      height: 450px; // Ã‰p dÃ¡ng ngang dÃ i
-      object-fit: cover; // Giá»¯ tá»‰ lá»‡ chuáº©n
+      height: 450px; // Ép dáng ngang dài
+      object-fit: cover; // Giữ tỉ lệ chuẩn
       box-shadow: 0 30px 60px rgba(0,0,0,0.15);
       position: relative;
       z-index: 2;
@@ -145,7 +145,7 @@ const image = "/images/BUSINESS FIELD/8ca87fd0-cd7e-4487-a834-d03293f1539c.jpg"
       right: -30px;
       width: 140px;
       height: 140px;
-      background: #12213a; // Xanh Ä‘en máº«u
+      background: #12213a; // Xanh đen mẫu
       z-index: 1;
     }
   }

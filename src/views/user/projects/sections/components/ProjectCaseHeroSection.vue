@@ -132,26 +132,6 @@ watch(
       <ChevronRight :size="28" />
     </button>
 
-    <div class="banFen reveal" style="--delay: 0.24s">
-      <Swiper
-        class="banFen_flx"
-        :slides-per-view="'auto'"
-        :space-between="0"
-        :speed="700"
-        @swiper="handleThumbsSwiper"
-      >
-        <SwiperSlide v-for="slide in slides" :key="`thumb-${slide.id}`" class="banFen_flx__slide">
-          <button
-            class="fLi"
-            :class="{ 'is-active': activeCategoryId === slide.id }"
-            type="button"
-            @click="emit('select-category', slide.id)"
-          >
-            {{ slide.title }}
-          </button>
-        </SwiperSlide>
-      </Swiper>
-    </div>
   </div>
 </template>
 

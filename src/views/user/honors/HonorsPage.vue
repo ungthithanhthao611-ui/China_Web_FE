@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 

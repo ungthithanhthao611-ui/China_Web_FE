@@ -21,19 +21,19 @@ const image = "/images/BUSINESS FIELD/b193b324-3ac0-4648-9b23-9ee9bfd8565e.png"
     <div class="gray-pattern-block entrance-right"></div>
 
     <div class="container content-grid">
-      <!-- Cá»™t áº¢nh (BÃªn TrÃ¡i) -->
+      <!-- Cột Ảnh (Bên Trái) -->
       <div class="image-side entrance-up" :style="{ transitionDelay: '0.1s' }">
         <div class="image-box">
              <img :src="image" :alt="title" class="main-img">
         </div>
       </div>
 
-      <!-- Cá»™t Chá»¯ (BÃªn Pháº£i) -->
+      <!-- Cột Chữ (Bên Phải) -->
       <div class="text-side">
         <div class="title-group entrance-up" :style="{ transitionDelay: '0.2s' }">
           <h2 class="fnt-serif">
             {{ title }}
-            <span class="red-stamp">è£å›½ <br> é¥°å›½</span>
+            <span class="red-stamp">裝国 <br> 饰国</span>
           </h2>
           <div class="red-horizontal-line entrance-expand"></div>
         </div>
@@ -128,7 +128,7 @@ const image = "/images/BUSINESS FIELD/b193b324-3ac0-4648-9b23-9ee9bfd8565e.png"
 .image-side {
   flex: 1.5;
   display: flex;
-  justify-content: flex-start; // ÄÆ°a vá» bÃªn trÃ¡i
+  justify-content: flex-start; // Đưa về bên trái
 
   .image-box {
     width: 100%;

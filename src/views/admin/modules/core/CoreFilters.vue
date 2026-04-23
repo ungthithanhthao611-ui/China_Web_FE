@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   config: {
     type: Object,
     required: true,
@@ -24,13 +26,18 @@ defineProps({
     type: Boolean,
     required: true,
   },
-});
+})
 
 const emit = defineEmits([
-  "update:searchKeyword",
-  "update:statusFilter",
-  "search",
-]);
+  'update:searchKeyword',
+  'update:statusFilter',
+  'search',
+])
+
+const safeLabel = computed(() => props.config?.label || 'bản ghi')
+const searchPlaceholder = computed(
+  () => `Search ${String(safeLabel.value).toLowerCase()}...`,
+)
 </script>
 
 <template>
@@ -40,7 +47,7 @@ const emit = defineEmits([
       <input
         :value="searchKeyword"
         type="search"
-        :placeholder="`Search ${config.label.toLowerCase()}...`"
+        :placeholder="searchPlaceholder"
         @input="emit('update:searchKeyword', $event.target.value)"
         @keyup.enter="emit('search')"
       />

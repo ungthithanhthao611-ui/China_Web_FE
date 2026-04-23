@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { onBeforeUnmount, onMounted } from 'vue'
 
 import AppFooter from '@/views/user/layout/AppFooter.vue'

@@ -24,7 +24,7 @@ const image = "/images/BUSINESS FIELD/68870615-867b-4aff-a821-b92d9a65997f.png"
     <div class="gray-pattern-block entrance-right"></div>
 
     <div class="container content-grid">
-      <!-- Cá»™t áº¢nh (BÃªn TrÃ¡i) -->
+      <!-- Cột Ảnh (Bên Trái) -->
       <div class="image-side entrance-up" :style="{ transitionDelay: '0.1s' }">
         <div class="image-box">
              <div class="dark-deco-box"></div>
@@ -32,12 +32,12 @@ const image = "/images/BUSINESS FIELD/68870615-867b-4aff-a821-b92d9a65997f.png"
         </div>
       </div>
 
-      <!-- Cá»™t Chá»¯ (BÃªn Pháº£i) -->
+      <!-- Cột Chữ (Bên Phải) -->
       <div class="text-side">
         <div class="title-group entrance-up" :style="{ transitionDelay: '0.2s' }">
           <h2 class="fnt-serif">
             {{ title }}
-            <span class="red-stamp">è£å›½ <br> é¥°å›½</span>
+            <span class="red-stamp">裝国 <br> 饰国</span>
           </h2>
           <div class="red-horizontal-line entrance-expand"></div>
         </div>
@@ -153,7 +153,7 @@ const image = "/images/BUSINESS FIELD/68870615-867b-4aff-a821-b92d9a65997f.png"
       right: -30px;
       width: 140px;
       height: 140px;
-      background: #12213a; // Xanh Ä‘en trang trÃ­
+      background: #12213a; // Xanh đen trang trí
       z-index: 1;
     }
   }

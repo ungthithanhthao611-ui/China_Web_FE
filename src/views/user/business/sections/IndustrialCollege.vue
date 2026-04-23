@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { uiState } from '@/shared/utils/uiState'
 import AppFooter from '@/views/user/layout/AppFooter.vue'
 
@@ -26,21 +26,21 @@ const image = "/images/BUSINESS FIELD/2484a544-4856-4253-9415-04681c12f22b.png"
       <div class="gray-pattern-bottom entrance-left"></div>
 
       <div class="container content-grid">
-        <!-- CÃ¡Â»â„¢t Ã¡ÂºÂ¢nh (BÃƒÂªn TrÃƒÂ¡i) -->
+        <!-- Cột Ảnh (Bên Trái) -->
         <div class="image-side entrance-up" :style="{ transitionDelay: '0.1s' }">
           <div class="image-box">
-             <!-- KhÃ¡Â»â€˜i vÃƒÂ ng trang trÃƒÂ­ sau Ã¡ÂºÂ£nh nhÃ†Â° mÃ¡ÂºÂ«u -->
+             <!-- Khối vàng trang trí sau ảnh như mẫu -->
              <div class="gold-deco-box"></div>
              <img :src="image" :alt="title" class="main-img">
           </div>
         </div>
 
-        <!-- CÃ¡Â»â„¢t ChÃ¡Â»Â¯ (BÃƒÂªn PhÃ¡ÂºÂ£i) -->
+        <!-- Cột Chữ (Bên Phải) -->
         <div class="text-side">
           <div class="title-group entrance-up" :style="{ transitionDelay: '0.2s' }">
             <h2 class="fnt-serif">
               {{ title }}
-              <span class="red-stamp">Ã¨Â£ÂÃ¥â€ºÂ½ <br> Ã©Â¥Â°Ã¥â€ºÂ½</span>
+              <span class="red-stamp">裝国 <br> 饰国</span>
             </h2>
             <div class="red-horizontal-line entrance-expand"></div>
           </div>
@@ -53,7 +53,7 @@ const image = "/images/BUSINESS FIELD/2484a544-4856-4253-9415-04681c12f22b.png"
       </div>
     </div>
 
-    <!-- CÃ¡Â»â€˜ Ã„â€˜Ã¡Â»â€¹nh Footer Ã¡Â»Å¸ cuÃ¡Â»â€˜i trang -->
+    <!-- Cố định Footer ở cuối trang -->
     <AppFooter id="business-footer" />
   </div>
 </template>
@@ -62,7 +62,7 @@ const image = "/images/BUSINESS FIELD/2484a544-4856-4253-9415-04681c12f22b.png"
 .last-section-wrapper {
   width: 100%;
   height: 100vh;
-  overflow-y: auto; // Cho phÃƒÂ©p cuÃ¡Â»â„¢n nÃ¡Â»â„¢i bÃ¡Â»â„¢ Ã„â€˜Ã¡Â»Æ’ xem Footer
+  overflow-y: auto; // Cho phép cuộn nội bộ để xem Footer
   background: #fff;
   scroll-snap-align: start;
 }
@@ -70,7 +70,7 @@ const image = "/images/BUSINESS FIELD/2484a544-4856-4253-9415-04681c12f22b.png"
 .business-section {
   position: relative;
   width: 100%;
-  min-height: 100vh; // Ã„ÂÃ¡ÂºÂ£m bÃ¡ÂºÂ£o chiÃ¡ÂºÂ¿m ÃƒÂ­t nhÃ¡ÂºÂ¥t 1 mÃƒÂ n hÃƒÂ¬nh
+  min-height: 100vh; // Đảm bảo chiếm ít nhất 1 màn hình
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -169,7 +169,7 @@ const image = "/images/BUSINESS FIELD/2484a544-4856-4253-9415-04681c12f22b.png"
       right: -30px;
       width: 160px;
       height: 160px;
-      background: #c5a47e; // MÃƒÂ u vÃƒÂ ng Ã„â€˜Ã¡Â»â€œng mÃ¡ÂºÂ«u
+      background: #c5a47e; // Màu vàng đồng mẫu
       opacity: 0.8;
       z-index: 1;
     }

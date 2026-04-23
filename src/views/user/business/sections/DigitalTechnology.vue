@@ -25,7 +25,7 @@ const image = "/images/BUSINESS FIELD/47dd06f8-6932-4e56-830d-c777ae78b277.png"
         <div class="title-group entrance-up" :style="{ transitionDelay: '0.2s' }">
           <h2 class="fnt-serif">
             {{ title }}
-            <span class="red-stamp">è£å›½ <br> é¥°å›½</span>
+            <span class="red-stamp">裝国 <br> 饰国</span>
           </h2>
           <div class="red-horizontal-line entrance-expand"></div>
         </div>
@@ -163,7 +163,7 @@ const image = "/images/BUSINESS FIELD/47dd06f8-6932-4e56-830d-c777ae78b277.png"
   }
 
   &:hover {
-    width: 250px; // Má»Ÿ rá»™ng khi hover
+    width: 250px; // Mở rộng khi hover
     box-shadow: 0 10px 40px rgba(218, 27, 43, 0.4);
     &::before { transform: translateX(100%); }
   }
@@ -176,9 +176,9 @@ const image = "/images/BUSINESS FIELD/47dd06f8-6932-4e56-830d-c777ae78b277.png"
   right: 0;
   width: 110px;
   height: 220px;
-  background: #ececec; // MÃ u xÃ¡m máº«u
+  background: #ececec; // Màu xám mẫu
   background-image: radial-gradient(#d1d1d1 1px, transparent 1px);
-  background-size: 10px 10px; // Há»a tiáº¿t cháº¥m chÃ¬m
+  background-size: 10px 10px; // Họa tiết chấm chìm
   z-index: 1;
 }
 

@@ -13,7 +13,22 @@ const error = ref(null)
 
 const imageUrl = (media) => media?.url || ''
 const galleryUrl = (item) => item?.media?.url || ''
-const usedProducts = computed(() => project.value?.used_products || [])
+const normalizeUsedProduct = (item = {}) => ({
+  ...item,
+  id: item?.id ? String(item.id) : String(item?.product_id || item?.slug || Math.random()),
+  name: item?.name || item?.product?.name || 'Sản phẩm',
+  slug: item?.slug || item?.product?.slug || '',
+  href: item?.href || (item?.slug || item?.product?.slug ? `/products/${item?.slug || item?.product?.slug}` : ''),
+  image_url: item?.image_url || item?.product?.image_url || '',
+  short_desc: item?.short_desc || item?.product?.short_desc || '',
+  note: item?.note || '',
+  sort_order: Number(item?.sort_order || 0),
+})
+const usedProducts = computed(() => {
+  const rawItems = project.value?.used_products || project.value?.usedProducts || []
+  if (!Array.isArray(rawItems)) return []
+  return rawItems.map(normalizeUsedProduct)
+})
 
 const formatYear = (value) => {
   if (!value) return ''
@@ -197,8 +212,8 @@ onMounted(() => {
             <Package2 :size="30" />
             <h3>Chưa có dữ liệu mapping sản phẩm</h3>
             <p>
-              File Excel hiện chưa có dữ liệu dự án thực tế, nên section này đang chờ business bổ sung
-              mapping Project → Product trong CMS.
+              Dự án này hiện chưa được gắn sản phẩm trong CMS. Vui lòng vào khu vực quản trị
+              <strong>Quản lý dự án → Sản phẩm sử dụng</strong> để thêm mapping Project → Product.
             </p>
           </div>
         </div>

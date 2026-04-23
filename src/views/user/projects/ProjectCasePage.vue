@@ -1,9 +1,9 @@
-﻿<script setup>
+<script setup>
 import { computed } from 'vue'
 import { useProjectCasePage } from './composables/useProjectCasePage'
 import ProjectCaseFeatureSection from './sections/components/ProjectCaseFeatureSection.vue'
 import ProjectCaseHeroSection from './sections/components/ProjectCaseHeroSection.vue'
-import ProjectCaseSidebar from './sections/components/ProjectCaseSidebar.vue'
+
 import ProjectCaseStandardSection from './sections/components/ProjectCaseStandardSection.vue'
 
 const {
@@ -35,18 +35,7 @@ function isVisible(sectionId) {
 
 <template>
   <div class="project-case-page">
-    <ProjectCaseSidebar
-      :categories="sidebarCategories"
-      :active-category-id="activeCategoryId"
-      :active-section-id="activeSectionId"
-      :expanded-category-ids="expandedCategoryIds"
-      :is-open="sidebarOpen"
-      @select-all="openAllCategories"
-      @select-category="openCategory"
-      @select-project="openProject"
-      @toggle-category="toggleCategory"
-      @toggle-sidebar="sidebarOpen = !sidebarOpen"
-    />
+
 
     <main class="project-case-page__main">
       <section

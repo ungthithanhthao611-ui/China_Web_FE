@@ -1,5 +1,10 @@
 import { fetchJson } from '@/shared/lib/http'
 
+const ADMIN_ENTITY_ALIASES = Object.freeze({
+  categories: 'product_categories',
+  inquiries: 'inquiry_submissions',
+})
+
 function withAdminHeaders(token) {
   const normalized = String(token || '').trim()
   if (!normalized) {
@@ -9,6 +14,11 @@ function withAdminHeaders(token) {
   return {
     Authorization: `Bearer ${normalized}`,
   }
+}
+
+function normalizeAdminEntityName(entityName) {
+  const normalized = String(entityName || '').trim()
+  return ADMIN_ENTITY_ALIASES[normalized] || normalized
 }
 
 export function loginAdmin(username, password) {
@@ -32,7 +42,8 @@ export function getAdminEntities(token) {
 
 export function listAdminEntityRecords(entityName, token, query = {}, options = {}) {
   const timeoutMs = Number(options.timeoutMs)
-  return fetchJson(`/admin/${entityName}`, {
+  const normalizedEntityName = normalizeAdminEntityName(entityName)
+  return fetchJson(`/admin/${normalizedEntityName}`, {
     headers: withAdminHeaders(token),
     query,
     ...(Number.isFinite(timeoutMs) && timeoutMs > 0 ? { timeoutMs } : {}),
@@ -40,13 +51,15 @@ export function listAdminEntityRecords(entityName, token, query = {}, options = 
 }
 
 export function getAdminEntityRecord(entityName, recordId, token) {
-  return fetchJson(`/admin/${entityName}/${recordId}`, {
+  const normalizedEntityName = normalizeAdminEntityName(entityName)
+  return fetchJson(`/admin/${normalizedEntityName}/${recordId}`, {
     headers: withAdminHeaders(token),
   })
 }
 
 export function createAdminEntityRecord(entityName, payload, token) {
-  return fetchJson(`/admin/${entityName}`, {
+  const normalizedEntityName = normalizeAdminEntityName(entityName)
+  return fetchJson(`/admin/${normalizedEntityName}`, {
     method: 'POST',
     headers: withAdminHeaders(token),
     body: payload,
@@ -54,7 +67,8 @@ export function createAdminEntityRecord(entityName, payload, token) {
 }
 
 export function updateAdminEntityRecord(entityName, recordId, payload, token) {
-  return fetchJson(`/admin/${entityName}/${recordId}`, {
+  const normalizedEntityName = normalizeAdminEntityName(entityName)
+  return fetchJson(`/admin/${normalizedEntityName}/${recordId}`, {
     method: 'PUT',
     headers: withAdminHeaders(token),
     body: payload,
@@ -62,7 +76,8 @@ export function updateAdminEntityRecord(entityName, recordId, payload, token) {
 }
 
 export function deleteAdminEntityRecord(entityName, recordId, token) {
-  return fetchJson(`/admin/${entityName}/${recordId}`, {
+  const normalizedEntityName = normalizeAdminEntityName(entityName)
+  return fetchJson(`/admin/${normalizedEntityName}/${recordId}`, {
     method: 'DELETE',
     headers: withAdminHeaders(token),
   })

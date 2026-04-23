@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import CountUp from '@/views/user/home/widgets/CountUp.vue'
 
 defineProps({

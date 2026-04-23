@@ -21,13 +21,13 @@ watch(activeSection, (newVal) => {
   const hash = `#ctn${newVal + 1}`
   window.history.replaceState(history.state, '', window.location.pathname + hash)
   
-  // áº¨n menu vÃ  footer há»‡ thá»‘ng khi á»Ÿ trang nÃ y
+  // Ẩn menu và footer hệ thống khi ở trang này
   uiState.isHeaderHidden = newVal > 0
   uiState.isFooterHidden = true 
 }, { immediate: true })
 
 onUnmounted(() => {
-  // Hiá»‡n láº¡i menu vÃ  footer khi rá»i khá»i trang Business Areas
+  // Hiện lại menu và footer khi rời khỏi trang Business Areas
   uiState.isHeaderHidden = false
   uiState.isFooterHidden = false
 })
@@ -57,13 +57,13 @@ const scrollToSection = (index) => {
 }
 
 const handleScroll = (e) => {
-  // Náº¿u Ä‘ang á»Ÿ section cuá»‘i, hÃ£y kiá»ƒm tra xem cÃ³ nÃªn Ä‘á»ƒ nÃ³ cuá»™n ná»™i dung bÃªn trong (xem footer) khÃ´ng
+  // Nếu đang ở section cuối, hãy kiểm tra xem có nên để nó cuộn nội dung bên trong (xem footer) không
   if (activeSection.value === totalSections - 1 && e.deltaY > 0) {
-     // Cho phÃ©p cuá»™n tá»± nhiÃªn cá»§a trÃ¬nh duyá»‡t Ä‘á»ƒ xem footer
+     // Cho phép cuộn tự nhiên của trình duyệt để xem footer
      return 
   }
 
-  // Cháº·n cuá»™n máº·c Ä‘á»‹nh Ä‘á»ƒ thá»±c hiá»‡n snap transition
+  // Chặn cuộn mặc định để thực hiện snap transition
   if (isScrolling.value) {
     e.preventDefault()
     return
@@ -76,7 +76,7 @@ const handleScroll = (e) => {
       activeSection.value++
     }
   } else {
-    // Náº¿u Ä‘ang á»Ÿ section cuá»‘i vÃ  khÃ´ng á»Ÿ Ä‘á»‰nh Ä‘áº§u cá»§a nÃ³, hÃ£y Ä‘á»ƒ nÃ³ cuá»™n lÃªn tá»± nhiÃªn trÆ°á»›c khi snap vá» section trÆ°á»›c
+    // Nếu đang ở section cuối và không ở đỉnh đầu của nó, hãy để nó cuộn lên tự nhiên trước khi snap về section trước
     const lastSectionEl = document.querySelector('.last-section-wrapper')
     if (activeSection.value === totalSections - 1 && lastSectionEl && lastSectionEl.scrollTop > 10) {
       return
@@ -92,7 +92,7 @@ const handleScroll = (e) => {
   if (isScrolling.value) {
     setTimeout(() => {
       isScrolling.value = false
-    }, 1200) // Khá»›p vá»›i thá»i gian transition 1s + Ä‘á»‡m
+    }, 1200) // Khớp với thời gian transition 1s + đệm
   }
 }
 

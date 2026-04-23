@@ -222,7 +222,7 @@ onMounted(async () => {
                 </span>
                 <span class="prod-card__video-text">
                   <strong>Video Demo</strong>
-                  <small>Xem ngay nÃ´i dung video cá»§a sáº£n pháº©m</small>
+                  <small>Xem ngay nội dung video của sản phẩm</small>
                 </span>
               </a>
               <div class="prod-card__footer">

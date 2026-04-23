@@ -25,7 +25,7 @@ const image = "/images/BUSINESS FIELD/87007cbc-55bd-48e8-acfd-8b1c32d35745.jpg"
         <div class="title-group entrance-up" :style="{ transitionDelay: '0.2s' }">
           <h2 class="fnt-serif">
             {{ title }}
-            <span class="red-stamp">è£å›½ <br> é¥°å›½</span>
+            <span class="red-stamp">裝国 <br> 饰国</span>
           </h2>
           <div class="red-horizontal-line entrance-expand"></div>
         </div>

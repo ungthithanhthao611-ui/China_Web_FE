@@ -820,7 +820,7 @@ watch(pageSize, async (nextSize, previousSize) => {
       </div>
       <div v-if="totalRecords > 0" class="table-pagination">
         <p class="pagination-meta">
-          Total {{ totalRecords }} records â€¢ Page {{ currentPage }} / {{ totalPages }}
+          Total {{ totalRecords }} records • Page {{ currentPage }} / {{ totalPages }}
         </p>
         <div class="pagination-actions">
           <button type="button" class="btn btn-secondary" :disabled="loading || currentPage <= 1" @click="setPage(currentPage - 1)">

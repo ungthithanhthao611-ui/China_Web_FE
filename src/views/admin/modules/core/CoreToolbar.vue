@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   config: {
     type: Object,
     required: true,
@@ -12,22 +14,28 @@ defineProps({
     type: Boolean,
     required: true,
   },
-});
+})
 
-const emit = defineEmits(["refresh", "create"]);
+const emit = defineEmits(['refresh', 'create'])
+
+const safeEyebrow = computed(() => props.config?.eyebrow || 'Admin module')
+const safeLabel = computed(() => props.config?.label || 'Bản ghi')
+const safeDescription = computed(
+  () => props.config?.description || 'Quản lý dữ liệu từ giao diện quản trị.',
+)
 </script>
 
 <template>
   <div class="manager-toolbar">
     <div class="manager-toolbar__content">
       <div class="manager-toolbar__badge-wrap">
-        <p class="eyebrow">{{ config.eyebrow }}</p>
+        <p class="eyebrow">{{ safeEyebrow }}</p>
         <span class="manager-toolbar__badge">CMS Module</span>
       </div>
 
       <div class="manager-toolbar__heading">
-        <h2>{{ config.label }}</h2>
-        <p class="description">{{ config.description }}</p>
+        <h2>{{ safeLabel }}</h2>
+        <p class="description">{{ safeDescription }}</p>
       </div>
     </div>
 

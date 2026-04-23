@@ -169,7 +169,7 @@ onMounted(() => {
     <!-- Loading -->
     <section v-if="loading" class="detail-empty">
       <div class="container">
-        <p style="color: #667085; margin-top: 60px">Loading articleâ€¦</p>
+        <p style="color: #667085; margin-top: 60px">Loading article…</p>
       </div>
     </section>
 
@@ -258,7 +258,7 @@ onMounted(() => {
       </section>
     </template>
 
-    <!-- Article khÃ´ng tá»“n táº¡i -->
+    <!-- Article không tồn tại -->
     <section v-else class="detail-empty">
       <div class="container">
         <h1>Article not found</h1>

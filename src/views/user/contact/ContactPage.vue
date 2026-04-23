@@ -4,9 +4,11 @@ import { useRoute } from 'vue-router'
 import { AlertCircle, CheckCircle, ChevronRight, ChevronUp, House, Loader2, Send } from 'lucide-vue-next'
 import { getContacts } from '@/views/user/services/publicApi'
 import { submitInquiry } from '@/views/user/services/productsApi'
+import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { uiState } from '@/shared/utils/uiState'
 
 const route = useRoute()
+const bootstrapStore = useBootstrapStore()
 const scrollContainer = ref(null)
 const activeSection = ref('ctn1')
 const animatedSections = ref(['ctn1'])
@@ -33,8 +35,9 @@ const contactTabs = [
   { name: 'Liên Hệ Chúng Tôi', path: '/contact#ctn2' },
 ]
 
-const fallbackMapEmbed =
-  'https://www.openstreetmap.org/export/embed.html?bbox=116.4378%2C39.9087%2C116.4439%2C39.9124&layer=mapnik&marker=39.910466%2C116.44079'
+const fallbackMapEmbed = 'https://www.google.com/maps?q=Vietnam&hl=vi&z=6&output=embed'
+const defaultLogoUrl =
+  'https://res.cloudinary.com/db1b15yn4/image/upload/v1776826808/logo-thien-dong.jpg-removebg-preview_ckqep4.png'
 
 const contactIcons = {
   address:
@@ -59,6 +62,18 @@ const qrItems = [
       'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/dd0e6fc9-5acf-455b-9d5b-ab546cee1f2f.png'
   }
 ]
+
+const readSetting = (keys, fallback = '') => {
+  for (const key of keys) {
+    const value = bootstrapStore.settingsMap[key]
+    if (value) return value
+  }
+  return fallback
+}
+
+const companyLogoUrl = computed(() =>
+  readSetting(['company_logo_url', 'site_logo', 'logo_url'], defaultLogoUrl),
+)
 
 const primaryContact = computed(() => {
   if (!contacts.value.length) {
@@ -168,17 +183,49 @@ function parseCoordinate(value, axis) {
   return parsed
 }
 
-function buildOsmEmbedUrl(latitude, longitude) {
-  const latitudeDelta = 0.0018
-  const longitudeDelta = 0.0031
-
-  const minLongitude = encodeURIComponent((longitude - longitudeDelta).toFixed(6))
-  const minLatitude = encodeURIComponent((latitude - latitudeDelta).toFixed(6))
-  const maxLongitude = encodeURIComponent((longitude + longitudeDelta).toFixed(6))
-  const maxLatitude = encodeURIComponent((latitude + latitudeDelta).toFixed(6))
+function buildGoogleEmbedFromCoordinates(latitude, longitude) {
   const marker = encodeURIComponent(`${latitude.toFixed(6)},${longitude.toFixed(6)}`)
+  return `https://www.google.com/maps?q=${marker}&hl=vi&z=16&output=embed`
+}
 
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${minLongitude}%2C${minLatitude}%2C${maxLongitude}%2C${maxLatitude}&layer=mapnik&marker=${marker}`
+function normalizeGoogleMapUrl(mapUrl) {
+  const rawValue = String(mapUrl ?? '').trim()
+  if (!rawValue) {
+    return ''
+  }
+
+  try {
+    const parsedUrl = new URL(rawValue)
+    const hostname = parsedUrl.hostname.toLowerCase()
+    const pathname = parsedUrl.pathname.toLowerCase()
+
+    if (!hostname.includes('google.') && !hostname.includes('goo.gl')) {
+      return ''
+    }
+
+    if (pathname.includes('/maps/embed')) {
+      return rawValue
+    }
+
+    const queryCandidate =
+      parsedUrl.searchParams.get('q') ||
+      parsedUrl.searchParams.get('query') ||
+      parsedUrl.searchParams.get('ll') ||
+      parsedUrl.searchParams.get('center')
+
+    if (queryCandidate) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(queryCandidate)}&hl=vi&z=16&output=embed`
+    }
+
+    const markerMatch = rawValue.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/)
+    if (markerMatch) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(`${markerMatch[1]},${markerMatch[2]}`)}&hl=vi&z=16&output=embed`
+    }
+
+    return `https://www.google.com/maps?q=${encodeURIComponent(rawValue)}&hl=vi&z=16&output=embed`
+  } catch {
+    return `https://www.google.com/maps?q=${encodeURIComponent(rawValue)}&hl=vi&z=16&output=embed`
+  }
 }
 
 const mapEmbed = computed(() => {
@@ -190,11 +237,10 @@ const mapEmbed = computed(() => {
   const latitude = parseCoordinate(contact.latitude, 'lat')
   const longitude = parseCoordinate(contact.longitude, 'lng')
   if (latitude !== null && longitude !== null) {
-    return buildOsmEmbedUrl(latitude, longitude)
+    return buildGoogleEmbedFromCoordinates(latitude, longitude)
   }
 
-  const mapUrl = String(contact.map_url || '').trim()
-  return mapUrl || fallbackMapEmbed
+  return normalizeGoogleMapUrl(contact.map_url) || fallbackMapEmbed
 })
 
 const hasContactData = computed(() => Boolean(primaryContact.value && contactDetails.value.length))
@@ -481,7 +527,7 @@ onUnmounted(() => {
                 <iframe :src="mapEmbed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 <div v-if="primaryContact" class="contact-map__marker">
                   <div class="contact-map__brand">
-                    <img src="/images/logo.png" alt="China Decor" />
+                    <img :src="companyLogoUrl" :alt="primaryContact.name || 'Company logo'" />
                   </div>
                   <div class="contact-map__label">
                     <strong>{{ primaryContact.name || 'China National Decoration Co.,Ltd' }}</strong>

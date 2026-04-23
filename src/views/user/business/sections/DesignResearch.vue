@@ -25,7 +25,7 @@ const reversed = false
     <div class="container content-grid">
       <div class="text-side">
         <div class="title-group">
-          <h2 class="fnt-serif">{{ title }} <span class="red-stamp">è£åœ‹ <br> é¥°å›½</span></h2>
+          <h2 class="fnt-serif">{{ title }} <span class="red-stamp">裝國 <br> 饰国</span></h2>
           <div class="red-horizontal-line"></div>
         </div>
 
@@ -149,7 +149,7 @@ const reversed = false
   height: 350px;
   background: #da1b2b;
   z-index: 1;
-  /* Tráº¡ng thÃ¡i ban Ä‘áº§u Ä‘á»ƒ trÆ°á»£t tá»« pháº£i vÃ o */
+  /* Trạng thái ban đầu để trượt từ phải vào */
   transform: translateX(100%);
   opacity: 0;
   transition: all 1s cubic-bezier(0.19, 1, 0.22, 1);
@@ -163,13 +163,13 @@ const reversed = false
   height: 120px;
   background: #da1b2b;
   z-index: 1;
-  /* Tráº¡ng thÃ¡i ban Ä‘áº§u Ä‘á»ƒ trÆ°á»£t tá»« trÃ¡i vÃ o */
+  /* Trạng thái ban đầu để trượt từ trái vào */
   transform: translateX(-100%);
   opacity: 0;
   transition: all 1s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-// KÃ­ch hoáº¡t animation khi trang Active
+// Kích hoạt animation khi trang Active
 .is-active {
   .red-deco-top {
     transform: translateX(0);
@@ -181,7 +181,7 @@ const reversed = false
   }
 }
 
-// HIá»†U á»¨NG HOVER REVEAL
+// HIỆU ỨNG HOVER REVEAL
 .red-deco-top, .red-deco-bottom-left {
   cursor: pointer;
   &::after {

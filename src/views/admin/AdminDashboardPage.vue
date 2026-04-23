@@ -6,16 +6,30 @@ import { ADMIN_TOKEN_STORAGE_KEY, ADMIN_USER_STORAGE_KEY } from '@/views/admin/c
 import { ADMIN_SECTION_GROUPS, ADMIN_SECTION_INDEX } from '@/views/admin/config/entityConfigs'
 import { getCurrentAdminUser, listAdminEntityRecords, listNavigationMenus } from '@/views/admin/api/adminApi.js'
 import { uiState } from '@/shared/utils/uiState'
-import EntityManager from '@/views/admin/modules/entity-manager/EntityManager.vue'
+
+import AboutManager from '@/views/admin/modules/about/AboutManager.vue'
+import ContactsManager from '@/views/admin/modules/contacts/ContactsManager.vue'
+import InquiriesManager from '@/views/admin/modules/contacts/InquiriesManager.vue'
+import ProductsManager from '@/views/admin/modules/products/ProductsManager.vue'
+import CategoriesManager from '@/views/admin/modules/products/CategoriesManager.vue'
+import VideosManager from '@/views/admin/modules/products/VideosManager.vue'
+import ProjectsManager from '@/views/admin/modules/projects/ProjectsManager.vue'
+
+import BannersManager from '@/views/admin/modules/system/BannersManager.vue'
+import SiteSettingsManager from '@/views/admin/modules/system/SiteSettingsManager.vue'
+import MediaAssetsManager from '@/views/admin/modules/system/MediaAssetsManager.vue'
 import HonorsManager from '@/views/admin/modules/honors/HonorsManager.vue'
 import NavigationMenusManager from '@/views/admin/modules/navigation/NavigationMenusManager.vue'
 import NewsManager from '@/views/admin/modules/news/NewsManager.vue'
+
 
 const router = useRouter()
 const route = useRoute()
 
 const availableSectionKeys = ['dashboard', 'navigation', ...Object.keys(ADMIN_SECTION_INDEX).filter((key) => key !== 'dashboard' && key !== 'navigation')]
 const LEGACY_SECTION_REDIRECTS = {
+  project_products: 'projects',
+  entity_media: 'projects',
 }
 
 function resolveSection(value) {
@@ -471,11 +485,91 @@ onBeforeUnmount(() => {
         </p>
       </section>
 
-      <EntityManager
-        v-else
-        :key="activeSection"
+      <AboutManager
+        v-else-if="activeSection === 'content_block_items'"
         :token="token"
-        :entity-key="activeSection"
+        :active="true"
+        @notify-success="setSuccess"
+        @notify-error="setError"
+        @clear-notify="clearMessages"
+      />
+
+      <ContactsManager
+        v-else-if="activeSection === 'contacts'"
+        :token="token"
+        :active="true"
+        @notify-success="setSuccess"
+        @notify-error="setError"
+        @clear-notify="clearMessages"
+      />
+
+      <InquiriesManager
+        v-else-if="activeSection === 'inquiry_submissions'"
+        :token="token"
+        :active="true"
+        @notify-success="setSuccess"
+        @notify-error="setError"
+        @clear-notify="clearMessages"
+      />
+
+      <ProductsManager
+        v-else-if="activeSection === 'products'"
+        :token="token"
+        :active="true"
+        @notify-success="setSuccess"
+        @notify-error="setError"
+        @clear-notify="clearMessages"
+      />
+
+      <CategoriesManager
+        v-else-if="activeSection === 'product_categories'"
+        :token="token"
+        :active="true"
+        @notify-success="setSuccess"
+        @notify-error="setError"
+        @clear-notify="clearMessages"
+      />
+
+      <VideosManager
+        v-else-if="activeSection === 'videos'"
+        :token="token"
+        :active="true"
+        @notify-success="setSuccess"
+        @notify-error="setError"
+        @clear-notify="clearMessages"
+      />
+
+      <ProjectsManager
+        v-else-if="activeSection === 'projects'"
+        :token="token"
+        :active="true"
+        @notify-success="setSuccess"
+        @notify-error="setError"
+        @clear-notify="clearMessages"
+      />
+
+
+      <BannersManager
+        v-else-if="activeSection === 'banners'"
+        :token="token"
+        :active="true"
+        @notify-success="setSuccess"
+        @notify-error="setError"
+        @clear-notify="clearMessages"
+      />
+
+      <SiteSettingsManager
+        v-else-if="activeSection === 'site_settings'"
+        :token="token"
+        :active="true"
+        @notify-success="setSuccess"
+        @notify-error="setError"
+        @clear-notify="clearMessages"
+      />
+
+      <MediaAssetsManager
+        v-else-if="activeSection === 'media_assets'"
+        :token="token"
         :active="true"
         @notify-success="setSuccess"
         @notify-error="setError"
