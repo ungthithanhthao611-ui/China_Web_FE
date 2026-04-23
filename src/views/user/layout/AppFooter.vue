@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { findMenuItems, normalizeMenuItems, toLinkProps } from '@/shared/utils/navigation'
 import { uiState } from '@/shared/utils/uiState'
+import logoImage from '@/assets/logo-cty.png'
 
 const props = defineProps({
   forceVisible: {
@@ -119,28 +120,9 @@ const footerGroups = computed(() => {
   }))
 })
 
-const socialItems = [
-  {
-    name: 'wechat',
-    href: '#',
-    icon: 'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/07d4f28d-1dc0-4f6c-a387-820025a3de76.png',
-    qr: 'https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/675e6578-004d-4d09-bda7-fd6d57af218d.jpeg'
-  },
-  {
-    name: 'weibo',
-    href: 'https://weibo.com/u/5705681276',
-    icon: 'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/2519511a-7e4d-4f4d-b708-fc4821cc59ff.png'
-  },
-  {
-    name: 'channel',
-    href: '#',
-    icon: 'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/ca068339-ec52-4181-8281-afe11cc0a744.png',
-    qr: 'https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/1f5f7088-c0d0-404b-bfff-c3a511768b81.jpg'
-  }
-]
+const socialItems = []
 
-const defaultLogoUrl =
-  'https://res.cloudinary.com/db1b15yn4/image/upload/v1776826808/logo-thien-dong.jpg-removebg-preview_ckqep4.png'
+const defaultLogoUrl = logoImage
 const siteName = computed(() =>
   readSetting(
     ['site_name', 'company_name'],
@@ -150,9 +132,7 @@ const siteName = computed(() =>
 const siteTagline = computed(() =>
   readSetting(['site_tagline', 'company_slogan'], 'UY TÍN TỪ NHỮNG ĐIỀU NHỎ NHẤT'),
 )
-const companyLogoUrl = computed(() =>
-  readSetting(['company_logo_url', 'site_logo', 'logo_url'], defaultLogoUrl),
-)
+const companyLogoUrl = computed(() => defaultLogoUrl)
 
 const contactItems = computed(() => {
   const fallbackAddressLines = [
@@ -223,7 +203,7 @@ const getLinkProps = (item) => toLinkProps(item)
           <div class="foot_left">
             <router-link id="footer-logo-link" class="foot_logo" to="/">
               <img
-                :src="companyLogoUrl"
+                :src="logoImage"
                 :alt="siteName"
               />
             </router-link>

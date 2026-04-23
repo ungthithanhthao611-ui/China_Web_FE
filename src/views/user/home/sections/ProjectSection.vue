@@ -142,7 +142,6 @@ onUnmounted(() => {
           <div class="tit-box" :class="{ 'reveal-anim': active }">
              <div class="tit-content">
                 <span class="fnt-36">DỰ ÁN TIÊU BIỂU</span>
-                <img src="https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/012ad584-f3a1-4ceb-a342-1936a1bf6ff2.png" class="stamp-ic" alt=""/>
              </div>
              <div class="tit-line"></div>
           </div>

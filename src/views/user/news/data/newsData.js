@@ -12,6 +12,5 @@ export const newsHero = {
     'https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/ebdf4a36-79b8-4e02-a195-5f552d4cb8ef.jpg',
   listBackground:
     'https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/f05a7ab9-c68c-43f3-9113-55fb50cb4dd7.jpg',
-  sectionDecoration:
-    'https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/53e45437-3eaa-453a-87e7-5d86b6f29064.png',
+  sectionDecoration: '',
 }

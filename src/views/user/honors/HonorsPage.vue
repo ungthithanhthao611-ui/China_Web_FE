@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { env } from '@/shared/config/env'
@@ -9,6 +9,7 @@ import HonorsAwardsTabs from '@/views/user/honors/ui/HonorsAwardsTabs.vue'
 import HonorsHeroSection from '@/views/user/honors/ui/HonorsHeroSection.vue'
 import HonorsQualificationList from '@/views/user/honors/ui/HonorsQualificationList.vue'
 import HonorCard from '@/views/user/honors/ui/HonorCard.vue'
+import logoImage from '@/assets/logo-cty.png'
 
 const route = useRoute()
 const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
@@ -32,17 +33,25 @@ const hero = ref({
     'https://res.cloudinary.com/db1b15yn4/image/upload/v1776695465/width_1600_1_kqfqbl.png',
   mobile_background:
     'https://res.cloudinary.com/db1b15yn4/image/upload/v1776695465/width_1600_1_kqfqbl.png',
-  accent:
-    'https://omo-oss-image.thefastimg.com/portal-saas/ngc202303290005/cms/image/53e45437-3eaa-453a-87e7-5d86b6f29064.png',
+  accent: '',
 })
 const qualificationItems = ref([])
 const factoryLocationItems = ref([])
-const outputItems = ref([])
+const factoryMapEmbed = ref('')
+const outputMetrics = ref([])
 const technologyItems = ref([])
 const corporateItems = ref([])
 const projectItems = ref([])
 const contacts = ref([])
 const primaryContact = ref(null)
+
+const companyName = computed(() => {
+  const name = primaryContact.value?.name || ''
+  if (!name || name.toLowerCase().includes('china national decoration')) {
+    return 'CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ THIÊN ĐỒNG VIỆT NAM'
+  }
+  return name
+})
 
 const fallbackFactoryImages = [
   {
@@ -118,16 +127,52 @@ function resolveImageUrl(url) {
   return `${API_ORIGIN}${url.startsWith('/') ? url : `/${url}`}`
 }
 
-function buildOsmEmbedUrl(latitude, longitude) {
-  const latitudeDelta = 0.0018
-  const longitudeDelta = 0.0031
-  const minLongitude = encodeURIComponent((longitude - longitudeDelta).toFixed(6))
-  const minLatitude = encodeURIComponent((latitude - latitudeDelta).toFixed(6))
-  const maxLongitude = encodeURIComponent((longitude + longitudeDelta).toFixed(6))
-  const maxLatitude = encodeURIComponent((latitude + latitudeDelta).toFixed(6))
+function buildGoogleEmbedFromCoordinates(latitude, longitude) {
   const marker = encodeURIComponent(`${latitude.toFixed(6)},${longitude.toFixed(6)}`)
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${minLongitude}%2C${minLatitude}%2C${maxLongitude}%2C${maxLatitude}&layer=mapnik&marker=${marker}`
+  return `https://www.google.com/maps?q=${marker}&hl=vi&z=16&output=embed`
 }
+
+function normalizeGoogleMapUrl(mapUrl) {
+  const rawValue = String(mapUrl ?? '').trim()
+  if (!rawValue) {
+    return ''
+  }
+
+  try {
+    const parsedUrl = new URL(rawValue)
+    const hostname = parsedUrl.hostname.toLowerCase()
+    const pathname = parsedUrl.pathname.toLowerCase()
+
+    if (!hostname.includes('google.') && !hostname.includes('goo.gl')) {
+      return ''
+    }
+
+    if (pathname.includes('/maps/embed')) {
+      return rawValue
+    }
+
+    const queryCandidate =
+      parsedUrl.searchParams.get('q') ||
+      parsedUrl.searchParams.get('query') ||
+      parsedUrl.searchParams.get('ll') ||
+      parsedUrl.searchParams.get('center')
+
+    if (queryCandidate) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(queryCandidate)}&hl=vi&z=16&output=embed`
+    }
+
+    const markerMatch = rawValue.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/)
+    if (markerMatch) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(`${markerMatch[1]},${markerMatch[2]}`)}&hl=vi&z=16&output=embed`
+    }
+
+    return `https://www.google.com/maps?q=${encodeURIComponent(rawValue)}&hl=vi&z=16&output=embed`
+  } catch {
+    return `https://www.google.com/maps?q=${encodeURIComponent(rawValue)}&hl=vi&z=16&output=embed`
+  }
+}
+
+const fallbackMapEmbed = 'https://www.google.com/maps?q=Vietnam&hl=vi&z=6&output=embed'
 
 function parseCoordinate(value, axis) {
   const raw = String(value ?? '').trim()
@@ -186,12 +231,14 @@ async function loadHonors() {
       const lng = parseCoordinate(primaryContact.value.longitude, 'lng')
       factoryMapEmbed.value =
         lat !== null && lng !== null
-          ? buildOsmEmbedUrl(lat, lng)
-          : String(primaryContact.value.map_url || '').trim()
+          ? buildGoogleEmbedFromCoordinates(lat, lng)
+          : normalizeGoogleMapUrl(primaryContact.value.map_url) || fallbackMapEmbed
       factoryAddressText.value =
         [primaryContact.value.name, primaryContact.value.address, primaryContact.value.phone]
           .filter(Boolean)
           .join(' • ')
+    } else {
+      factoryMapEmbed.value = fallbackMapEmbed
     }
 
     const payload = await getHonorsPageData()
@@ -266,13 +313,21 @@ onBeforeUnmount(() => {
         </header>
         <div class="location-layout">
           <div class="location-map">
-            <iframe :src="factoryMapEmbed || 'https://www.openstreetmap.org/export/embed.html?bbox=116.4378%2C39.9087%2C116.4439%2C39.9124&layer=mapnik&marker=39.910466%2C116.44079'" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <iframe :src="factoryMapEmbed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <div v-if="primaryContact" class="contact-map__marker">
+              <div class="contact-map__brand">
+                <img :src="logoImage" :alt="primaryContact.name || 'Company logo'" />
+              </div>
+              <div class="contact-map__label">
+                <strong>{{ companyName }}</strong>
+                <span>{{ primaryContact.address || 'Địa chỉ nhà máy đang được cập nhật.' }}</span>
+              </div>
+            </div>
           </div>
           <div class="location-copy">
             <div class="location-meta">Location</div>
-            <h3>{{ primaryContact?.name || 'Factory location' }}</h3>
+            <h3>{{ companyName }}</h3>
             <p>{{ primaryContact?.address || 'Đang cập nhật địa chỉ nhà máy.' }}</p>
-            <div class="location-chip" v-if="factoryAddressText">{{ factoryAddressText }}</div>
           </div>
         </div>
       </div>
@@ -453,10 +508,70 @@ onBeforeUnmount(() => {
 }
 
 .location-map {
+  position: relative;
   min-height: 560px;
   border-radius: 28px;
   overflow: hidden;
   box-shadow: 0 20px 44px rgba(18, 12, 6, 0.18);
+  border: 1px solid #d2a66b;
+}
+
+.contact-map__marker {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(25px, -50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 240px;
+  max-width: 300px;
+  padding: 10px 14px;
+  background: rgba(190, 145, 92, 0.94);
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(88, 58, 28, 0.25);
+  pointer-events: none;
+  z-index: 10;
+  border-radius: 4px;
+}
+
+.contact-map__marker::after {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 10px solid rgba(190, 145, 92, 0.94);
+}
+
+.contact-map__brand {
+  width: 54px;
+  flex-shrink: 0;
+}
+
+.contact-map__brand img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.contact-map__label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.contact-map__label strong {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 2px;
 }
 
 .location-map iframe {
@@ -571,6 +686,33 @@ onBeforeUnmount(() => {
 
   .location-map {
     min-height: 360px;
+    border-radius: 20px;
+  }
+
+  .contact-map__marker {
+    left: 14px;
+    right: 14px;
+    top: 14px;
+    transform: none;
+    min-width: 0;
+    max-width: none;
+    padding: 12px;
+  }
+
+  .contact-map__marker::after {
+    display: none;
+  }
+
+  .contact-map__brand {
+    width: 64px;
+  }
+
+  .contact-map__label strong {
+    font-size: 13px;
+  }
+
+  .contact-map__label {
+    font-size: 11px;
   }
 }
 </style>

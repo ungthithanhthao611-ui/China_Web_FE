@@ -32,7 +32,7 @@ const image = "/images/BUSINESS FIELD/f8a3b381-108e-4d95-9212-c158344b05ed.png"
         <div class="title-group entrance-up" :style="{ transitionDelay: '0.2s' }">
           <h2 class="fnt-serif">
             {{ title }}
-            <span class="red-stamp">裝国<br>饰国</span>
+            <span class="red-stamp">ẤN</span>
           </h2>
           <div class="red-horizontal-line entrance-expand"></div>
         </div>

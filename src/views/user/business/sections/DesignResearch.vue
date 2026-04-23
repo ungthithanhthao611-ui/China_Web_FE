@@ -25,7 +25,7 @@ const reversed = false
     <div class="container content-grid">
       <div class="text-side">
         <div class="title-group">
-          <h2 class="fnt-serif">{{ title }} <span class="red-stamp">裝國 <br> 饰国</span></h2>
+          <h2 class="fnt-serif">{{ title }} <span class="red-stamp">ẤN</span></h2>
           <div class="red-horizontal-line"></div>
         </div>
 

@@ -6,6 +6,7 @@ import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { findMenuItems, normalizeMenuItems, toLinkProps } from '@/shared/utils/navigation'
 import { uiState } from '@/shared/utils/uiState'
 import { listProductCategories } from '@/views/user/services/productsApi'
+import logoImage from '@/assets/logo-cty.png'
 
 const isMobileMenuOpen = ref(false)
 const isSearchOpen = ref(false)
@@ -88,15 +89,12 @@ const readSetting = (keys, fallback = '') => {
   return fallback
 }
 
-const defaultLogoUrl =
-  'https://res.cloudinary.com/db1b15yn4/image/upload/v1776826808/logo-thien-dong.jpg-removebg-preview_ckqep4.png'
-const siteName = computed(() => readSetting(['site_name', 'company_name'], 'THIÊN ĐỒNG VIỆT NAM'))
+const defaultLogoUrl = logoImage
+const siteName = computed(() => readSetting(['site_name', 'company_name'], 'CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ THIÊN ĐỒNG VIỆT NAM'))
 const siteTagline = computed(() =>
   readSetting(['site_tagline', 'company_slogan'], 'UY TÍN TỪ NHỮNG ĐIỀU NHỎ NHẤT'),
 )
-const companyLogoUrl = computed(() =>
-  readSetting(['company_logo_url', 'site_logo', 'logo_url'], defaultLogoUrl),
-)
+const companyLogoUrl = computed(() => defaultLogoUrl)
 const headerEmail = computed(() =>
   readSetting(['company_email', 'contact_email', 'email'], 'thiendongintl@gmail.com'),
 )
@@ -256,12 +254,8 @@ onBeforeUnmount(() => {
     <div class="header_flx">
       <div class="brand-block">
         <router-link to="/" class="logo-link">
-          <img :src="companyLogoUrl" :alt="`${siteName} logo`" />
+          <img :src="logoImage" :alt="`${siteName} logo`" />
         </router-link>
-        <div class="brand-copy">
-          <strong class="brand-name">{{ siteName }}</strong>
-          <span class="brand-tagline">{{ siteTagline }}</span>
-        </div>
       </div>
 
       <div class="header_r">

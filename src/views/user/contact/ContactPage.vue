@@ -6,6 +6,7 @@ import { getContacts } from '@/views/user/services/publicApi'
 import { submitInquiry } from '@/views/user/services/productsApi'
 import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { uiState } from '@/shared/utils/uiState'
+import logoImage from '@/assets/logo-cty.png'
 
 const route = useRoute()
 const bootstrapStore = useBootstrapStore()
@@ -36,8 +37,7 @@ const contactTabs = [
 ]
 
 const fallbackMapEmbed = 'https://www.google.com/maps?q=Vietnam&hl=vi&z=6&output=embed'
-const defaultLogoUrl =
-  'https://res.cloudinary.com/db1b15yn4/image/upload/v1776826808/logo-thien-dong.jpg-removebg-preview_ckqep4.png'
+const defaultLogoUrl = logoImage
 
 const contactIcons = {
   address:
@@ -50,18 +50,7 @@ const contactIcons = {
     'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/c8bab589-8307-4f7b-92bb-4fddbb9c7003.png'
 }
 
-const qrItems = [
-  {
-    label: 'Weibo Chính thức',
-    image:
-      'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/7bf73994-265a-4dd7-82a5-da95de2d899b.png'
-  },
-  {
-    label: 'WeChat Chính thức',
-    image:
-      'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/dd0e6fc9-5acf-455b-9d5b-ab546cee1f2f.png'
-  }
-]
+const qrItems = []
 
 const readSetting = (keys, fallback = '') => {
   for (const key of keys) {
@@ -71,9 +60,7 @@ const readSetting = (keys, fallback = '') => {
   return fallback
 }
 
-const companyLogoUrl = computed(() =>
-  readSetting(['company_logo_url', 'site_logo', 'logo_url'], defaultLogoUrl),
-)
+const companyLogoUrl = computed(() => defaultLogoUrl)
 
 const primaryContact = computed(() => {
   if (!contacts.value.length) {
@@ -83,13 +70,19 @@ const primaryContact = computed(() => {
   return contacts.value.find((item) => item?.is_primary) || contacts.value[0]
 })
 
-const companyName = computed(() => primaryContact.value?.name || 'China National Decoration Co.,Ltd')
+const companyName = computed(() => {
+  const name = primaryContact.value?.name || ''
+  if (!name || name.toLowerCase().includes('china national decoration')) {
+    return 'CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ THIÊN ĐỒNG VIỆT NAM'
+  }
+  return name
+})
 
 const companyNameLines = computed(() => {
   const name = companyName.value.trim()
 
-  if (!name) {
-    return ['China National Decoration', 'Co.,Ltd']
+  if (name === 'CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ THIÊN ĐỒNG VIỆT NAM') {
+    return ['CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ', 'THIÊN ĐỒNG VIỆT NAM']
   }
 
   if (name.includes(',')) {
@@ -99,13 +92,6 @@ const companyNameLines = computed(() => {
       .filter(Boolean)
 
     return parts.length ? parts : [name]
-  }
-
-  const suffix = 'Co.,Ltd'
-
-  if (name.endsWith(suffix) && name !== suffix) {
-    const prefix = name.slice(0, -suffix.length).trim()
-    return prefix ? [prefix, suffix] : [name]
   }
 
   return [name]
@@ -527,11 +513,11 @@ onUnmounted(() => {
                 <iframe :src="mapEmbed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 <div v-if="primaryContact" class="contact-map__marker">
                   <div class="contact-map__brand">
-                    <img :src="companyLogoUrl" :alt="primaryContact.name || 'Company logo'" />
+                    <img :src="logoImage" :alt="primaryContact.name || 'Company logo'" />
                   </div>
                   <div class="contact-map__label">
-                    <strong>{{ primaryContact.name || 'China National Decoration Co.,Ltd' }}</strong>
-                    <span>{{ primaryContact.address || 'Contact address is being updated.' }}</span>
+                    <strong>{{ companyName }}</strong>
+                    <span>{{ primaryContact.address || 'Địa chỉ đang được cập nhật.' }}</span>
                   </div>
                 </div>
               </div>
@@ -1253,31 +1239,32 @@ onUnmounted(() => {
   transform: translate(25px, -50%);
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-width: 288px;
-  max-width: 330px;
-  padding: 14px 16px;
-  background: rgba(190, 145, 92, 0.96);
+  gap: 10px;
+  min-width: 240px;
+  max-width: 300px;
+  padding: 10px 14px;
+  background: rgba(190, 145, 92, 0.94);
   color: #ffffff;
-  box-shadow: 0 16px 28px rgba(88, 58, 28, 0.2);
+  box-shadow: 0 12px 24px rgba(88, 58, 28, 0.25);
   pointer-events: none;
+  border-radius: 4px;
 }
 
 .contact-map__marker::after {
   content: '';
   position: absolute;
-  left: -9px;
+  left: -8px;
   top: 50%;
   transform: translateY(-50%);
   width: 0;
   height: 0;
-  border-top: 9px solid transparent;
-  border-bottom: 9px solid transparent;
-  border-right: 12px solid rgba(190, 145, 92, 0.96);
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 10px solid rgba(190, 145, 92, 0.94);
 }
 
 .contact-map__brand {
-  width: 86px;
+  width: 54px;
   flex-shrink: 0;
 }
 
@@ -1290,15 +1277,16 @@ onUnmounted(() => {
 .contact-map__label {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  font-size: 12px;
-  line-height: 1.38;
+  gap: 1px;
+  font-size: 11px;
+  line-height: 1.3;
 }
 
 .contact-map__label strong {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.2;
+  margin-bottom: 2px;
 }
 
 .contact-footer-section {
