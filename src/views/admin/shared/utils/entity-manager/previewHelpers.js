@@ -317,7 +317,7 @@ export function createEntityManagerPreviewHelpers({
 
   const buildMediaPreviewFromMediaRecord = (
     media,
-    fallbackLabel = "Media preview",
+    fallbackLabel = "Xem trước media",
   ) => {
     if (!media?.url) return null;
 
@@ -340,7 +340,7 @@ export function createEntityManagerPreviewHelpers({
     return null;
   };
 
-  const buildMediaPreviewFromUrl = (rawUrl, fallbackLabel = "Media preview") => {
+  const buildMediaPreviewFromUrl = (rawUrl, fallbackLabel = "Xem trước media") => {
     const normalized = normalizedExternalUrl(rawUrl);
     if (!normalized) return null;
 
@@ -387,7 +387,7 @@ export function createEntityManagerPreviewHelpers({
     if (entityKey.value === "page_sections") {
       return buildMediaPreviewFromMediaRecord(
         getMediaOptionById(record?.image_id),
-        "Section image preview",
+        "Xem trước ảnh section",
       );
     }
 
@@ -395,7 +395,7 @@ export function createEntityManagerPreviewHelpers({
       return null;
     }
 
-    // Prioritize linked media asset if image_id exists
+    // Ưu tiên media đã liên kết nếu image_id tồn tại
     if (record?.image_id) {
       const linkedMedia = buildMediaPreviewFromMediaRecord(
         getMediaOptionById(record.image_id),
@@ -404,7 +404,7 @@ export function createEntityManagerPreviewHelpers({
       if (linkedMedia) return linkedMedia;
     }
 
-    // Fallback to metadata only if no image_id found or it failed to resolve
+    // Fallback sang metadata nếu không có image_id hoặc không resolve được
     const metadata = safeMetadataObject(record?.metadata_json);
     const metadataPreview = buildMediaPreviewFromUrl(
       metadata?.src ||
@@ -487,7 +487,7 @@ export function createEntityManagerPreviewHelpers({
 
   const selectedMediaLabel = (form, field) => {
     const media = getMediaOptionById(form[field]);
-    return media ? mediaAssetLabel(media) : "No media selected";
+    return media ? mediaAssetLabel(media) : "Chưa chọn media";
   };
 
   const rowThumbnailUrl = (record) =>
@@ -499,10 +499,10 @@ export function createEntityManagerPreviewHelpers({
   const videoUrlHint = (url) => {
     const normalized = String(url || "").trim();
     if (!normalized) return "";
-    if (isDirectVideoFile(normalized)) return "Direct video file detected";
-    if (/youtube\.com|youtu\.be/i.test(normalized)) return "YouTube link detected";
-    if (/vimeo\.com/i.test(normalized)) return "Vimeo link detected";
-    return "External video link detected";
+    if (isDirectVideoFile(normalized)) return "Đã nhận diện tệp video trực tiếp";
+    if (/youtube\.com|youtu\.be/i.test(normalized)) return "Đã nhận diện liên kết YouTube";
+    if (/vimeo\.com/i.test(normalized)) return "Đã nhận diện liên kết Vimeo";
+    return "Đã nhận diện liên kết video ngoài";
   };
 
   return {

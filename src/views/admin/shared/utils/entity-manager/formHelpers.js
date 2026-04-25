@@ -173,8 +173,8 @@ export function createEntityManagerFormHelpers({
   const entityMediaTargetTypeLabel = () => {
     if (!isEntityMediaEntity.value) return "";
     return String(form.entity_type || "").trim() === "project"
-      ? "Project target"
-      : "Project Category target";
+      ? "Đích dự án"
+      : "Đích danh mục dự án";
   };
 
   const selectedRelationSummary = (field) => {

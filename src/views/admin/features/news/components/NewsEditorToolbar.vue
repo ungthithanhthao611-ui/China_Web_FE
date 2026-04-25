@@ -1,7 +1,7 @@
 <template>
   <div class="cms-toolbar">
     <div class="cms-toolbar__group">
-      <button class="cms-toolbar__btn cms-toolbar__btn--ghost" @click="$emit('back')">← Back</button>
+      <button class="cms-toolbar__btn cms-toolbar__btn--ghost" @click="$emit('back')">← Quay lại</button>
       <button class="cms-toolbar__icon" :disabled="!canUndo" @click="$emit('undo')">↶</button>
       <button class="cms-toolbar__icon" :disabled="!canRedo" @click="$emit('redo')">↷</button>
     </div>
@@ -29,7 +29,7 @@
 
     <div class="cms-toolbar__group cms-toolbar__group--relative">
       <button class="cms-toolbar__btn" @click="$emit('toggle-text-color')">
-        Text Color
+        Màu chữ
         <span class="cms-toolbar__color-preview" :style="{ background: textColor }"></span>
       </button>
       <EditorColorPopover :open="textColorOpen" :model-value="textColor" @select="$emit('set-text-color', $event)" />
@@ -37,7 +37,7 @@
 
     <div class="cms-toolbar__group cms-toolbar__group--relative">
       <button class="cms-toolbar__btn" @click="$emit('toggle-highlight-color')">
-        Highlight
+        Tô nền
         <span class="cms-toolbar__color-preview" :style="{ background: highlightColor }"></span>
       </button>
       <EditorColorPopover :open="highlightOpen" :model-value="highlightColor" @select="$emit('set-highlight-color', $event)" />
@@ -45,18 +45,18 @@
 
     <div class="cms-toolbar__divider"></div>
 
-    <div class="cms-toolbar__group cms-toolbar__group--alignment" aria-label="Paragraph Alignment">
-      <button class="cms-toolbar__icon cms-toolbar__icon--align" :class="{ active: align === 'left' }" title="Align Left" @click="$emit('set-align', 'left')">
+    <div class="cms-toolbar__group cms-toolbar__group--alignment" aria-label="Căn chỉnh đoạn văn">
+      <button class="cms-toolbar__icon cms-toolbar__icon--align" :class="{ active: align === 'left' }" title="Căn trái" @click="$emit('set-align', 'left')">
         <span class="align-icon align-icon--left" aria-hidden="true">
           <span></span><span></span><span></span>
         </span>
       </button>
-      <button class="cms-toolbar__icon cms-toolbar__icon--align" :class="{ active: align === 'center' }" title="Center" @click="$emit('set-align', 'center')">
+      <button class="cms-toolbar__icon cms-toolbar__icon--align" :class="{ active: align === 'center' }" title="Căn giữa" @click="$emit('set-align', 'center')">
         <span class="align-icon align-icon--center" aria-hidden="true">
           <span></span><span></span><span></span>
         </span>
       </button>
-      <button class="cms-toolbar__icon cms-toolbar__icon--align" :class="{ active: align === 'right' }" title="Align Right" @click="$emit('set-align', 'right')">
+      <button class="cms-toolbar__icon cms-toolbar__icon--align" :class="{ active: align === 'right' }" title="Căn phải" @click="$emit('set-align', 'right')">
         <span class="align-icon align-icon--right" aria-hidden="true">
           <span></span><span></span><span></span>
         </span>
@@ -67,17 +67,17 @@
 
     <div class="cms-toolbar__group">
       <select class="cms-toolbar__select" :value="textStyle" @change="$emit('set-text-style', $event.target.value)">
-        <option value="paragraph">Paragraph</option>
-        <option value="h1">Heading 1</option>
-        <option value="h2">Heading 2</option>
-        <option value="h3">Heading 3</option>
+        <option value="paragraph">Đoạn văn</option>
+        <option value="h1">Tiêu đề 1</option>
+        <option value="h2">Tiêu đề 2</option>
+        <option value="h3">Tiêu đề 3</option>
       </select>
       <select class="cms-toolbar__select" @change="$emit('set-bullet-style', $event.target.value)">
-        <option value="">Bullet Library</option>
+        <option value="">Kiểu bullet</option>
         <option v-for="item in bulletStyles" :key="item.value" :value="item.value">{{ item.label }}</option>
       </select>
       <select class="cms-toolbar__select" @change="$emit('set-number-style', $event.target.value)">
-        <option value="">Numbering Library</option>
+        <option value="">Kiểu đánh số</option>
         <option v-for="item in numberStyles" :key="item.value" :value="item.value">{{ item.label }}</option>
       </select>
       <button class="cms-toolbar__icon" @click="$emit('indent-down')">⇤</button>
@@ -87,10 +87,10 @@
     <div class="cms-toolbar__spacer"></div>
 
     <div class="cms-toolbar__group">
-      <span v-if="saveStatus === 'saving'" class="cms-toolbar__status">Saving...</span>
-      <span v-else-if="saveStatus === 'saved'" class="cms-toolbar__status cms-toolbar__status--ok">Saved</span>
-      <span v-else-if="saveStatus === 'error'" class="cms-toolbar__status cms-toolbar__status--error">Save failed</span>
-      <button class="cms-toolbar__save" @click="$emit('save')">Save Article</button>
+      <span v-if="saveStatus === 'saving'" class="cms-toolbar__status">Đang lưu...</span>
+      <span v-else-if="saveStatus === 'saved'" class="cms-toolbar__status cms-toolbar__status--ok">Đã lưu</span>
+      <span v-else-if="saveStatus === 'error'" class="cms-toolbar__status cms-toolbar__status--error">Lưu thất bại</span>
+      <button class="cms-toolbar__save" @click="$emit('save')">Lưu bài viết</button>
     </div>
   </div>
 </template>

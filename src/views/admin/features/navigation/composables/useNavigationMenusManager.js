@@ -128,17 +128,32 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     if (typeof options.confirmAction === 'function') {
       return Boolean(await options.confirmAction(payload))
     }
-    return window.confirm(payload?.message || 'Are you sure?')
+
+    notifyError('Không thể mở hộp thoại xác nhận cho thao tác này.')
+    return false
   }
 
   function findNodeContext(cid) {
     return findNodeContextByCid(cid, navTree.value)
   }
 
+  function getPreferredLanguageId() {
+    const normalizedLanguages = [...languages.value].sort((a, b) => {
+      if (a?.is_default && !b?.is_default) return -1
+      if (!a?.is_default && b?.is_default) return 1
+      if (String(a?.code || '').toLowerCase() === 'vi' && String(b?.code || '').toLowerCase() !== 'vi') return -1
+      if (String(a?.code || '').toLowerCase() !== 'vi' && String(b?.code || '').toLowerCase() === 'vi') return 1
+      return Number(a?.id || 0) - Number(b?.id || 0)
+    })
+
+    const preferredLanguage = normalizedLanguages[0]
+    return preferredLanguage ? String(preferredLanguage.id) : '1'
+  }
+
   function resetMenuForm() {
     menuForm.name = ''
     menuForm.location = 'header'
-    menuForm.language_id = languages.value[0] ? String(languages.value[0].id) : ''
+    menuForm.language_id = getPreferredLanguageId()
     menuForm.is_active = true
   }
 
@@ -185,7 +200,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
         menuForm.language_id = String(languages.value[0].id)
       }
     } catch (error) {
-      notifyError(error.message || 'Failed to load languages.')
+      notifyError(error.message || 'Không thể tải danh sách ngôn ngữ.')
     } finally {
       loadingLanguages.value = false
     }
@@ -214,7 +229,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
         syncMenuTree(selectedMenu.value)
       }
     } catch (error) {
-      notifyError(error.message || 'Failed to load navigation menus.')
+      notifyError(error.message || 'Không thể tải danh sách menu điều hướng.')
     } finally {
       loadingNavigation.value = false
     }
@@ -224,7 +239,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     const token = normalizedToken()
     if (!token) {
       emit('menus-count', 0)
-      notifyError('Please provide admin token first.')
+      notifyError('Vui lòng đăng nhập quản trị để tiếp tục.')
       return
     }
 
@@ -251,12 +266,12 @@ export function useNavigationMenusManager(props, emit, options = {}) {
       await loadLanguages()
     }
     resetMenuForm()
-    openDrawer('createMenu', 'Add Menu')
+    openDrawer('createMenu', 'Thêm menu mới')
   }
 
   async function openEditMenuDrawer() {
     if (!selectedMenu.value) {
-      notifyError('Please select a menu first.')
+      notifyError('Vui lòng chọn menu trước.')
       return
     }
     if (languages.value.length === 0) {
@@ -266,22 +281,22 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     menuForm.location = selectedMenu.value.location || ''
     menuForm.language_id = String(selectedMenu.value.language_id || '')
     menuForm.is_active = Boolean(selectedMenu.value.is_active)
-    openDrawer('editMenu', 'Edit Menu')
+    openDrawer('editMenu', 'Chỉnh sửa menu')
   }
 
   function openCreateRootNodeDrawer() {
     if (!selectedMenu.value) {
-      notifyError('Please select a menu first.')
+      notifyError('Vui lòng chọn menu trước.')
       return
     }
     resetNodeForm()
     parentForNewNodeCid.value = ''
-    openDrawer('createNode', 'Add Navigation Entry')
+    openDrawer('createNode', 'Thêm mục gốc')
   }
 
   function openCreateChildNodeDrawer(cid) {
     if (!selectedMenu.value) {
-      notifyError('Please select a menu first.')
+      notifyError('Vui lòng chọn menu trước.')
       return
     }
     const context = findNodeContext(cid)
@@ -291,7 +306,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     parentForNewNodeCid.value = cid
     nodeForm.item_type = 'child'
     nodeForm.sort_order = (context.node.children || []).length * 10
-    openDrawer('createNode', `Add Child For "${context.node.title}"`)
+    openDrawer('createNode', `Thêm mục con cho "${context.node.title}"`)
   }
 
   function openEditNodeDrawer(cid) {
@@ -306,23 +321,23 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     nodeForm.page_id = context.node.page_id ?? ''
     nodeForm.anchor = context.node.anchor || ''
     nodeForm.sort_order = context.node.sort_order ?? 0
-    openDrawer('editNode', `Edit "${context.node.title}"`)
+    openDrawer('editNode', `Chỉnh sửa mục "${context.node.title}"`)
   }
 
   async function submitDrawer() {
     const token = normalizedToken()
     if (!token) {
-      notifyError('Please provide admin token first.')
+      notifyError('Vui lòng đăng nhập quản trị để tiếp tục.')
       return
     }
 
     if (drawerMode.value === 'createMenu') {
       if (!menuForm.name.trim()) {
-        notifyError('Menu name is required.')
+        notifyError('Tên menu là bắt buộc.')
         return
       }
       if (!menuForm.language_id) {
-        notifyError('Language is required.')
+        notifyError('Ngôn ngữ là bắt buộc.')
         return
       }
 
@@ -337,10 +352,10 @@ export function useNavigationMenusManager(props, emit, options = {}) {
         await loadNavigationMenus()
         publishNavigationMenusUpdated()
         selectedNavMenuId.value = String(created.id)
-        notifySuccess(`Created menu "${created.name}".`)
+        notifySuccess(`Đã tạo menu "${created.name}".`)
         closeDrawer()
       } catch (error) {
-        notifyError(error.message || 'Failed to create menu.')
+        notifyError(error.message || 'Không thể tạo menu mới.')
       } finally {
         savingNavigation.value = false
       }
@@ -349,22 +364,22 @@ export function useNavigationMenusManager(props, emit, options = {}) {
 
     if (drawerMode.value === 'editMenu') {
       if (!selectedMenu.value) {
-        notifyError('Select a menu first.')
+        notifyError('Vui lòng chọn menu trước.')
         return
       }
       if (!menuForm.name.trim()) {
-        notifyError('Menu name is required.')
+        notifyError('Tên menu là bắt buộc.')
         return
       }
       if (!menuForm.language_id) {
-        notifyError('Language is required.')
+        notifyError('Ngôn ngữ là bắt buộc.')
         return
       }
 
       const confirmed = await requestConfirm({
-        title: 'Xac nhan cap nhat menu',
-        message: `Ban co chac muon cap nhat menu "${menuForm.name.trim()}"?`,
-        confirmText: 'Xac nhan cap nhat',
+        title: 'Xác nhận cập nhật menu',
+        message: `Bạn có chắc chắn muốn cập nhật menu "${menuForm.name.trim()}"?`,
+        confirmText: 'Lưu thay đổi',
         tone: 'primary',
       })
       if (!confirmed) {
@@ -381,10 +396,10 @@ export function useNavigationMenusManager(props, emit, options = {}) {
         })
         await loadNavigationMenus()
         publishNavigationMenusUpdated()
-        notifySuccess('Menu metadata updated.')
+        notifySuccess('Đã cập nhật thông tin menu.')
         closeDrawer()
       } catch (error) {
-        notifyError(error.message || 'Failed to update menu.')
+        notifyError(error.message || 'Không thể cập nhật menu.')
       } finally {
         savingNavigation.value = false
       }
@@ -393,7 +408,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
 
     if (drawerMode.value === 'createNode') {
       if (!nodeForm.title.trim()) {
-        notifyError('Item title is required.')
+        notifyError('Tên mục điều hướng là bắt buộc.')
         return
       }
 
@@ -411,13 +426,13 @@ export function useNavigationMenusManager(props, emit, options = {}) {
       } else {
         const parentCtx = findNodeContext(parentForNewNodeCid.value)
         if (!parentCtx) {
-          notifyError('Parent item not found.')
+          notifyError('Không tìm thấy mục cha.')
           return
         }
         parentCtx.node.children = [...(parentCtx.node.children || []), node]
       }
 
-      notifySuccess('Navigation entry added. Click "Save Changes" to persist.')
+      notifySuccess('Đã thêm mục điều hướng tạm thời. Hãy bấm "Lưu thay đổi" để ghi vào hệ thống.')
       closeDrawer()
       return
     }
@@ -425,19 +440,19 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     if (drawerMode.value === 'editNode') {
       const context = findNodeContext(editingNodeCid.value)
       if (!context) {
-        notifyError('Selected item not found.')
+        notifyError('Không tìm thấy mục điều hướng cần sửa.')
         return
       }
       if (!nodeForm.title.trim()) {
-        notifyError('Item title is required.')
+        notifyError('Tên mục điều hướng là bắt buộc.')
         return
       }
 
-      const currentTitle = context.node.title || nodeForm.title.trim() || 'item'
+      const currentTitle = context.node.title || nodeForm.title.trim() || 'mục điều hướng'
       const confirmed = await requestConfirm({
-        title: 'Xac nhan cap nhat menu item',
-        message: `Ban co chac muon cap nhat menu item "${currentTitle}"?`,
-        confirmText: 'Xac nhan cap nhat',
+        title: 'Xác nhận cập nhật mục điều hướng',
+        message: `Bạn có chắc chắn muốn cập nhật mục điều hướng "${currentTitle}"?`,
+        confirmText: 'Lưu thay đổi',
         tone: 'primary',
       })
       if (!confirmed) {
@@ -451,7 +466,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
       context.node.page_id = toIntOrUndefined(nodeForm.page_id) ?? ''
       context.node.anchor = nodeForm.anchor.trim()
       context.node.sort_order = toIntOrUndefined(nodeForm.sort_order) ?? 0
-      notifySuccess('Navigation entry updated locally. Click "Save Changes" to persist.')
+      notifySuccess('Đã cập nhật mục điều hướng tạm thời. Hãy bấm "Lưu thay đổi" để ghi vào hệ thống.')
       closeDrawer()
     }
   }
@@ -462,9 +477,9 @@ export function useNavigationMenusManager(props, emit, options = {}) {
 
     const nodeTitle = context.node.title || `#${context.index + 1}`
     const confirmed = await requestConfirm({
-      title: 'Xac nhan xoa menu item',
-      message: `Ban co chac muon xoa menu item "${nodeTitle}"?`,
-      confirmText: 'Xac nhan xoa',
+      title: 'Xác nhận xóa mục điều hướng',
+      message: `Bạn có chắc chắn muốn xóa mục điều hướng "${nodeTitle}"?`,
+      confirmText: 'Xóa mục',
       tone: 'danger',
     })
     if (!confirmed) {
@@ -472,13 +487,13 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     }
 
     context.nodes.splice(context.index, 1)
-    notifySuccess('Navigation entry removed locally. Click "Save Changes" to persist.')
+    notifySuccess('Đã xóa mục điều hướng tạm thời. Hãy bấm "Lưu thay đổi" để ghi vào hệ thống.')
   }
 
   async function handleDeleteMenu() {
     const token = normalizedToken()
     if (!token || !selectedMenu.value) {
-      notifyError('Select a menu first.')
+      notifyError('Vui lòng chọn menu trước.')
       return false
     }
 
@@ -491,10 +506,10 @@ export function useNavigationMenusManager(props, emit, options = {}) {
       clearNotifications()
       await loadNavigationMenus()
       publishNavigationMenusUpdated()
-      notifySuccess(`Deleted menu "${deletedMenuLabel}" successfully.`)
+      notifySuccess(`Đã xóa menu "${deletedMenuLabel}" thành công.`)
       return true
     } catch (error) {
-      notifyError(error.message || 'Failed to delete menu.')
+      notifyError(error.message || 'Không thể xóa menu.')
       return false
     } finally {
       savingNavigation.value = false
@@ -504,7 +519,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
   async function handleSaveTree() {
     const token = normalizedToken()
     if (!token || !selectedMenu.value) {
-      notifyError('Select a menu first.')
+      notifyError('Vui lòng chọn menu trước.')
       return
     }
 
@@ -513,9 +528,9 @@ export function useNavigationMenusManager(props, emit, options = {}) {
       await replaceNavigationMenuTree(selectedMenu.value.id, token, serializeTree(navTree.value))
       await loadNavigationMenus()
       publishNavigationMenusUpdated()
-      notifySuccess('Navigation tree saved.')
+      notifySuccess('Đã lưu cây menu điều hướng.')
     } catch (error) {
-      notifyError(error.message || 'Failed to save navigation tree.')
+      notifyError(error.message || 'Không thể lưu cây menu điều hướng.')
     } finally {
       savingNavigation.value = false
     }

@@ -65,7 +65,7 @@ const fallbackNavItems = computed(() => [
   },
   {
     name: 'Dự Án',
-    path: '/project-case',
+    path: '/du-an',
   },
   {
     name: 'Tin Tức',
@@ -157,11 +157,14 @@ const isLinkActive = (path) => {
     return route.path === '/'
   }
 
-  if (normalizedPath === '/project-case') {
+  if (normalizedPath === '/du-an' || normalizedPath === '/project-case') {
     return (
+      route.path === '/du-an' ||
       route.path === '/project-case' ||
       route.path === '/projects' ||
+      route.path.startsWith('/du-an/') ||
       route.path.startsWith('/projects/') ||
+      route.path.startsWith('/project/') ||
       route.path.startsWith('/project_list/')
     )
   }

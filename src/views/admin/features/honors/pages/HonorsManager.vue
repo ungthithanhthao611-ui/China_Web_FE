@@ -14,6 +14,7 @@ import {
   updateHonor,
   updateHonorCategory,
 } from '@/views/admin/features/honors/api/honorsAdminApi.js'
+import CoreConfirmDialog from '@/views/admin/shared/components/CoreConfirmDialog.vue'
 import { env } from '@/shared/config/env'
 
 const props = defineProps({
@@ -36,11 +37,11 @@ const emit = defineEmits(['notify-success', 'notify-error', 'clear-notify'])
 const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
 
 const categoryTypeOptions = [
-  { value: 'qualification_certificate', label: 'Qualification Certificate' },
-  { value: 'awards_group', label: 'Awards Group' },
-  { value: 'corporate_honors', label: 'Corporate Honors' },
-  { value: 'project_honors', label: 'Project Honors' },
-  { value: 'custom', label: 'Custom' },
+  { value: 'qualification_certificate', label: 'Chứng chỉ năng lực' },
+  { value: 'awards_group', label: 'Nhóm giải thưởng' },
+  { value: 'corporate_honors', label: 'Danh hiệu doanh nghiệp' },
+  { value: 'project_honors', label: 'Danh hiệu dự án' },
+  { value: 'custom', label: 'Tùy chỉnh' },
 ]
 
 const loading = ref(false)
@@ -101,6 +102,16 @@ const categoryForm = reactive({
   is_active: true,
 })
 
+const confirmDialog = reactive({
+  visible: false,
+  tone: 'primary',
+  eyebrow: 'Xác nhận thao tác',
+  title: 'Bạn có chắc chắn muốn tiếp tục?',
+  message: '',
+  confirmText: 'Xác nhận',
+})
+let confirmDialogResolver = null
+
 function normalizedToken() {
   return String(props.token || '').trim()
 }
@@ -121,6 +132,48 @@ function resolveImageUrl(url) {
   if (!url) return ''
   if (/^https?:\/\//i.test(url)) return url
   return `${API_ORIGIN}${url.startsWith('/') ? url : `/${url}`}`
+}
+
+function closeConfirmDialog(result = false) {
+  confirmDialog.visible = false
+  if (typeof confirmDialogResolver === 'function') {
+    confirmDialogResolver(Boolean(result))
+    confirmDialogResolver = null
+  }
+}
+
+function askForConfirmation(options = {}) {
+  const {
+    tone = 'primary',
+    eyebrow = 'Xác nhận thao tác',
+    title = 'Bạn có chắc chắn muốn tiếp tục?',
+    message = 'Thao tác sẽ được thực thi ngay sau khi bạn xác nhận.',
+    confirmText = 'Xác nhận',
+  } = options
+
+  if (typeof confirmDialogResolver === 'function') {
+    confirmDialogResolver(false)
+    confirmDialogResolver = null
+  }
+
+  confirmDialog.tone = tone === 'danger' ? 'danger' : 'primary'
+  confirmDialog.eyebrow = String(eyebrow || 'Xác nhận thao tác')
+  confirmDialog.title = String(title || 'Bạn có chắc chắn muốn tiếp tục?')
+  confirmDialog.message = String(message || 'Thao tác sẽ được thực thi ngay sau khi bạn xác nhận.')
+  confirmDialog.confirmText = String(confirmText || 'Xác nhận')
+  confirmDialog.visible = true
+
+  return new Promise((resolve) => {
+    confirmDialogResolver = resolve
+  })
+}
+
+function acceptConfirmDialog() {
+  closeConfirmDialog(true)
+}
+
+function cancelConfirmDialog() {
+  closeConfirmDialog(false)
 }
 
 function onHonorImageError(honorId) {
@@ -155,26 +208,26 @@ const showHonorsSection = computed(() => normalizedViewMode.value !== 'categorie
 const headerMeta = computed(() => {
   if (normalizedViewMode.value === 'categories') {
     return {
-      title: 'Manage Honor Categories',
-      description: 'Category CRUD, active toggle, hierarchy, and sorting.',
+      title: 'Quản lý danh mục năng lực',
+      description: 'Tạo, sửa, xóa danh mục; đổi trạng thái; sắp xếp và quản lý phân cấp danh mục.',
     }
   }
   if (normalizedViewMode.value === 'honors') {
     return {
-      title: 'Manage Honors Records',
-      description: 'Honor CRUD, image upload, soft delete, active toggle, and sorting.',
+      title: 'Quản lý mục năng lực',
+      description: 'Tạo, sửa, xóa mục năng lực; tải ảnh; ẩn/xóa mềm; đổi trạng thái và sắp xếp hiển thị.',
     }
   }
   return {
-    title: 'Manage Honors Taxonomy & Records',
-    description: 'Full honors module management: category CRUD + honor CRUD, image upload, soft delete, active toggle, and sorting.',
+    title: 'Quản lý danh mục và mục năng lực',
+    description: 'Quản trị đầy đủ module năng lực: danh mục, mục năng lực, tải ảnh, xóa mềm, đổi trạng thái và sắp xếp hiển thị.',
   }
 })
 const totalPages = computed(() => Math.max(1, Math.ceil(totalRecords.value / pageSize.value)))
 
 function categoryName(categoryId) {
-  if (!categoryId) return 'Uncategorized'
-  return categoryMap.value.get(categoryId)?.name || `Category #${categoryId}`
+  if (!categoryId) return 'Chưa phân loại'
+  return categoryMap.value.get(categoryId)?.name || `Danh mục #${categoryId}`
 }
 
 function categoryTypeLabel(typeValue) {
@@ -409,7 +462,7 @@ async function refreshHonorsOnly({ resetPage = false } = {}) {
   try {
     await fetchHonorsPage()
   } catch (error) {
-    notifyError(error.message || 'Failed to load honors data.')
+    notifyError(error.message || 'Không thể tải dữ liệu năng lực.')
   } finally {
     loading.value = false
   }
@@ -441,7 +494,7 @@ async function refreshAll() {
       totalRecords.value = 0
     }
   } catch (error) {
-    notifyError(error.message || 'Failed to load honors data.')
+    notifyError(error.message || 'Không thể tải dữ liệu năng lực.')
   } finally {
     loading.value = false
   }
@@ -450,9 +503,14 @@ async function refreshAll() {
 async function resyncHonorImages() {
   const token = normalizedToken()
   if (!token) return
-  const confirmed = window.confirm(
-    'Re-sync all non-Cloudinary honor images to Cloudinary now?'
-  )
+
+  const confirmed = await askForConfirmation({
+    tone: 'primary',
+    eyebrow: 'Đồng bộ hình ảnh',
+    title: 'Xác nhận đồng bộ lại ảnh năng lực?',
+    message: 'Hệ thống sẽ đồng bộ toàn bộ ảnh năng lực chưa ở Cloudinary sang Cloudinary ngay sau khi bạn xác nhận.',
+    confirmText: 'Đồng bộ ngay',
+  })
   if (!confirmed) return
 
   resyncingImages.value = true
@@ -464,16 +522,16 @@ async function resyncHonorImages() {
       const firstFailure = result.failed_items?.[0]?.reason
       notifyError(
         firstFailure
-          ? `Re-sync done with errors: updated ${result.updated || 0}, skipped ${result.skipped || 0}, failed ${result.failed || 0}. First error: ${firstFailure}`
-          : `Re-sync done with errors: updated ${result.updated || 0}, skipped ${result.skipped || 0}, failed ${result.failed || 0}.`
+          ? `Đồng bộ hoàn tất nhưng có lỗi: cập nhật ${result.updated || 0}, bỏ qua ${result.skipped || 0}, thất bại ${result.failed || 0}. Lỗi đầu tiên: ${firstFailure}`
+          : `Đồng bộ hoàn tất nhưng có lỗi: cập nhật ${result.updated || 0}, bỏ qua ${result.skipped || 0}, thất bại ${result.failed || 0}.`
       )
     } else {
       notifySuccess(
-        `Re-sync completed: updated ${result.updated || 0}, skipped ${result.skipped || 0}, failed ${result.failed || 0}.`
+        `Đã đồng bộ ảnh thành công: cập nhật ${result.updated || 0}, bỏ qua ${result.skipped || 0}, thất bại ${result.failed || 0}.`
       )
     }
   } catch (error) {
-    notifyError(error.message || 'Failed to re-sync honors images to Cloudinary.')
+    notifyError(error.message || 'Không thể đồng bộ ảnh năng lực lên Cloudinary.')
   } finally {
     resyncingImages.value = false
   }
@@ -487,7 +545,7 @@ async function uploadHonorImage() {
   const token = normalizedToken()
   if (!token) return
   if (!uploadFile.value) {
-    notifyError('Select an image before upload.')
+    notifyError('Vui lòng chọn ảnh trước khi tải lên.')
     return
   }
 
@@ -503,10 +561,10 @@ async function uploadHonorImage() {
     uploadFile.value = null
     honorForm.uploadTitle = ''
     honorForm.uploadAltText = ''
-    notifySuccess(`Image uploaded successfully (${uploadStorageBackend.value}).`)
+    notifySuccess(`Đã tải ảnh lên thành công (${uploadStorageBackend.value}).`)
   } catch (error) {
     resetUploadFeedback()
-    notifyError(error.message || 'Image upload failed.')
+    notifyError(error.message || 'Tải ảnh lên thất bại.')
   } finally {
     uploading.value = false
   }
@@ -516,20 +574,32 @@ async function submitHonorForm() {
   const token = normalizedToken()
   if (!token || !validateHonorForm()) return
 
+  const isCreating = honorFormMode.value === 'create'
+  const confirmed = await askForConfirmation({
+    tone: 'primary',
+    eyebrow: isCreating ? 'Tạo mục năng lực' : 'Cập nhật mục năng lực',
+    title: isCreating ? 'Xác nhận tạo mục năng lực mới?' : 'Xác nhận cập nhật mục năng lực?',
+    message: isCreating
+      ? `Mục năng lực "${String(honorForm.title || '').trim()}" sẽ được tạo mới.`
+      : `Các thay đổi của mục năng lực "${String(honorForm.title || '').trim()}" sẽ được lưu lại.`,
+    confirmText: isCreating ? 'Tạo mới' : 'Lưu thay đổi',
+  })
+  if (!confirmed) return
+
   saving.value = true
   try {
     const payload = buildHonorPayload()
-    if (honorFormMode.value === 'create') {
+    if (isCreating) {
       await createHonor(token, payload)
-      notifySuccess('Honor created.')
+      notifySuccess('Đã tạo mục năng lực mới.')
     } else {
       await updateHonor(token, editingHonorId.value, payload)
-      notifySuccess('Honor updated.')
+      notifySuccess('Đã cập nhật mục năng lực.')
     }
     closeHonorForm()
     await refreshHonorsOnly()
   } catch (error) {
-    notifyError(error.message || 'Failed to save honor.')
+    notifyError(error.message || 'Không thể lưu mục năng lực.')
   } finally {
     saving.value = false
   }
@@ -538,14 +608,22 @@ async function submitHonorForm() {
 async function removeHonor(record) {
   const token = normalizedToken()
   if (!token) return
-  if (!window.confirm(`Soft delete honor "${record.title}"?`)) return
+
+  const confirmed = await askForConfirmation({
+    tone: 'danger',
+    eyebrow: 'Xóa mục năng lực',
+    title: 'Xác nhận xóa mục năng lực?',
+    message: `Mục năng lực "${record.title}" sẽ bị xóa mềm khỏi hệ thống quản trị.`,
+    confirmText: 'Xóa mục',
+  })
+  if (!confirmed) return
 
   try {
     await softDeleteHonor(token, record.id)
-    notifySuccess('Honor soft deleted.')
+    notifySuccess('Đã xóa mục năng lực.')
     await refreshHonorsOnly()
   } catch (error) {
-    notifyError(error.message || 'Failed to delete honor.')
+    notifyError(error.message || 'Không thể xóa mục năng lực.')
   }
 }
 
@@ -556,9 +634,9 @@ async function onToggleHonorActive(record, nextValue) {
   try {
     await toggleHonorActive(token, record.id, nextValue)
     await refreshHonorsOnly()
-    notifySuccess(nextValue ? 'Honor activated.' : 'Honor deactivated.')
+    notifySuccess(nextValue ? 'Đã bật hiển thị mục năng lực.' : 'Đã tắt hiển thị mục năng lực.')
   } catch (error) {
-    notifyError(error.message || 'Failed to update honor status.')
+    notifyError(error.message || 'Không thể cập nhật trạng thái mục năng lực.')
   }
 }
 
@@ -566,15 +644,27 @@ async function submitCategoryForm() {
   const token = normalizedToken()
   if (!token || !validateCategoryForm()) return
 
+  const isCreating = categoryFormMode.value === 'create'
+  const confirmed = await askForConfirmation({
+    tone: 'primary',
+    eyebrow: isCreating ? 'Tạo danh mục' : 'Cập nhật danh mục',
+    title: isCreating ? 'Xác nhận tạo danh mục mới?' : 'Xác nhận cập nhật danh mục?',
+    message: isCreating
+      ? `Danh mục "${String(categoryForm.name || '').trim()}" sẽ được tạo mới.`
+      : `Các thay đổi của danh mục "${String(categoryForm.name || '').trim()}" sẽ được lưu lại.`,
+    confirmText: isCreating ? 'Tạo danh mục' : 'Lưu thay đổi',
+  })
+  if (!confirmed) return
+
   categorySaving.value = true
   try {
     const payload = buildCategoryPayload()
-    if (categoryFormMode.value === 'create') {
+    if (isCreating) {
       await createHonorCategory(token, payload)
-      notifySuccess('Category created.')
+      notifySuccess('Đã tạo danh mục mới.')
     } else {
       await updateHonorCategory(token, editingCategoryId.value, payload)
-      notifySuccess('Category updated.')
+      notifySuccess('Đã cập nhật danh mục.')
     }
     closeCategoryForm()
     await loadCategories()
@@ -582,7 +672,7 @@ async function submitCategoryForm() {
       await refreshHonorsOnly()
     }
   } catch (error) {
-    notifyError(error.message || 'Failed to save category.')
+    notifyError(error.message || 'Không thể lưu danh mục.')
   } finally {
     categorySaving.value = false
   }
@@ -591,11 +681,19 @@ async function submitCategoryForm() {
 async function removeCategory(record) {
   const token = normalizedToken()
   if (!token) return
-  if (!window.confirm(`Soft delete category "${record.name}"?`)) return
+
+  const confirmed = await askForConfirmation({
+    tone: 'danger',
+    eyebrow: 'Xóa danh mục',
+    title: 'Xác nhận xóa danh mục?',
+    message: `Danh mục "${record.name}" sẽ bị xóa mềm khỏi hệ thống quản trị.`,
+    confirmText: 'Xóa danh mục',
+  })
+  if (!confirmed) return
 
   try {
     await deleteHonorCategory(token, record.id)
-    notifySuccess('Category deleted.')
+    notifySuccess('Đã xóa danh mục.')
     if (String(filters.categoryId) === String(record.id)) {
       filters.categoryId = ''
     }
@@ -604,7 +702,7 @@ async function removeCategory(record) {
       await refreshHonorsOnly({ resetPage: true })
     }
   } catch (error) {
-    notifyError(error.message || 'Failed to delete category.')
+    notifyError(error.message || 'Không thể xóa danh mục.')
   }
 }
 
@@ -614,13 +712,13 @@ async function onToggleCategoryActive(record, nextValue) {
 
   try {
     await updateHonorCategory(token, record.id, { is_active: nextValue })
-    notifySuccess(nextValue ? 'Category activated.' : 'Category deactivated.')
+    notifySuccess(nextValue ? 'Đã bật hiển thị danh mục.' : 'Đã tắt hiển thị danh mục.')
     await loadCategories()
     if (showHonorsSection.value) {
       await refreshHonorsOnly()
     }
   } catch (error) {
-    notifyError(error.message || 'Failed to update category status.')
+    notifyError(error.message || 'Không thể cập nhật trạng thái danh mục.')
   }
 }
 
@@ -658,7 +756,7 @@ watch(pageSize, async (nextSize, previousSize) => {
   <section class="honors-admin">
     <header class="panel header-panel">
       <div>
-        <p class="eyebrow">Honors Admin</p>
+        <p class="eyebrow">Quản trị năng lực</p>
         <h2>{{ headerMeta.title }}</h2>
         <p class="subtext">{{ headerMeta.description }}</p>
       </div>
@@ -670,10 +768,10 @@ watch(pageSize, async (nextSize, previousSize) => {
           :disabled="resyncingImages || loading"
           @click="resyncHonorImages"
         >
-          {{ resyncingImages ? 'Re-syncing...' : 'Re-sync Images' }}
+          {{ resyncingImages ? 'Đang đồng bộ...' : 'Đồng bộ ảnh' }}
         </button>
-        <button v-if="showCategorySection" type="button" class="btn btn-secondary" @click="openCreateCategoryForm">Add Category</button>
-        <button v-if="showHonorsSection" type="button" class="btn btn-primary" @click="openCreateHonorForm">Add Honor</button>
+        <button v-if="showCategorySection" type="button" class="btn btn-secondary" @click="openCreateCategoryForm">Thêm danh mục</button>
+        <button v-if="showHonorsSection" type="button" class="btn btn-primary" @click="openCreateHonorForm">Thêm mục năng lực</button>
         <button
           v-if="showCategorySection && !showHonorsSection"
           type="button"
@@ -681,52 +779,52 @@ watch(pageSize, async (nextSize, previousSize) => {
           :disabled="loading"
           @click="refreshAll"
         >
-          {{ loading ? 'Loading...' : 'Refresh' }}
+          {{ loading ? 'Đang tải...' : 'Làm mới' }}
         </button>
       </div>
     </header>
 
     <section v-if="showCategorySection" class="panel category-panel">
       <div class="panel-head">
-        <h3>Honor Categories</h3>
-        <button type="button" class="btn btn-secondary" @click="openCreateCategoryForm">Create Category</button>
+        <h3>Danh mục năng lực</h3>
+        <button type="button" class="btn btn-secondary" @click="openCreateCategoryForm">Tạo danh mục</button>
       </div>
-      <div v-if="loading" class="empty">Loading categories...</div>
-      <div v-else-if="!categories.length" class="empty">No categories found.</div>
+      <div v-if="loading" class="empty">Đang tải danh mục...</div>
+      <div v-else-if="!categories.length" class="empty">Chưa có danh mục nào.</div>
       <div v-else class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Name</th>
+              <th>Tên danh mục</th>
               <th>Slug</th>
-              <th>Type</th>
-              <th>Parent</th>
-              <th>Sort</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>Loại</th>
+              <th>Danh mục cha</th>
+              <th>Thứ tự</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in categories" :key="item.id" class="category-row">
-              <td data-label="Name">{{ item.name }}</td>
+              <td data-label="Tên danh mục">{{ item.name }}</td>
               <td data-label="Slug">{{ item.slug }}</td>
-              <td data-label="Type">{{ categoryTypeLabel(item.type) }}</td>
-              <td data-label="Parent">{{ categoryName(item.parent_id) }}</td>
-              <td data-label="Sort">{{ item.sort_order || 0 }}</td>
-              <td data-label="Status">
-                <span :class="statusBadgeClass(item.is_active)">{{ item.is_active ? 'Active' : 'Inactive' }}</span>
+              <td data-label="Loại">{{ categoryTypeLabel(item.type) }}</td>
+              <td data-label="Danh mục cha">{{ categoryName(item.parent_id) }}</td>
+              <td data-label="Thứ tự">{{ item.sort_order || 0 }}</td>
+              <td data-label="Trạng thái">
+                <span :class="statusBadgeClass(item.is_active)">{{ item.is_active ? 'Đang hiển thị' : 'Đang ẩn' }}</span>
               </td>
-              <td data-label="Actions">
+              <td data-label="Thao tác">
                 <div class="actions">
-                  <button type="button" class="btn btn-secondary" @click="openEditCategoryForm(item)">Edit</button>
+                  <button type="button" class="btn btn-secondary" @click="openEditCategoryForm(item)">Sửa</button>
                   <button
                     type="button"
                     class="btn btn-secondary"
                     @click="onToggleCategoryActive(item, !item.is_active)"
                   >
-                    {{ item.is_active ? 'Deactivate' : 'Activate' }}
+                    {{ item.is_active ? 'Ẩn' : 'Hiển thị' }}
                   </button>
-                  <button type="button" class="btn btn-danger" @click="removeCategory(item)">Delete</button>
+                  <button type="button" class="btn btn-danger" @click="removeCategory(item)">Xóa</button>
                 </div>
               </td>
             </tr>
@@ -736,52 +834,52 @@ watch(pageSize, async (nextSize, previousSize) => {
     </section>
 
     <section v-if="showHonorsSection" class="panel filters-panel">
-      <input v-model="filters.keyword" type="search" placeholder="Search by title, issuer, description..." />
+      <input v-model="filters.keyword" type="search" placeholder="Tìm theo tiêu đề, đơn vị cấp, mô tả..." />
       <select v-model="filters.categoryId">
-        <option value="">All categories</option>
+        <option value="">Tất cả danh mục</option>
         <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
       </select>
       <select v-model="filters.status">
-        <option value="all">All status</option>
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
+        <option value="all">Tất cả trạng thái</option>
+        <option value="active">Đang hiển thị</option>
+        <option value="inactive">Đang ẩn</option>
       </select>
       <select v-model.number="pageSize" :disabled="loading">
-        <option :value="10">10 / page</option>
-        <option :value="20">20 / page</option>
-        <option :value="50">50 / page</option>
+        <option :value="10">10 / trang</option>
+        <option :value="20">20 / trang</option>
+        <option :value="50">50 / trang</option>
       </select>
       <button type="button" class="btn btn-secondary" :disabled="loading" @click="applyHonorsFilters">
-        {{ loading ? 'Loading...' : 'Apply Filter' }}
+        {{ loading ? 'Đang tải...' : 'Áp dụng bộ lọc' }}
       </button>
       <button type="button" class="btn btn-secondary" :disabled="loading" @click="refreshAll">
-        {{ loading ? 'Loading...' : 'Refresh' }}
+        {{ loading ? 'Đang tải...' : 'Làm mới' }}
       </button>
     </section>
 
     <section v-if="showHonorsSection" class="panel table-panel">
       <div class="panel-head">
-        <h3>Honors</h3>
-        <button type="button" class="btn btn-primary" @click="openCreateHonorForm">Create Honor</button>
+        <h3>Mục năng lực</h3>
+        <button type="button" class="btn btn-primary" @click="openCreateHonorForm">Tạo mục năng lực</button>
       </div>
-      <div v-if="loading" class="empty">Loading honors...</div>
-      <div v-else-if="!honors.length" class="empty">No honors found.</div>
+      <div v-if="loading" class="empty">Đang tải dữ liệu năng lực...</div>
+      <div v-else-if="!honors.length" class="empty">Chưa có mục năng lực nào.</div>
       <div v-else class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Image</th>
-              <th>Title</th>
-              <th>Category</th>
-              <th>Year</th>
-              <th>Sort</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>Hình ảnh</th>
+              <th>Tiêu đề</th>
+              <th>Danh mục</th>
+              <th>Năm</th>
+              <th>Thứ tự</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in honors" :key="item.id" class="honor-row">
-              <td data-label="Image">
+              <td data-label="Hình ảnh">
                 <img
                   v-if="item.image_url && !brokenImageIds.has(item.id)"
                   class="thumb"
@@ -789,29 +887,29 @@ watch(pageSize, async (nextSize, previousSize) => {
                   :alt="item.title"
                   @error="onHonorImageError(item.id)"
                 />
-                <div v-else class="thumb thumb-empty">No image</div>
+                <div v-else class="thumb thumb-empty">Chưa có ảnh</div>
               </td>
-              <td data-label="Title">
+              <td data-label="Tiêu đề">
                 <p class="title">{{ item.title }}</p>
-                <p class="meta">{{ item.issued_by || 'No issuer' }}</p>
+                <p class="meta">{{ item.issued_by || 'Chưa có đơn vị cấp' }}</p>
               </td>
-              <td data-label="Category">{{ categoryName(item.category_id) }}</td>
-              <td data-label="Year">{{ item.year || '-' }}</td>
-              <td data-label="Sort">{{ item.sort_order || 0 }}</td>
-              <td data-label="Status">
-                <span :class="statusBadgeClass(item.is_active)">{{ item.is_active ? 'Active' : 'Inactive' }}</span>
+              <td data-label="Danh mục">{{ categoryName(item.category_id) }}</td>
+              <td data-label="Năm">{{ item.year || '-' }}</td>
+              <td data-label="Thứ tự">{{ item.sort_order || 0 }}</td>
+              <td data-label="Trạng thái">
+                <span :class="statusBadgeClass(item.is_active)">{{ item.is_active ? 'Đang hiển thị' : 'Đang ẩn' }}</span>
               </td>
-              <td data-label="Actions">
+              <td data-label="Thao tác">
                 <div class="actions">
-                  <button type="button" class="btn btn-secondary" @click="openEditHonorForm(item)">Edit</button>
+                  <button type="button" class="btn btn-secondary" @click="openEditHonorForm(item)">Sửa</button>
                   <button
                     type="button"
                     class="btn btn-secondary"
                     @click="onToggleHonorActive(item, !item.is_active)"
                   >
-                    {{ item.is_active ? 'Deactivate' : 'Activate' }}
+                    {{ item.is_active ? 'Ẩn' : 'Hiển thị' }}
                   </button>
-                  <button type="button" class="btn btn-danger" @click="removeHonor(item)">Delete</button>
+                  <button type="button" class="btn btn-danger" @click="removeHonor(item)">Xóa</button>
                 </div>
               </td>
             </tr>
@@ -820,14 +918,14 @@ watch(pageSize, async (nextSize, previousSize) => {
       </div>
       <div v-if="totalRecords > 0" class="table-pagination">
         <p class="pagination-meta">
-          Total {{ totalRecords }} records • Page {{ currentPage }} / {{ totalPages }}
+          Tổng {{ totalRecords }} bản ghi • Trang {{ currentPage }} / {{ totalPages }}
         </p>
         <div class="pagination-actions">
           <button type="button" class="btn btn-secondary" :disabled="loading || currentPage <= 1" @click="setPage(currentPage - 1)">
-            Prev
+            Trước
           </button>
           <button type="button" class="btn btn-secondary" :disabled="loading || currentPage >= totalPages" @click="setPage(currentPage + 1)">
-            Next
+            Sau
           </button>
         </div>
       </div>
@@ -836,7 +934,7 @@ watch(pageSize, async (nextSize, previousSize) => {
     <aside v-if="showHonorsSection && honorFormOpen" class="overlay" @click.self="closeHonorForm">
       <section class="panel form-panel">
         <div class="form-head">
-          <h3>{{ honorFormMode === 'create' ? 'Create Honor' : 'Edit Honor' }}</h3>
+          <h3>{{ honorFormMode === 'create' ? 'Tạo mục năng lực' : 'Chỉnh sửa mục năng lực' }}</h3>
           <button type="button" class="icon-btn" @click="closeHonorForm">x</button>
         </div>
 
@@ -846,10 +944,10 @@ watch(pageSize, async (nextSize, previousSize) => {
 
         <div class="upload-row">
           <input type="file" accept="image/*" @change="onFileSelected" />
-          <input v-model="honorForm.uploadTitle" type="text" placeholder="Upload title" />
-          <input v-model="honorForm.uploadAltText" type="text" placeholder="Upload alt text" />
+          <input v-model="honorForm.uploadTitle" type="text" placeholder="Tiêu đề ảnh tải lên" />
+          <input v-model="honorForm.uploadAltText" type="text" placeholder="Alt text của ảnh" />
           <button type="button" class="btn btn-primary" :disabled="uploading" @click="uploadHonorImage">
-            {{ uploading ? 'Uploading...' : 'Upload Image' }}
+            {{ uploading ? 'Đang tải lên...' : 'Tải ảnh lên' }}
           </button>
         </div>
         <div v-if="uploadStorageBackend" class="upload-feedback">
@@ -857,18 +955,18 @@ watch(pageSize, async (nextSize, previousSize) => {
             class="upload-badge"
             :class="uploadStorageBackend === 'cloudinary' ? 'upload-badge-cloudinary' : 'upload-badge-local'"
           >
-            Uploaded to: {{ uploadStorageBackend }}
+            Đã tải lên: {{ uploadStorageBackend }}
           </span>
           <p v-if="uploadFallbackReason" class="upload-fallback">
-            Fallback reason: {{ uploadFallbackReason }}
+            Lý do fallback: {{ uploadFallbackReason }}
           </p>
         </div>
 
         <form class="form-grid" @submit.prevent="submitHonorForm">
           <label>
-            <span>Category</span>
+            <span>Danh mục</span>
             <select v-model="honorForm.category_id">
-              <option disabled value="">Select category</option>
+              <option disabled value="">Chọn danh mục</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">
                 {{ category.name }}
               </option>
@@ -876,69 +974,69 @@ watch(pageSize, async (nextSize, previousSize) => {
           </label>
 
           <label>
-            <span>Title</span>
+            <span>Tiêu đề</span>
             <input v-model="honorForm.title" type="text" />
           </label>
 
           <label>
             <span>Slug</span>
-            <input v-model="honorForm.slug" type="text" placeholder="Optional, auto-generated if empty" />
+            <input v-model="honorForm.slug" type="text" placeholder="Không bắt buộc, sẽ tự tạo nếu để trống" />
           </label>
 
           <label>
-            <span>Image URL</span>
+            <span>URL hình ảnh</span>
             <input v-model="honorForm.image_url" type="text" />
           </label>
 
           <label>
-            <span>Year</span>
+            <span>Năm</span>
             <input v-model="honorForm.year" type="number" />
           </label>
 
           <label>
-            <span>Issued By</span>
+            <span>Đơn vị cấp</span>
             <input v-model="honorForm.issued_by" type="text" />
           </label>
 
           <label>
-            <span>Display Type</span>
+            <span>Kiểu hiển thị</span>
             <select v-model="honorForm.display_type">
-              <option value="qualification_certificate">Qualification Certificate</option>
-              <option value="corporate_honors">Corporate Honors</option>
-              <option value="project_honors">Project Honors</option>
+              <option value="qualification_certificate">Chứng chỉ năng lực</option>
+              <option value="corporate_honors">Danh hiệu doanh nghiệp</option>
+              <option value="project_honors">Danh hiệu dự án</option>
             </select>
           </label>
 
           <label>
-            <span>Sort Order</span>
+            <span>Thứ tự</span>
             <input v-model="honorForm.sort_order" type="number" />
           </label>
 
           <label>
-            <span>Status</span>
+            <span>Trạng thái</span>
             <select v-model="honorForm.is_active">
-              <option :value="true">Active</option>
-              <option :value="false">Inactive</option>
+              <option :value="true">Đang hiển thị</option>
+              <option :value="false">Đang ẩn</option>
             </select>
           </label>
 
           <label>
-            <span>Featured</span>
+            <span>Nổi bật</span>
             <select v-model="honorForm.is_featured">
-              <option :value="false">No</option>
-              <option :value="true">Yes</option>
+              <option :value="false">Không</option>
+              <option :value="true">Có</option>
             </select>
           </label>
 
           <label class="wide">
-            <span>Short Description</span>
+            <span>Mô tả ngắn</span>
             <textarea v-model="honorForm.short_description" rows="4"></textarea>
           </label>
 
           <div class="form-actions">
-            <button type="button" class="btn btn-secondary" @click="closeHonorForm">Cancel</button>
+            <button type="button" class="btn btn-secondary" @click="closeHonorForm">Hủy</button>
             <button type="submit" class="btn btn-primary" :disabled="saving">
-              {{ saving ? 'Saving...' : honorFormMode === 'create' ? 'Create' : 'Update' }}
+              {{ saving ? 'Đang lưu...' : honorFormMode === 'create' ? 'Tạo mới' : 'Cập nhật' }}
             </button>
           </div>
         </form>
@@ -948,7 +1046,7 @@ watch(pageSize, async (nextSize, previousSize) => {
     <aside v-if="showCategorySection && categoryFormOpen" class="overlay" @click.self="closeCategoryForm">
       <section class="panel category-form-panel">
         <div class="form-head">
-          <h3>{{ categoryFormMode === 'create' ? 'Create Category' : 'Edit Category' }}</h3>
+          <h3>{{ categoryFormMode === 'create' ? 'Tạo danh mục' : 'Chỉnh sửa danh mục' }}</h3>
           <button type="button" class="icon-btn" @click="closeCategoryForm">x</button>
         </div>
 
@@ -958,17 +1056,17 @@ watch(pageSize, async (nextSize, previousSize) => {
 
         <form class="form-grid" @submit.prevent="submitCategoryForm">
           <label>
-            <span>Name</span>
+            <span>Tên danh mục</span>
             <input v-model="categoryForm.name" type="text" />
           </label>
 
           <label>
             <span>Slug</span>
-            <input v-model="categoryForm.slug" type="text" placeholder="Optional, auto-generated if empty" />
+            <input v-model="categoryForm.slug" type="text" placeholder="Không bắt buộc, sẽ tự tạo nếu để trống" />
           </label>
 
           <label>
-            <span>Type</span>
+            <span>Loại</span>
             <select v-model="categoryForm.type">
               <option v-for="option in categoryTypeOptions" :key="option.value" :value="option.value">
                 {{ option.label }}
@@ -977,9 +1075,9 @@ watch(pageSize, async (nextSize, previousSize) => {
           </label>
 
           <label>
-            <span>Parent Category</span>
+            <span>Danh mục cha</span>
             <select v-model="categoryForm.parent_id">
-              <option value="">No parent</option>
+              <option value="">Không có danh mục cha</option>
               <option v-for="item in categoryParentOptions" :key="item.id" :value="item.id">
                 {{ item.name }}
               </option>
@@ -987,32 +1085,40 @@ watch(pageSize, async (nextSize, previousSize) => {
           </label>
 
           <label>
-            <span>Sort Order</span>
+            <span>Thứ tự</span>
             <input v-model="categoryForm.sort_order" type="number" />
           </label>
 
           <label>
-            <span>Status</span>
+            <span>Trạng thái</span>
             <select v-model="categoryForm.is_active">
-              <option :value="true">Active</option>
-              <option :value="false">Inactive</option>
+              <option :value="true">Đang hiển thị</option>
+              <option :value="false">Đang ẩn</option>
             </select>
           </label>
 
           <label class="wide">
-            <span>Description</span>
+            <span>Mô tả</span>
             <textarea v-model="categoryForm.description" rows="4"></textarea>
           </label>
 
           <div class="form-actions">
-            <button type="button" class="btn btn-secondary" @click="closeCategoryForm">Cancel</button>
+            <button type="button" class="btn btn-secondary" @click="closeCategoryForm">Hủy</button>
             <button type="submit" class="btn btn-primary" :disabled="categorySaving">
-              {{ categorySaving ? 'Saving...' : categoryFormMode === 'create' ? 'Create' : 'Update' }}
+              {{ categorySaving ? 'Đang lưu...' : categoryFormMode === 'create' ? 'Tạo mới' : 'Cập nhật' }}
             </button>
           </div>
         </form>
       </section>
     </aside>
+
+    <CoreConfirmDialog
+      :visible="confirmDialog.visible"
+      :dialog="confirmDialog"
+      :confirm-button-class="confirmDialog.tone === 'danger' ? 'btn btn-danger' : 'btn btn-primary'"
+      @cancel="cancelConfirmDialog"
+      @accept="acceptConfirmDialog"
+    />
   </section>
 </template>
 

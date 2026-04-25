@@ -22,7 +22,7 @@ const confirmDialog = reactive({
   open: false,
   title: '',
   message: '',
-  confirmText: 'Xac nhan',
+  confirmText: 'Xác nhận',
   tone: 'primary',
   resolver: null,
 })
@@ -46,9 +46,9 @@ function openConfirmDialog({ title, message, confirmText, tone = 'primary' } = {
     confirmDialog.resolver = null
   }
 
-  confirmDialog.title = String(title || 'Xac nhan thao tac')
-  confirmDialog.message = String(message || 'Ban co chac muon tiep tuc?')
-  confirmDialog.confirmText = String(confirmText || 'Xac nhan')
+  confirmDialog.title = String(title || 'Xác nhận thao tác')
+  confirmDialog.message = String(message || 'Bạn có chắc chắn muốn tiếp tục?')
+  confirmDialog.confirmText = String(confirmText || 'Xác nhận')
   confirmDialog.tone = tone === 'danger' ? 'danger' : 'primary'
   confirmDialog.open = true
 
@@ -104,9 +104,9 @@ async function openDeleteConfirm() {
   }
 
   const confirmed = await openConfirmDialog({
-    title: 'Xac nhan xoa menu',
-    message: `Ban co chac muon xoa menu "${selectedMenu.value?.name || 'this menu'}" va toan bo menu item ben trong khong?`,
-    confirmText: 'Xac nhan xoa',
+    title: 'Xác nhận xóa menu',
+    message: `Bạn có chắc chắn muốn xóa menu "${selectedMenu.value?.name || 'đang chọn'}" và toàn bộ mục menu bên trong không?`,
+    confirmText: 'Xóa menu',
     tone: 'danger',
   })
   if (!confirmed) {
@@ -124,13 +124,13 @@ defineExpose({
   <section class="nav-manager">
     <header class="nav-manager__header">
       <div class="title-wrap">
-        <p class="crumb">Dashboard <span>/</span> Navigation Menus</p>
-        <h2>Navigation Menus</h2>
+        <p class="crumb">Bảng điều khiển <span>/</span> Menu điều hướng</p>
+        <h2>Menu điều hướng</h2>
       </div>
       <div class="head-actions">
-        <button type="button" class="btn btn-ghost">Export XML</button>
+        <button type="button" class="btn btn-ghost">Xuất XML</button>
         <button type="button" class="btn btn-ghost" :disabled="loadingNavigation" @click="refreshAll">
-          {{ loadingNavigation ? 'Refreshing...' : 'Refresh' }}
+          {{ loadingNavigation ? 'Đang làm mới...' : 'Làm mới' }}
         </button>
         <AddNavigationMenu @trigger="openCreateMenuDrawer" />
       </div>
@@ -138,35 +138,35 @@ defineExpose({
 
     <section class="filters">
       <label class="filter-box">
-        <span>Keyword Search</span>
-        <input v-model="searchKeyword" type="text" placeholder="Menu title..." />
+        <span>Từ khóa tìm kiếm</span>
+        <input v-model="searchKeyword" type="text" placeholder="Tên menu..." />
       </label>
       <label class="filter-box">
-        <span>Status</span>
+        <span>Trạng thái</span>
         <select v-model="statusFilter">
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="all">Tất cả trạng thái</option>
+          <option value="active">Đang hiển thị</option>
+          <option value="inactive">Đang ẩn</option>
         </select>
       </label>
       <label class="filter-box">
-        <span>Type</span>
+        <span>Loại mục</span>
         <select v-model="typeFilter">
-          <option value="all">All Types</option>
-          <option value="parent">Parent</option>
-          <option value="child">Child</option>
+          <option value="all">Tất cả loại</option>
+          <option value="parent">Mục cha</option>
+          <option value="child">Mục con</option>
         </select>
       </label>
       <label class="filter-box">
-        <span>Menu Scope</span>
+        <span>Phạm vi menu</span>
         <select v-model="selectedNavMenuId">
-          <option value="">Select menu</option>
+          <option value="">Chọn menu</option>
           <option v-for="menu in navMenus" :key="menu.id" :value="String(menu.id)">
-            {{ menu.name }} ({{ menu.location || 'no-location' }})
+            {{ menu.name }} ({{ menu.location || 'chưa có vị trí' }})
           </option>
         </select>
       </label>
-      <button type="button" class="btn btn-filter" @click="applyFilters">Apply Filters</button>
+      <button type="button" class="btn btn-filter" @click="applyFilters">Áp dụng bộ lọc</button>
     </section>
 
     <section class="table-card">
@@ -174,56 +174,56 @@ defineExpose({
         <table>
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Menu Title</th>
+            <th>STT</th>
+            <th>Tên menu</th>
             <th>Slug</th>
-            <th>Type</th>
-            <th>Parent</th>
-            <th>Sort</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th>Loại</th>
+            <th>Mục cha</th>
+            <th>Thứ tự</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(row, idx) in pagedRows" :key="row.node._cid" class="nav-row">
-            <td data-label="ID">{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
-            <td data-label="Menu Title">
+            <td data-label="STT">{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
+            <td data-label="Tên menu">
               <span class="title-cell" :style="{ paddingLeft: `${row.depth * 18}px` }">{{ row.node.title }}</span>
             </td>
             <td data-label="Slug">{{ itemSlugFromUrl(row.node.url) }}</td>
-            <td data-label="Type">
-              <span class="pill" :class="row.rowType">{{ row.rowType.toUpperCase() }}</span>
+            <td data-label="Loại">
+              <span class="pill" :class="row.rowType">{{ row.rowType === 'parent' ? 'MỤC CHA' : 'MỤC CON' }}</span>
             </td>
-            <td data-label="Parent">{{ row.parentTitle || '-' }}</td>
-            <td data-label="Sort">{{ row.node.sort_order ?? 0 }}</td>
-            <td data-label="Status">
+            <td data-label="Mục cha">{{ row.parentTitle || '-' }}</td>
+            <td data-label="Thứ tự">{{ row.node.sort_order ?? 0 }}</td>
+            <td data-label="Trạng thái">
               <span class="status-chip" :class="{ inactive: !selectedMenu?.is_active }">
-                {{ selectedMenu?.is_active ? 'Active' : 'Inactive' }}
+                {{ selectedMenu?.is_active ? 'Đang hiển thị' : 'Đang ẩn' }}
               </span>
             </td>
-            <td data-label="Actions">
+            <td data-label="Thao tác">
               <div class="row-actions">
                 <button type="button" class="btn btn-mini btn-ghost" @click="openEditNodeDrawer(row.node._cid)">
-                  Edit
+                  Sửa
                 </button>
                 <button type="button" class="btn btn-mini btn-ghost" @click="openCreateChildNodeDrawer(row.node._cid)">
-                  + Child
+                  + Mục con
                 </button>
                 <button type="button" class="btn btn-mini btn-danger-outline" @click="removeNode(row.node._cid)">
-                  Delete
+                  Xóa
                 </button>
               </div>
             </td>
           </tr>
           <tr v-if="!pagedRows.length" class="table-empty-row">
-            <td colspan="8" class="empty-row">No navigation entries.</td>
+            <td colspan="8" class="empty-row">Chưa có mục điều hướng nào.</td>
           </tr>
         </tbody>
         </table>
       </div>
 
       <footer class="table-footer">
-        <p>Showing {{ showingFrom }}-{{ showingTo }} of {{ rowsCount }} entries</p>
+        <p>Hiển thị {{ showingFrom }}-{{ showingTo }} trên tổng {{ rowsCount }} mục</p>
         <div class="pagination">
           <button type="button" class="page-btn" :disabled="currentPage <= 1" @click="setPage(currentPage - 1)">
             &lt;
@@ -248,11 +248,11 @@ defineExpose({
           </button>
         </div>
         <div class="footer-actions">
-          <button type="button" class="btn btn-secondary" @click="openCreateRootNodeDrawer">Add Root Entry</button>
+          <button type="button" class="btn btn-secondary" @click="openCreateRootNodeDrawer">Thêm mục gốc</button>
           <EditNavigationMenu :disabled="!selectedMenu" @trigger="openEditMenuDrawer" />
           <DeleteNavigationMenu :disabled="!selectedMenu || savingNavigation" @trigger="openDeleteConfirm" />
           <button type="button" class="btn btn-primary" :disabled="!selectedMenu || savingNavigation" @click="handleSaveTree">
-            Save Changes
+            Lưu thay đổi
           </button>
         </div>
       </footer>
@@ -275,7 +275,7 @@ defineExpose({
         <h3 id="confirm-dialog-title">{{ confirmDialog.title }}</h3>
         <p>{{ confirmDialog.message }}</p>
         <div class="confirm-modal__actions">
-          <button type="button" class="btn btn-ghost" @click="closeConfirmDialog(false)">Huy</button>
+          <button type="button" class="btn btn-ghost" @click="closeConfirmDialog(false)">Hủy</button>
           <button
             type="button"
             class="btn"
@@ -293,24 +293,24 @@ defineExpose({
       <header class="drawer-header">
         <div>
           <h3>{{ drawerTitle }}</h3>
-          <p>Navigation Entry</p>
+          <p>{{ drawerMode === 'createMenu' || drawerMode === 'editMenu' ? 'Thông tin menu' : 'Thông tin mục điều hướng' }}</p>
         </div>
         <button type="button" class="close-btn" @click="closeDrawer">x</button>
       </header>
 
       <section class="drawer-body" v-if="drawerMode === 'createMenu' || drawerMode === 'editMenu'">
         <label>
-          <span>Menu Label</span>
-          <input v-model="menuForm.name" type="text" placeholder="e.g. Main Navigation" />
+          <span>Tên menu</span>
+          <input v-model="menuForm.name" type="text" placeholder="Ví dụ: Menu chính" />
         </label>
         <label>
-          <span>Location</span>
+          <span>Vị trí</span>
           <input v-model="menuForm.location" type="text" placeholder="header / footer" />
         </label>
         <label>
-          <span>Language</span>
+          <span>Ngôn ngữ</span>
           <select v-model="menuForm.language_id">
-            <option value="">Select language</option>
+            <option value="">Chọn ngôn ngữ</option>
             <option v-for="language in languages" :key="language.id" :value="String(language.id)">
               {{ language.code }} - {{ language.name }}
             </option>
@@ -318,17 +318,17 @@ defineExpose({
         </label>
         <label class="toggle-row">
           <input v-model="menuForm.is_active" type="checkbox" />
-          <span>Active status</span>
+          <span>Đang hiển thị</span>
         </label>
       </section>
 
       <section class="drawer-body" v-else>
         <label>
-          <span>Menu Label</span>
-          <input v-model="nodeForm.title" type="text" placeholder="e.g. Our History" />
+          <span>Tên mục</span>
+          <input v-model="nodeForm.title" type="text" placeholder="Ví dụ: Lịch sử phát triển" />
         </label>
         <label>
-          <span>Target Path</span>
+          <span>Đường dẫn</span>
           <input v-model="nodeForm.url" type="text" placeholder="/about/history" />
         </label>
         <div class="grid-2">
@@ -337,13 +337,13 @@ defineExpose({
             <input v-model="nodeForm.anchor" type="text" placeholder="section-id" />
           </label>
           <label>
-            <span>Sort Order</span>
+            <span>Thứ tự</span>
             <input v-model="nodeForm.sort_order" type="number" placeholder="0" />
           </label>
         </div>
         <div class="grid-2">
           <label>
-            <span>Type</span>
+            <span>Loại</span>
             <input v-model="nodeForm.item_type" type="text" placeholder="parent/child" />
           </label>
           <label>
@@ -354,9 +354,9 @@ defineExpose({
       </section>
 
       <footer class="drawer-footer">
-        <button type="button" class="btn btn-ghost" @click="closeDrawer">Discard</button>
+        <button type="button" class="btn btn-ghost" @click="closeDrawer">Hủy</button>
         <button type="button" class="btn btn-primary" :disabled="savingNavigation || loadingLanguages" @click="submitDrawer">
-          Save Changes
+          Lưu thay đổi
         </button>
       </footer>
     </aside>

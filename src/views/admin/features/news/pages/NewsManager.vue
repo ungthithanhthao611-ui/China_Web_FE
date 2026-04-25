@@ -2,13 +2,13 @@
   <div class="news-mgr" :class="{ 'news-mgr--embedded': embedded }">
     <!-- Header -->
     <div class="news-mgr__header">
-      <h1 class="news-mgr__title">News Management</h1>
+      <h1 class="news-mgr__title">Quản lý tin tức</h1>
       <div class="news-mgr__actions">
         <button class="btn btn--outline" @click="showCrawlModal = true">
-          <Download :size="16" /> Crawl from URL
+          <Download :size="16" /> Crawl từ URL
         </button>
         <button type="button" class="btn btn--primary" @click="goToCreate">
-          <Plus :size="16" /> Create Article
+          <Plus :size="16" /> Tạo bài viết
         </button>
       </div>
     </div>
@@ -18,11 +18,11 @@
       <table class="news-mgr__table">
         <thead>
           <tr>
-            <th class="col-img">Image</th>
-            <th class="col-title">Title</th>
-            <th class="col-status">Status</th>
-            <th class="col-date">Published At</th>
-            <th class="col-actions">Actions</th>
+            <th class="col-img">Ảnh</th>
+            <th class="col-title">Tiêu đề</th>
+            <th class="col-status">Trạng thái</th>
+            <th class="col-date">Ngày xuất bản</th>
+            <th class="col-actions">Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -30,14 +30,14 @@
           <tr v-if="loading">
             <td colspan="5" class="text-center py-12">
               <Loader2 :size="24" class="spin inline-block" />
-              <span class="ml-2 text-sub">Loading...</span>
+              <span class="ml-2 text-sub">Đang tải...</span>
             </td>
           </tr>
 
           <!-- Empty -->
           <tr v-else-if="posts.length === 0">
             <td colspan="5" class="text-center py-12 text-sub">
-              No articles found. Create one to get started.
+              Chưa có bài viết nào. Hãy tạo bài viết đầu tiên.
             </td>
           </tr>
 
@@ -64,12 +64,12 @@
                 <button
                   type="button"
                   class="act-btn act-btn--edit"
-                  title="Edit Article"
+                  title="Sửa bài viết"
                   @click="goToEdit(post.id)"
                 >
                   <Edit :size="16" />
                 </button>
-                <button class="act-btn act-btn--delete" title="Delete Article" @click="deleteTarget = post">
+                <button class="act-btn act-btn--delete" title="Xóa bài viết" @click="deleteTarget = post">
                   <Trash2 :size="16" />
                 </button>
               </div>
@@ -84,11 +84,11 @@
       <div v-if="showCrawlModal" class="modal-overlay" @click.self="showCrawlModal = false">
         <div class="modal-card">
           <div class="modal-header">
-            <h2>Crawl Article from URL</h2>
+            <h2>Crawl bài viết từ URL</h2>
             <button class="close-btn" @click="showCrawlModal = false"><X :size="18" /></button>
           </div>
           <div class="modal-body">
-            <p class="text-sub mb-3">Enter the URL of the article you want to crawl into the editor:</p>
+            <p class="text-sub mb-3">Nhập URL bài viết bạn muốn crawl vào trình biên tập:</p>
             <input
               v-model="crawlUrl"
               type="url"
@@ -98,9 +98,9 @@
             />
           </div>
           <div class="modal-footer">
-            <button class="btn btn--ghost" @click="showCrawlModal = false">Cancel</button>
+            <button class="btn btn--ghost" @click="showCrawlModal = false">Hủy</button>
             <button class="btn btn--primary" :disabled="!crawlUrl.trim()" @click="submitCrawl">
-              Start Crawling
+              Bắt đầu crawl
             </button>
           </div>
         </div>
@@ -115,12 +115,12 @@
             <div class="modal-icon modal-icon--danger">
               <AlertTriangle :size="24" />
             </div>
-            <h3>Delete Article</h3>
-            <p class="text-sub">Are you sure you want to delete this article? This action cannot be undone.</p>
+            <h3>Xóa bài viết</h3>
+            <p class="text-sub">Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.</p>
           </div>
           <div class="modal-footer modal-footer--center">
-            <button class="btn btn--outline btn--full" @click="deleteTarget = null">Cancel</button>
-            <button class="btn btn--danger btn--full" @click="executeDelete">Confirm Delete</button>
+            <button class="btn btn--outline btn--full" @click="deleteTarget = null">Hủy</button>
+            <button class="btn btn--danger btn--full" @click="executeDelete">Xác nhận xóa</button>
           </div>
         </div>
       </div>
@@ -197,7 +197,7 @@ async function executeDelete() {
     deleteTarget.value = null
     await fetchPosts()
   } catch (err) {
-    alert('Delete error: ' + err.message)
+    alert('Không thể xóa bài viết: ' + err.message)
   }
 }
 

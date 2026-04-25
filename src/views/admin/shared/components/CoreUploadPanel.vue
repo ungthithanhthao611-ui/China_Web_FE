@@ -25,16 +25,16 @@ const emit = defineEmits([
 <template>
   <div class="upload-panel">
     <div class="upload-panel__intro">
-      <p class="eyebrow">Media Workspace</p>
-      <h3>Upload media asset</h3>
+      <p class="eyebrow">Khu vực media</p>
+      <h3>Tải tài nguyên media</h3>
       <p class="description">
-        Add new files to the media library with a clean publishing workflow and ready-to-use metadata.
+        Thêm tệp mới vào thư viện media với quy trình xuất bản gọn gàng và metadata sẵn sàng để sử dụng.
       </p>
     </div>
 
     <div class="upload-row upload-row--standalone">
       <label class="upload-field upload-field--file">
-        <span>Source file</span>
+        <span>Tệp nguồn</span>
         <input
           type="file"
           accept="image/*,video/*,application/pdf"
@@ -43,34 +43,34 @@ const emit = defineEmits([
       </label>
 
       <label class="upload-field">
-        <span>Media title</span>
+        <span>Tiêu đề media</span>
         <input
           :value="uploadTitle"
           type="text"
-          placeholder="Media title"
+          placeholder="Tiêu đề media"
           @input="emit('update:uploadTitle', $event.target.value)"
         />
       </label>
 
       <label class="upload-field">
-        <span>Alt text</span>
+        <span>Văn bản thay thế</span>
         <input
           :value="uploadAltText"
           type="text"
-          placeholder="Alt text"
+          placeholder="Văn bản thay thế"
           @input="emit('update:uploadAltText', $event.target.value)"
         />
       </label>
 
       <div class="upload-field upload-field--action">
-        <span>Publish</span>
+        <span>Xuất bản</span>
         <button
           type="button"
           class="btn btn-primary"
           :disabled="uploading"
           @click="emit('upload')"
         >
-          {{ uploading ? "Uploading..." : "Upload" }}
+          {{ uploading ? "Đang tải lên..." : "Tải lên" }}
         </button>
       </div>
     </div>

@@ -46,9 +46,9 @@ const fallbackFooterGroups = [
   },
   {
     title: 'Dự Án',
-    titlePath: '/project-case',
+    titlePath: '/du-an',
     links: [
-      { name: 'Dự Án Tiêu Biểu', path: '/project-case' },
+      { name: 'Dự Án Tiêu Biểu', path: '/du-an' },
     ],
   },
   {

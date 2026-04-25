@@ -28,6 +28,106 @@ async function fetchWithLanguageFallback(path, queryBuilder, fallbackLanguages =
   throw lastError
 }
 
+/**
+ * Giống fetchWithLanguageFallback nhưng cũng fallback khi response trả về
+ * danh sách rỗng (items.length === 0). Hữu ích cho endpoint trả 200 OK
+ * với items=[] khi không có dữ liệu ở language_code đó.
+ */
+async function fetchWithLanguageFallbackNonEmpty(path, queryBuilder, fallbackLanguages = ['vi']) {
+  const seen = new Set()
+  const languages = [env.languageCode, ...fallbackLanguages]
+    .map((value) => String(value || '').trim())
+    .filter((value) => {
+      if (!value || seen.has(value)) return false
+      seen.add(value)
+      return true
+    })
+
+  let lastResult = null
+  let lastError = null
+
+  for (const languageCode of languages) {
+    try {
+      const result = await fetchJson(path, {
+        query: queryBuilder(languageCode),
+      })
+
+      const items = result?.items
+      if (Array.isArray(items) && items.length > 0) {
+        return result
+      }
+
+      if (!lastResult) {
+        lastResult = result
+      }
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  if (lastResult) return lastResult
+  if (lastError) throw lastError
+
+  return { items: [] }
+}
+
+/**
+ * Gộp danh sách dự án từ nhiều ngôn ngữ để trang `/du-an` không bị thiếu
+ * item khi admin tạo dự án rải ở nhiều language_id khác nhau.
+ */
+async function fetchMergedProjectsByLanguages(queryBuilder, languages = ['vi', 'en']) {
+  const normalizedLanguages = [...new Set(
+    languages
+      .map((value) => String(value || '').trim())
+      .filter(Boolean)
+  )]
+
+  const results = await Promise.allSettled(
+    normalizedLanguages.map((languageCode) =>
+      fetchJson('/public/projects', {
+        query: queryBuilder(languageCode),
+      })
+    )
+  )
+
+  const mergedItems = []
+  const seenKeys = new Set()
+  let pagination = null
+  let firstError = null
+
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      firstError ||= result.reason
+      continue
+    }
+
+    const payload = result.value || {}
+    const items = Array.isArray(payload.items) ? payload.items : []
+    pagination ||= payload.pagination || null
+
+    for (const item of items) {
+      const dedupeKey = String(item?.slug || item?.id || '')
+      if (!dedupeKey || seenKeys.has(dedupeKey)) continue
+      seenKeys.add(dedupeKey)
+      mergedItems.push(item)
+    }
+  }
+
+  if (!mergedItems.length && firstError) {
+    throw firstError
+  }
+
+  return {
+    items: mergedItems,
+    pagination: {
+      ...(pagination || {}),
+      total: mergedItems.length,
+      skip: 0,
+      limit: mergedItems.length || pagination?.limit || 0,
+    },
+  }
+}
+
 export function getHealth() {
   return fetchJson('/health')
 }
@@ -52,19 +152,28 @@ export function getPageDetail(slug, query = {}) {
 }
 
 export function getProjects({ categorySlug, year, skip, limit, ...query } = {}) {
-  return fetchJson('/public/projects', {
-    query: withLanguage({
+  return fetchMergedProjectsByLanguages(
+    (languageCode) => ({
+      language_code: languageCode,
       category_slug: categorySlug,
       year,
       skip,
       limit,
       ...query,
     }),
-  })
+    [env.languageCode, 'vi', 'en']
+  )
 }
 
 export function getProjectDetail(slug, query = {}) {
-  return fetchJson(`/public/projects/${slug}`, { query: withLanguage(query) })
+  return fetchWithLanguageFallback(
+    `/public/projects/${slug}`,
+    (languageCode) => ({
+      language_code: languageCode,
+      ...query,
+    }),
+    ['vi', 'en']
+  )
 }
 
 export function getProjectCasePage(categoryId, query = {}) {

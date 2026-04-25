@@ -70,7 +70,7 @@ export function createNavigationTreeHelpers() {
   function serializeTree(nodes = []) {
     return nodes.map((node, index) => ({
       ...(node.id ? { id: node.id } : {}),
-      title: String(node.title || '').trim() || 'Untitled',
+      title: String(node.title || '').trim() || 'Chưa đặt tiêu đề',
       url: String(node.url || '').trim() || '/',
       target: trimOrUndefined(node.target),
       item_type: trimOrUndefined(node.item_type),
@@ -84,7 +84,7 @@ export function createNavigationTreeHelpers() {
   function createEmptyNode() {
     return {
       id: null,
-      title: 'New Item',
+      title: 'Mục mới',
       url: '/',
       target: '',
       item_type: '',

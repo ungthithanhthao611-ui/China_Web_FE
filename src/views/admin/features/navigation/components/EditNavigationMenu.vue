@@ -10,5 +10,5 @@ const emit = defineEmits(['trigger'])
 </script>
 
 <template>
-  <button type="button" class="btn btn-secondary" :disabled="disabled" @click="emit('trigger')">Edit Menu</button>
+  <button type="button" class="btn btn-secondary" :disabled="disabled" @click="emit('trigger')">Sửa menu</button>
 </template>

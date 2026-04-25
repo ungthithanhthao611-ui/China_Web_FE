@@ -49,7 +49,7 @@ const emit = defineEmits(["cancel", "accept"]);
             class="btn btn-secondary"
             @click="emit('cancel')"
           >
-            Cancel
+            Hủy
           </button>
           <button
             type="button"

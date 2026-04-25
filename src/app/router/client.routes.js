@@ -56,13 +56,9 @@ const clientRoutes = [
     component: () => import('@/views/user/business/BusinessAreasPage.vue'),
   },
   {
-    path: 'projects',
+    path: 'du-an',
     name: 'Projects',
-    component: () => import('@/views/user/projects/ProjectCasePage.vue'),
-  },
-  {
-    path: 'project-case',
-    name: 'ProjectCase',
+    alias: ['/projects', '/project-case'],
     component: () => import('@/views/user/projects/ProjectCasePage.vue'),
   },
   {
@@ -76,8 +72,9 @@ const clientRoutes = [
     component: () => import('@/views/user/projects/ProjectCasePage.vue'),
   },
   {
-    path: 'project/:slug',
+    path: 'du-an/:slug',
     name: 'ProjectDetail',
+    alias: ['/project/:slug'],
     component: () => import('@/views/user/projects/ProjectDetailPage.vue'),
   },
   {

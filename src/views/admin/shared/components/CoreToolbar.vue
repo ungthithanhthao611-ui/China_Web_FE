@@ -18,7 +18,7 @@ const props = defineProps({
 
 const emit = defineEmits(['refresh', 'create'])
 
-const safeEyebrow = computed(() => props.config?.eyebrow || 'Admin module')
+const safeEyebrow = computed(() => props.config?.eyebrow || 'Mô-đun quản trị')
 const safeLabel = computed(() => props.config?.label || 'Bản ghi')
 const safeDescription = computed(
   () => props.config?.description || 'Quản lý dữ liệu từ giao diện quản trị.',
@@ -30,7 +30,7 @@ const safeDescription = computed(
     <div class="manager-toolbar__content">
       <div class="manager-toolbar__badge-wrap">
         <p class="eyebrow">{{ safeEyebrow }}</p>
-        <span class="manager-toolbar__badge">CMS Module</span>
+        <span class="manager-toolbar__badge">Mô-đun CMS</span>
       </div>
 
       <div class="manager-toolbar__heading">
@@ -46,7 +46,7 @@ const safeDescription = computed(
         :disabled="loading"
         @click="emit('refresh')"
       >
-        {{ loading ? "Refreshing..." : "Refresh" }}
+        {{ loading ? 'Đang làm mới...' : 'Làm mới' }}
       </button>
       <button
         v-if="canCreate"
@@ -54,7 +54,7 @@ const safeDescription = computed(
         class="btn btn-primary"
         @click="emit('create')"
       >
-        New Record
+        Thêm mới
       </button>
     </div>
   </div>
