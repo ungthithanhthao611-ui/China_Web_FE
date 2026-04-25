@@ -8,13 +8,23 @@ Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://
 
 Copy `.env.example` to `.env` and point `VITE_API_BASE_URL` to the FastAPI backend.
 
-Default local value:
+### Local development
 
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api/v1
 VITE_LANGUAGE_CODE=en
 VITE_HTTP_TIMEOUT_MS=15000
 ```
+
+### Production / Vercel deployment
+
+Set `VITE_API_BASE_URL` in Vercel to your real public backend URL, for example:
+
+```env
+VITE_API_BASE_URL=https://your-backend-domain.example.com/api/v1
+```
+
+Do **not** use `127.0.0.1` or `localhost` in production. A browser running on `https://your-vercel-app.vercel.app` cannot call your own computer's loopback address.
 
 ## Project Case smoke verification
 

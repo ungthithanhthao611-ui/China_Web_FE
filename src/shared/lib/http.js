@@ -14,6 +14,13 @@ export class HttpError extends Error {
 
 function buildUrl(path, query) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
+
+  if (!env.apiBaseUrl) {
+    throw new HttpError('Missing VITE_API_BASE_URL configuration. Please set the frontend API URL.', {
+      url: normalizedPath,
+    })
+  }
+
   const url = new URL(`${env.apiBaseUrl}${normalizedPath}`)
 
   if (query) {
