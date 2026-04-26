@@ -31,7 +31,7 @@ const {
   clearAllPendingProductSelections,
   resolveMediaUrl, moveGalleryItem, removeGalleryBinding,
   onMultiGalleryFilesSelected, removePendingGalleryFile,
-  cleanupProductSearch,
+  cleanupProductSearch, isProductAlreadySelected,
 } = useProjectManager()
 
 onMounted(() => {
@@ -140,6 +140,43 @@ onBeforeUnmount(() => {
     </div>
     <template v-else>
       <div ref="productComboRef" class="product-search-wrap">
+        <div
+          v-if="showProductDropdown && productSearchResults.length && productDropdownPlacement === 'up'"
+          class="product-dropdown product-dropdown--up"
+        >
+          <div class="product-dropdown-header">
+            <strong>{{ productSearchResults.length }} sản phẩm khả dụng</strong>
+            <span>Cuộn để xem thêm · bấm nhiều lần để chọn nhiều sản phẩm</span>
+          </div>
+          <button
+            v-for="product in productSearchResults"
+            :key="`up-${product.id}`"
+            type="button"
+            class="product-dropdown-item"
+            :class="{ 'product-dropdown-item--selected': isProductAlreadySelected(product.id) }"
+            @click="selectProductFromSearch(product)"
+          >
+            <span class="product-dropdown-check" :class="{ 'product-dropdown-check--active': isProductAlreadySelected(product.id) }">
+              <svg v-if="isProductAlreadySelected(product.id)" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            <div class="product-dropdown-thumb">
+              <img v-if="getProductThumb(product)" :src="getProductThumb(product)" :alt="product.name || product.title" />
+              <div v-else class="thumb-placeholder-small"></div>
+            </div>
+            <div class="product-dropdown-info">
+              <strong>{{ product.name || product.title }}</strong>
+              <span>SKU: {{ product.sku || '-' }}</span>
+            </div>
+          </button>
+        </div>
+
+        <div
+          v-if="showProductDropdown && !productSearchResults.length && productDropdownPlacement === 'up'"
+          class="product-dropdown product-dropdown--empty product-dropdown--up"
+        >
+          {{ productSearchQuery.trim() ? 'Không tìm thấy sản phẩm phù hợp.' : 'Không còn sản phẩm nào để thêm.' }}
+        </div>
+
         <label class="field-block field-block--full">
           <span>
             Tìm &amp; chọn sản phẩm
@@ -177,11 +214,24 @@ onBeforeUnmount(() => {
           </button>
         </div>
         <div
-          v-if="showProductDropdown && productSearchResults.length"
+          v-if="showProductDropdown && productSearchResults.length && productDropdownPlacement !== 'up'"
           class="product-dropdown"
-          :class="{ 'product-dropdown--up': productDropdownPlacement === 'up' }"
         >
-          <button v-for="product in productSearchResults" :key="product.id" type="button" class="product-dropdown-item" @click="selectProductFromSearch(product)">
+          <div class="product-dropdown-header">
+            <strong>{{ productSearchResults.length }} sản phẩm khả dụng</strong>
+            <span>Cuộn để xem thêm · bấm nhiều lần để chọn nhiều sản phẩm</span>
+          </div>
+          <button
+            v-for="product in productSearchResults"
+            :key="`down-${product.id}`"
+            type="button"
+            class="product-dropdown-item"
+            :class="{ 'product-dropdown-item--selected': isProductAlreadySelected(product.id) }"
+            @click="selectProductFromSearch(product)"
+          >
+            <span class="product-dropdown-check" :class="{ 'product-dropdown-check--active': isProductAlreadySelected(product.id) }">
+              <svg v-if="isProductAlreadySelected(product.id)" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
             <div class="product-dropdown-thumb">
               <img v-if="getProductThumb(product)" :src="getProductThumb(product)" :alt="product.name || product.title" />
               <div v-else class="thumb-placeholder-small"></div>
@@ -193,9 +243,8 @@ onBeforeUnmount(() => {
           </button>
         </div>
         <div
-          v-if="showProductDropdown && !productSearchResults.length"
+          v-if="showProductDropdown && !productSearchResults.length && productDropdownPlacement !== 'up'"
           class="product-dropdown product-dropdown--empty"
-          :class="{ 'product-dropdown--up': productDropdownPlacement === 'up' }"
         >
           {{ productSearchQuery.trim() ? 'Không tìm thấy sản phẩm phù hợp.' : 'Không còn sản phẩm nào để thêm.' }}
         </div>

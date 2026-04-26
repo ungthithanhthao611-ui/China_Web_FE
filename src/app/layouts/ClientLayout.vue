@@ -1,5 +1,6 @@
 <script setup>
-import { onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 
 import AppFooter from '@/views/user/layout/AppFooter.vue'
 import AppHeader from '@/views/user/layout/AppHeader.vue'
@@ -7,7 +8,18 @@ import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { NAVIGATION_MENUS_SYNC_KEY } from '@/shared/utils/navigationSync'
 import { uiState } from '@/shared/utils/uiState'
 
+const route = useRoute()
 const bootstrapStore = useBootstrapStore()
+
+const readAdminPreviewMode = () => {
+  if (typeof window === 'undefined') {
+    return String(route.query.adminPreview || '').trim() === '1'
+  }
+
+  return new URL(window.location.href).searchParams.get('adminPreview') === '1'
+}
+
+const isAdminPreviewMode = computed(() => readAdminPreviewMode())
 
 function logBootstrapError(error) {
   if (import.meta.env.DEV) {
@@ -34,8 +46,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="app-wrapper">
-    <AppHeader v-if="!uiState.isNavHidden" />
+  <div class="app-wrapper" :class="{ 'app-wrapper--admin-preview': isAdminPreviewMode }">
+    <AppHeader v-if="!uiState.isNavHidden && !isAdminPreviewMode" />
 
     <main class="main-content">
       <router-view v-slot="{ Component }">
@@ -45,7 +57,7 @@ onBeforeUnmount(() => {
       </router-view>
     </main>
 
-    <AppFooter v-if="!uiState.isFooterHidden" />
+    <AppFooter v-if="!uiState.isFooterHidden && !isAdminPreviewMode" />
   </div>
 </template>
 
@@ -54,6 +66,10 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+}
+
+.app-wrapper--admin-preview {
+  min-height: auto;
 }
 
 .main-content {

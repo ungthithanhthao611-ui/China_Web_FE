@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 
+import AboutGroupedView from '@/views/admin/features/about/pages/AboutGroupedView.vue'
 import { useEntityManager } from '@/views/admin/shared/composables/useEntityManager.js'
 import EntityManagerConfirmDialog from '@/views/admin/shared/components/CoreConfirmDialog.vue'
 import EntityManagerEditor from '@/views/admin/shared/components/AdminCoreEditor.vue'
@@ -18,42 +19,158 @@ const props = defineProps({
 const emit = defineEmits(['notify-success', 'notify-error', 'clear-notify'])
 
 const {
-  records, mediaOptions, relationOptions, searchKeyword, statusFilter,
-  currentPage, pageSize, totalRecords, loading, saving, deletingId,
-  formOpen, formMode, editingRecordId, inlineEditorRef, form, formErrors,
-  uploadFile, uploadTitle, uploadAltText, uploadTargetField, uploading,
-  videoUploadFile, videoUploading, bannerFocusDragging, actionConfirmDialog,
-  productInlineUploading, galleryUploadProgress,
-  config, resolvedEntityKey, hasValidEntityConfig, previewRecordUrl, tableColumns, visibleFormFields, statusOptions,
-  totalPages, hasStatusFilter, hasMediaFields, mediaFieldOptions, canCreate,
-  standaloneUpload, isMediaAssetsEntity, isVideosEntity, isBannerEntity,
-  isProductsEntity, isFormModalEntity, showInlineEditor, inlineEditorPlacement,
-  slugSourceField, actionConfirmButtonClass, featuredTableFields,
-  previewMediaOptions, videoLibraryOptions,
-  resolveMediaUrl, isDirectVideoFile, isAllowedVideoUrl, isVideoMediaRecord,
-  isImageMedia, videoUrlHint, mediaAssetPreviewUrl, mediaAssetLabel,
-  rowThumbnailUrl, videoPreviewUrl, hasRichPreview, previewCard, previewMedia,
-  previewStatusText, previewStatusTone, selectedMediaPreviewUrl,
-  selectedMediaAsset, selectedMediaLabel,
-  fieldLabel, fieldPlaceholder, fieldHelpText, isTextarea, isBooleanField,
-  inputType, isSelectField, selectOptions, formatCell, recordDisplayName,
-  relationSelectValue, selectedRelationSummary, relationPreviewPath,
-  relationPreviewLabel, updateRelationField, handleSlugInput,
-  handleSlugSourceInput, mediaUploadAccept,
-  bannerMediaRecord, bannerFormMediaRecord, bannerMediaUrl, bannerMediaAlt,
-  bannerTypeLabel, bannerOrdinal, bannerDisplayTitle, bannerImageStyle,
-  bannerFormImageStyle, canAdjustBannerFocus, bannerFocusIndicatorStyle,
-  startBannerFocusAdjust, onBannerFocusAdjust, stopBannerFocusAdjust,
+  records,
+  mediaOptions,
+  relationOptions,
+  searchKeyword,
+  statusFilter,
+  aboutSectionFilter,
+  aboutBlockFilter,
+  aboutCompletenessFilter,
+  aboutMediaFilter,
+  aboutViewMode,
+  currentPage,
+  pageSize,
+  totalRecords,
+  loading,
+  saving,
+  deletingId,
+  formOpen,
+  formMode,
+  editingRecordId,
+  inlineEditorRef,
+  form,
+  formErrors,
+  uploadFile,
+  uploadTitle,
+  uploadAltText,
+  uploadTargetField,
+  uploading,
+  videoUploadFile,
+  videoUploading,
+  bannerFocusDragging,
+  actionConfirmDialog,
+  productInlineUploading,
+  galleryUploadProgress,
+  config,
+  resolvedEntityKey,
+  hasValidEntityConfig,
+  previewRecordUrl,
+  tableColumns,
+  visibleFormFields,
+  statusOptions,
+  totalPages,
+  hasStatusFilter,
+  hasMediaFields,
+  mediaFieldOptions,
+  canCreate,
+  standaloneUpload,
+  isMediaAssetsEntity,
+  isVideosEntity,
+  isBannerEntity,
+  isProductsEntity,
+  isFormModalEntity,
+  showInlineEditor,
+  inlineEditorPlacement,
+  slugSourceField,
+  actionConfirmButtonClass,
+  featuredTableFields,
+  previewMediaOptions,
+  videoLibraryOptions,
+  isAboutContentBlockItemsEntity,
+  aboutFilterConfig,
+  aboutViewModeOptions,
+  hasAdvancedAboutFilters,
+  resolveMediaUrl,
+  isDirectVideoFile,
+  isAllowedVideoUrl,
+  isVideoMediaRecord,
+  isImageMedia,
+  videoUrlHint,
+  mediaAssetPreviewUrl,
+  mediaAssetLabel,
+  rowThumbnailUrl,
+  videoPreviewUrl,
+  hasRichPreview,
+  previewCard,
+  previewMedia,
+  previewStatusText,
+  previewStatusTone,
+  selectedMediaPreviewUrl,
+  selectedMediaAsset,
+  selectedMediaLabel,
+  fieldLabel,
+  fieldPlaceholder,
+  fieldHelpText,
+  isTextarea,
+  isBooleanField,
+  inputType,
+  isSelectField,
+  selectOptions,
+  formatCell,
+  recordDisplayName,
+  relationSelectValue,
+  selectedRelationSummary,
+  relationPreviewPath,
+  relationPreviewLabel,
+  updateRelationField,
+  handleSlugInput,
+  handleSlugSourceInput,
+  mediaUploadAccept,
+  bannerMediaRecord,
+  bannerFormMediaRecord,
+  bannerMediaUrl,
+  bannerMediaAlt,
+  bannerTypeLabel,
+  bannerOrdinal,
+  bannerDisplayTitle,
+  bannerImageStyle,
+  bannerFormImageStyle,
+  canAdjustBannerFocus,
+  bannerFocusIndicatorStyle,
+  startBannerFocusAdjust,
+  onBannerFocusAdjust,
+  stopBannerFocusAdjust,
   resetBannerFocus,
-  openCreateForm, openEditForm, handleFieldUpdate, closeForm, submitForm,
-  deleteRecord, handleFileChange, handleVideoFileChange, uploadMedia,
-  uploadVideoFile, inlineUploadForField, removeGalleryUrl,
-  refreshAll, loadRecords, setPage,
-  cancelActionConfirmDialog, acceptActionConfirmDialog,
-  currentFormPreviewUrl, FIELD_GROUPS,
+  openCreateForm,
+  openEditForm,
+  handleFieldUpdate,
+  closeForm,
+  submitForm,
+  deleteRecord,
+  handleFileChange,
+  handleVideoFileChange,
+  uploadMedia,
+  uploadVideoFile,
+  inlineUploadForField,
+  removeGalleryUrl,
+  refreshAll,
+  loadRecords,
+  setPage,
+  cancelActionConfirmDialog,
+  acceptActionConfirmDialog,
+  currentFormPreviewUrl,
+  FIELD_GROUPS,
 } = useEntityManager(props, emit)
 
 const safeEditLabel = computed(() => config?.value?.editLabel || 'Sửa')
+const shouldUseAboutGroupedView = computed(
+  () => isAboutContentBlockItemsEntity.value && aboutViewMode.value === 'grouped',
+)
+
+function applyFilters() {
+  currentPage.value = 1
+  loadRecords()
+}
+
+function resetAboutFilters() {
+  aboutSectionFilter.value = ''
+  aboutBlockFilter.value = ''
+  aboutCompletenessFilter.value = ''
+  aboutMediaFilter.value = ''
+  aboutViewMode.value = aboutViewModeOptions.value[1]?.value || aboutViewModeOptions.value[0]?.value || 'table'
+  applyFilters()
+}
 </script>
 
 <template>
@@ -87,12 +204,23 @@ const safeEditLabel = computed(() => config?.value?.editLabel || 'Sửa')
         :has-status-filter="hasStatusFilter"
         :status-options="statusOptions"
         :loading="loading"
+        :has-advanced-about-filters="hasAdvancedAboutFilters"
+        :about-filter-config="aboutFilterConfig"
+        :about-section-filter="aboutSectionFilter"
+        :about-block-filter="aboutBlockFilter"
+        :about-completeness-filter="aboutCompletenessFilter"
+        :about-media-filter="aboutMediaFilter"
+        :about-view-mode="aboutViewMode"
+        :about-view-mode-options="aboutViewModeOptions"
         @update:search-keyword="searchKeyword = $event"
         @update:status-filter="statusFilter = $event"
-        @search="
-          currentPage = 1;
-          loadRecords();
-        "
+        @update:about-section-filter="aboutSectionFilter = $event"
+        @update:about-block-filter="aboutBlockFilter = $event"
+        @update:about-completeness-filter="aboutCompletenessFilter = $event"
+        @update:about-media-filter="aboutMediaFilter = $event"
+        @update:about-view-mode="aboutViewMode = $event"
+        @search="applyFilters"
+        @reset-about-filters="resetAboutFilters"
       />
 
       <EntityManagerUploadPanel
@@ -115,7 +243,22 @@ const safeEditLabel = computed(() => config?.value?.editLabel || 'Sửa')
           },
         ]"
       >
+        <AboutGroupedView
+          v-if="shouldUseAboutGroupedView"
+          :records="records"
+          :loading="loading"
+          :deleting-id="deletingId"
+          :preview-media="previewMedia"
+          :resolve-media-url="resolveMediaUrl"
+          :is-image-media-record="isImageMedia"
+          :is-video-media-record="isVideoMediaRecord"
+          :record-display-name="recordDisplayName"
+          @edit="openEditForm"
+          @delete="deleteRecord"
+        />
+
         <EntityManagerRecordsTable
+          v-else
           :records="records"
           :table-columns="tableColumns"
           :field-label="fieldLabel"
@@ -241,9 +384,7 @@ const safeEditLabel = computed(() => config?.value?.editLabel || 'Sửa')
         @update:relation-field="updateRelationField"
         @slug-input="handleSlugInput(slugSourceField, formMode)"
         @slug-source-input="handleSlugSourceInput($event, slugSourceField, formMode)"
-        @video-library-select="
-          form.video_url = $event;
-        "
+        @video-library-select="form.video_url = $event"
         @reset-banner-focus="resetBannerFocus"
         @banner-focus-start="startBannerFocusAdjust"
         @banner-focus-move="onBannerFocusAdjust"
@@ -263,8 +404,6 @@ const safeEditLabel = computed(() => config?.value?.editLabel || 'Sửa')
   </section>
 </template>
 
-
 <style scoped>
 @import '@/views/admin/shared/components/AdminCoreManager.css';
 </style>
-

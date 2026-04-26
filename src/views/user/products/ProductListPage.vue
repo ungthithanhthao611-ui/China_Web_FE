@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronRight, Home, Play, Search, X, SlidersHorizontal } from 'lucide-vue-next'
 import { uiState } from '@/shared/utils/uiState'
@@ -8,29 +8,91 @@ import { listProductCategories, listProducts } from '@/views/user/services/produ
 const route = useRoute()
 const router = useRouter()
 
-const categories = ref([])
 const products = ref([])
-const totalProducts = ref(0)
-const loadingCats = ref(false)
+const categoryTree = ref([])
 const loadingProducts = ref(false)
+const loadingCategories = ref(false)
 const activeCategorySlug = ref('')
 const searchQuery = ref('')
 const currentPage = ref(1)
 const PAGE_SIZE = 9
 
+const normalizeText = (value) => String(value || '')
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+
+const flattenCategoryTree = (nodes, depth = 0) => nodes.flatMap((node) => {
+  const currentNode = {
+    ...node,
+    depth,
+  }
+  const children = flattenCategoryTree(node.children || [], depth + 1)
+  return [currentNode, ...children]
+})
+
+const allCategories = computed(() => flattenCategoryTree(categoryTree.value))
+
+const rootCategory = computed(() => categoryTree.value[0] || null)
+
+const sidebarCategories = computed(() => allCategories.value.filter((category) => (
+  category.slug && category.id !== rootCategory.value?.id
+)))
+
+const activeSidebarCategory = computed(() => {
+  if (!activeCategorySlug.value) {
+    return {
+      slug: '',
+      name: 'Tất cả',
+      description: rootCategory.value?.description || 'Hiển thị toàn bộ sản phẩm trong danh mục hiện có.',
+      product_count: rootCategory.value?.product_count || products.value.length,
+    }
+  }
+
+  return sidebarCategories.value.find((category) => category.slug === activeCategorySlug.value) || {
+    slug: '',
+    name: 'Tất cả',
+    description: rootCategory.value?.description || '',
+    product_count: rootCategory.value?.product_count || products.value.length,
+  }
+})
+
+const filteredProducts = computed(() => {
+  if (!searchQuery.value.trim()) return products.value
+
+  const query = normalizeText(searchQuery.value)
+  return products.value.filter((product) => {
+    const searchableText = normalizeText([
+      product?.name,
+      product?.sku,
+      product?.short_desc,
+      product?.material,
+      product?.category_name,
+    ].join(' '))
+    return searchableText.includes(query)
+  })
+})
+
+const totalProducts = computed(() => filteredProducts.value.length)
 const totalPages = computed(() => Math.max(1, Math.ceil(totalProducts.value / PAGE_SIZE)))
-const activeCategory = computed(() => categories.value.find(c => c.slug === activeCategorySlug.value) || null)
+const rootProductCount = computed(() => rootCategory.value?.product_count || products.value.length)
+
+const paginatedProducts = computed(() => {
+  const start = (currentPage.value - 1) * PAGE_SIZE
+  return filteredProducts.value.slice(start, start + PAGE_SIZE)
+})
+
 const hasVideoUrl = (product) => Boolean(String(product?.video_url || '').trim())
 
-async function fetchCategories() {
-  loadingCats.value = true
+async function fetchCategoryTree() {
+  loadingCategories.value = true
   try {
     const res = await listProductCategories()
-    categories.value = res.items || []
+    categoryTree.value = res.items || []
   } catch {
-    categories.value = []
+    categoryTree.value = []
   } finally {
-    loadingCats.value = false
+    loadingCategories.value = false
   }
 }
 
@@ -39,23 +101,32 @@ async function fetchProducts() {
   try {
     const res = await listProducts({
       categorySlug: activeCategorySlug.value,
-      skip: (currentPage.value - 1) * PAGE_SIZE,
-      limit: PAGE_SIZE,
+      skip: 0,
+      limit: 100,
     })
     products.value = res.items || []
-    totalProducts.value = res.pagination?.total || 0
   } catch {
     products.value = []
-    totalProducts.value = 0
   } finally {
     loadingProducts.value = false
   }
 }
 
+function isKnownCategorySlug(slug) {
+  if (!slug) return true
+  return sidebarCategories.value.some((category) => category.slug === slug)
+}
+
+function syncActiveCategoryFromRoute() {
+  const categoryFromQuery = typeof route.query.category === 'string' ? route.query.category : ''
+  activeCategorySlug.value = isKnownCategorySlug(categoryFromQuery) ? categoryFromQuery : ''
+}
+
 function selectCategory(slug) {
-  activeCategorySlug.value = slug
+  const nextSlug = isKnownCategorySlug(slug) ? slug : ''
+  activeCategorySlug.value = nextSlug
   currentPage.value = 1
-  router.replace({ query: slug ? { category: slug } : {} })
+  router.replace({ query: nextSlug ? { category: nextSlug } : {} })
 }
 
 function goToPage(page) {
@@ -64,25 +135,29 @@ function goToPage(page) {
   window.scrollTo({ top: 400, behavior: 'smooth' })
 }
 
-const filteredProducts = computed(() => {
-  if (!searchQuery.value.trim()) return products.value
-  const q = searchQuery.value.toLowerCase()
-  return products.value.filter(p =>
-    p.name.toLowerCase().includes(q) ||
-    p.sku.toLowerCase().includes(q) ||
-    p.short_desc.toLowerCase().includes(q)
-  )
+watch(searchQuery, () => {
+  currentPage.value = 1
 })
 
-watch(activeCategorySlug, fetchProducts)
-watch(currentPage, fetchProducts)
+watch(totalPages, (pageCount) => {
+  if (currentPage.value > pageCount) {
+    currentPage.value = pageCount
+  }
+})
+
+watch(
+  () => route.query.category,
+  async () => {
+    syncActiveCategoryFromRoute()
+    await fetchProducts()
+  },
+)
 
 onMounted(async () => {
   uiState.isHeaderHidden = false
   uiState.isFooterHidden = false
-  const catFromQuery = route.query.category || ''
-  activeCategorySlug.value = catFromQuery
-  await fetchCategories()
+  await fetchCategoryTree()
+  syncActiveCategoryFromRoute()
   await fetchProducts()
 })
 </script>
@@ -112,38 +187,42 @@ onMounted(async () => {
       <aside class="prod-sidebar">
         <div class="prod-sidebar__header">
           <SlidersHorizontal :size="16" />
-          <span>Danh Mục</span>
+          <span>Danh mục</span>
         </div>
-        <ul class="prod-cat-list">
-          <li>
-            <button
-              :class="['prod-cat-item', { active: !activeCategorySlug }]"
-              @click="selectCategory('')"
-            >
-              Tất Cả Sản Phẩm
-              <span class="prod-cat-count">{{ categories.reduce((s, c) => s + (c.product_count || 0), 0) }}</span>
-            </button>
-          </li>
-          <li v-for="cat in categories" :key="cat.id">
-            <button
-              :class="['prod-cat-item', { active: activeCategorySlug === cat.slug }]"
-              @click="selectCategory(cat.slug)"
-            >
-              <img
-                v-if="cat.image_url"
-                class="prod-cat-thumb"
-                :src="cat.image_url"
-                :alt="cat.name"
-                loading="lazy"
-              />
-              <span v-else class="prod-cat-thumb prod-cat-thumb--fallback" aria-hidden="true">
-                {{ cat.name?.charAt(0) || 'C' }}
-              </span>
-              {{ cat.name }}
-              <span class="prod-cat-count">{{ cat.product_count }}</span>
-            </button>
-          </li>
-        </ul>
+
+        <div class="prod-sidebar__tree">
+          <div class="prod-cat-root">
+            <div>
+              <span class="prod-cat-root__label">DANH MỤC</span>
+              <strong class="prod-cat-root__title">{{ rootCategory?.name || 'Danh mục sản phẩm' }}</strong>
+            </div>
+            <span class="prod-cat-count">{{ rootProductCount }}</span>
+          </div>
+
+          <ul class="prod-cat-tree">
+            <li>
+              <button
+                :class="['prod-cat-item', { active: !activeCategorySlug }]"
+                @click="selectCategory('')"
+              >
+                <span class="prod-cat-item__branch" aria-hidden="true" />
+                <span class="prod-cat-item__label">Tất cả</span>
+                <span class="prod-cat-count">{{ rootProductCount }}</span>
+              </button>
+            </li>
+            <li v-for="cat in sidebarCategories" :key="cat.slug || cat.id">
+              <button
+                :class="['prod-cat-item', { active: activeCategorySlug === cat.slug }]"
+                :style="{ '--depth': cat.depth }"
+                @click="selectCategory(cat.slug)"
+              >
+                <span class="prod-cat-item__branch" aria-hidden="true" />
+                <span class="prod-cat-item__label">{{ cat.name }}</span>
+                <span class="prod-cat-count">{{ cat.product_count }}</span>
+              </button>
+            </li>
+          </ul>
+        </div>
       </aside>
 
       <!-- Main -->
@@ -151,10 +230,9 @@ onMounted(async () => {
         <!-- Toolbar -->
         <div class="prod-toolbar">
           <div class="prod-toolbar__info">
-            <span v-if="activeCategory">
-              <strong>{{ activeCategory.name }}</strong> — {{ totalProducts }} sản phẩm
+            <span>
+              <strong>{{ activeSidebarCategory.name }}</strong> — {{ totalProducts }} sản phẩm
             </span>
-            <span v-else>Tất cả — <strong>{{ totalProducts }}</strong> sản phẩm</span>
           </div>
           <div class="prod-search">
             <Search :size="16" />
@@ -171,8 +249,8 @@ onMounted(async () => {
         </div>
 
         <!-- Category Description -->
-        <div v-if="activeCategory?.description" class="prod-cat-desc">
-          <p>{{ activeCategory.description }}</p>
+        <div v-if="activeSidebarCategory?.description" class="prod-cat-desc">
+          <p>{{ activeSidebarCategory.description }}</p>
         </div>
 
         <!-- Loading -->
@@ -189,7 +267,7 @@ onMounted(async () => {
         <!-- Grid -->
         <div v-else class="prod-grid">
           <article
-            v-for="product in filteredProducts"
+            v-for="product in paginatedProducts"
             :key="product.id"
             class="prod-card"
           >
@@ -246,7 +324,7 @@ onMounted(async () => {
         </div>
 
         <!-- Pagination -->
-        <div v-if="totalPages > 1 && !searchQuery" class="prod-pagination">
+        <div v-if="totalPages > 1" class="prod-pagination">
           <button
             class="prod-page-arrow"
             :disabled="currentPage === 1"
@@ -361,7 +439,7 @@ onMounted(async () => {
 /* ── Shell ── */
 .prod-shell {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 280px minmax(0, 1fr);
   gap: 32px;
   max-width: $max-width-container;
   margin: 0 auto;
@@ -376,95 +454,157 @@ onMounted(async () => {
 }
 
 .prod-sidebar__header {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 0 0 12px;
-  margin-bottom: 8px;
-  border-bottom: 2px solid #c40011;
+  margin-bottom: 14px;
   color: #1d283d;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
-.prod-cat-list {
+.prod-sidebar__tree {
+  padding: 24px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(29, 40, 61, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(196, 0, 17, 0.08), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 245, 239, 0.96));
+  box-shadow:
+    0 20px 45px rgba(29, 40, 61, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.prod-cat-root {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(29, 40, 61, 0.08);
+}
+
+.prod-cat-root__label {
+  display: block;
+  margin-bottom: 6px;
+  color: #7a6652;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.prod-cat-root__title {
+  display: block;
+  color: #1d283d;
+  font-family: $font-title;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.prod-cat-tree {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  gap: 6px;
 }
 
 .prod-cat-item {
-  display: flex;
+  --depth: 0;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   width: 100%;
-  padding: 10px 14px;
-  border: none;
-  border-radius: 6px;
+  padding: 10px 12px;
+  padding-left: calc(12px + (var(--depth) * 18px));
+  border: 1px solid transparent;
+  border-radius: 14px;
   background: transparent;
   color: #4a5568;
   font-size: 14px;
   text-align: left;
   cursor: pointer;
-  transition: background 0.18s, color 0.18s;
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.prod-cat-item > :not(.prod-cat-count) {
-  flex-shrink: 0;
+.prod-cat-item__branch {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  opacity: 0.65;
 }
 
-.prod-cat-thumb {
-  width: 34px;
-  height: 34px;
-  margin-right: 10px;
-  border-radius: 10px;
-  object-fit: cover;
-  background: rgba(10, 17, 32, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(10, 17, 32, 0.08);
+.prod-cat-item__branch::before,
+.prod-cat-item__branch::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+  border-radius: 999px;
 }
 
-.prod-cat-thumb--fallback {
-  display: grid;
-  place-items: center;
-  color: #c40011;
-  font-size: 13px;
-  font-weight: 700;
-  background: rgba(196, 0, 17, 0.08);
+.prod-cat-item__branch::before {
+  left: 2px;
+  top: 0;
+  width: 1px;
+  height: 12px;
+}
+
+.prod-cat-item__branch::after {
+  left: 2px;
+  top: 11px;
+  width: 10px;
+  height: 1px;
+}
+
+.prod-cat-item__label {
+  min-width: 0;
 }
 
 .prod-cat-item:hover {
-  background: #f0ebe3;
+  transform: translateX(2px);
+  background: rgba(196, 0, 17, 0.06);
+  border-color: rgba(196, 0, 17, 0.1);
   color: #1d283d;
 }
 
 .prod-cat-item.active {
-  background: #c40011;
+  background: linear-gradient(135deg, #c40011, #8f1120);
+  border-color: transparent;
   color: #fff;
-  font-weight: 600;
+  box-shadow: 0 16px 24px rgba(196, 0, 17, 0.2);
 }
 
-.prod-cat-item.active .prod-cat-count {
-  background: rgba(255,255,255,0.22);
-  color: #fff;
+.prod-cat-item.active .prod-cat-item__branch {
+  opacity: 1;
 }
 
 .prod-cat-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 10px;
-  background: #f0ebe3;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(29, 40, 61, 0.06);
   color: #7a6652;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.prod-cat-item.active .prod-cat-count {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
 }
 
 /* ── Main ── */
@@ -913,11 +1053,11 @@ onMounted(async () => {
 
   .prod-cat-item {
     gap: 8px;
-    align-items: flex-start;
+    grid-template-columns: 16px minmax(0, 1fr) auto;
+    align-items: center;
   }
 
-  .prod-cat-item > :not(.prod-cat-count) {
-    flex-shrink: 1;
+  .prod-cat-item__label {
     min-width: 0;
   }
 

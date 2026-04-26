@@ -27,10 +27,18 @@ const bootstrapStore = useBootstrapStore()
 
 const productCategories = ref([])
 
+const flattenCategories = (nodes = []) => nodes.flatMap((category) => {
+  const current = {
+    ...category,
+    children: undefined,
+  }
+  return [current, ...flattenCategories(category.children || [])]
+})
+
 async function loadProductCategories() {
   try {
     const res = await listProductCategories()
-    productCategories.value = res.items || []
+    productCategories.value = flattenCategories(res.items || [])
   } catch {
     productCategories.value = []
   }

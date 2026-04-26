@@ -3,6 +3,8 @@ import {
   ABOUT_SECTION_PREVIEW_MAP,
   BANNER_MEDIA_KEYWORDS,
   MEDIA_NOISE_KEYWORDS,
+  resolveAboutBlockDisplayName,
+  resolveAboutItemDisplayName,
 } from "@/views/admin/shared/utils/entity-manager/constants.js";
 
 export function createEntityManagerPreviewHelpers({
@@ -137,11 +139,14 @@ export function createEntityManagerPreviewHelpers({
     const pageLabel =
       entityType === "page" ? relationLabelFromOptions("entity_id", entityId) : "";
     const previewTarget = resolveContentBlockPreview(record);
+    const displayBlockLabel = resolveAboutBlockDisplayName(
+      blockKey.toLowerCase(),
+      String(record?.title || "").trim() || blockKey,
+    );
 
     return {
       badge: blockType || "block",
-      title:
-        String(record?.title || "").trim() || blockKey || `Block #${record?.id || ""}`,
+      title: displayBlockLabel || blockKey || `Block #${record?.id || ""}`,
       summary: pageLabel
         ? `Block này đang cấp dữ liệu cho page: ${pageLabel}`
         : `entity_type: ${entityType || "-"} · entity_id: ${entityId || "-"}`,
@@ -160,8 +165,12 @@ export function createEntityManagerPreviewHelpers({
   const contentBlockItemPreview = (record) => {
     const blockId = record?.block_id;
     const blockRecord = resolveBlockRecordById(blockId);
+    const blockKey = String(blockRecord?.block_key || "").trim().toLowerCase();
     const blockLabel = blockRecord
-      ? String(blockRecord.title || blockRecord.block_key || `#${blockRecord.id}`).trim()
+      ? resolveAboutBlockDisplayName(
+          blockKey,
+          String(blockRecord.title || blockRecord.block_key || `#${blockRecord.id}`).trim(),
+        )
       : relationLabelFromOptions("block_id", blockId);
     const itemKey = String(record?.item_key || "").trim();
     const metadata =
@@ -173,11 +182,16 @@ export function createEntityManagerPreviewHelpers({
     const previewTarget = blockRecord
       ? resolveContentBlockPreview(blockRecord)
       : { href: "", targetLabel: "" };
+    const displayItemTitle = resolveAboutItemDisplayName({
+      blockKey,
+      itemKey,
+      title: record?.title,
+      includeBlockPrefix: true,
+    });
 
     return {
       badge: "item",
-      title:
-        String(record?.title || "").trim() || itemKey || `Item #${record?.id || ""}`,
+      title: displayItemTitle || itemKey || `Item #${record?.id || ""}`,
       summary: blockLabel ? `Thuộc block: ${blockLabel}` : `Block ID: ${blockId || "-"}`,
       meta: [
         itemKey ? `key: ${itemKey}` : "",

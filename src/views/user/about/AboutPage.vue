@@ -75,6 +75,46 @@ const introScroller = ref(null);
 const speechScroller = ref(null);
 const syncingRouteFromSection = ref(false);
 
+const readPreviewLocation = () => {
+  if (typeof window === 'undefined') {
+    return {
+      adminPreview: String(route.query.adminPreview || '').trim() === '1',
+      previewSection: String(route.query.previewSection || '').trim().toLowerCase(),
+      hashSection: String(route.hash || '').replace('#', '').trim().toLowerCase(),
+    }
+  }
+
+  const currentUrl = new URL(window.location.href)
+  return {
+    adminPreview: currentUrl.searchParams.get('adminPreview') === '1',
+    previewSection: String(currentUrl.searchParams.get('previewSection') || '').trim().toLowerCase(),
+    hashSection: String(currentUrl.hash || '').replace('#', '').trim().toLowerCase(),
+  }
+}
+
+const isAdminPreview = computed(() => readPreviewLocation().adminPreview)
+
+const previewSectionId = computed(() => {
+  const { previewSection, hashSection } = readPreviewLocation()
+
+  if (/^page[1-8]$/.test(previewSection)) {
+    return previewSection
+  }
+
+  if (isAdminPreview.value && /^page[1-8]$/.test(hashSection)) {
+    return hashSection
+  }
+
+  return ''
+})
+
+const isSingleSectionPreview = computed(() => Boolean(previewSectionId.value))
+
+const filteredSectionMeta = computed(() => {
+  if (!isSingleSectionPreview.value) return sectionMeta.value
+  return sectionMeta.value.filter((item) => item.id === previewSectionId.value)
+})
+
 let observer;
 
 const activeCultureTitleInit = computed(() => cultureBlocks.value?.[0]?.title ?? "");
@@ -89,10 +129,30 @@ const currentCultureBlock = computed(
 );
 
 const timelineSlides = computed(() =>
-  timelineEntries.value.map((item) => ({
-    ...item,
-    type: item.image ? "ad-image" : "no-image"
-  }))
+  timelineEntries.value.map((item) => {
+    const startLabel = item.startYear
+      ? [item.startYear, item.startMonth].filter(Boolean).join('.')
+      : '';
+    const endLabel = item.endYear
+      ? [item.endYear, item.endMonth].filter(Boolean).join('.')
+      : '';
+
+    return {
+      ...item,
+      year: item.startYear || '',
+      month: item.startMonth || '',
+      day: item.startDay || '',
+      endYear: item.endYear || '',
+      endMonth: item.endMonth || '',
+      endDay: item.endDay || '',
+      displayYearLabel: endLabel ? `${startLabel} - ${endLabel}` : startLabel,
+      displayMonthLabel:
+        item.startDay || item.endDay
+          ? [item.startDay, item.endDay].filter(Boolean).join(' - ')
+          : '',
+      type: item.image ? "ad-image" : "no-image"
+    };
+  })
 );
 
 const timelineModules = [Autoplay];
@@ -142,6 +202,10 @@ const slideLeadership = (direction) => {
 };
 
 const getTargetSectionId = () => {
+  if (previewSectionId.value) {
+    return previewSectionId.value
+  }
+
   if (route.hash) {
     return route.hash.replace("#", "");
   }
@@ -153,6 +217,8 @@ const getTargetSectionId = () => {
 
   return "page1";
 };
+
+const shouldRenderSection = (id) => !previewSectionId.value || previewSectionId.value === id;
 
 const isSectionVisible = (id) => visibleSections.value.has(id);
 
@@ -247,7 +313,7 @@ const setupObserver = () => {
     rootMargin: "0px"
   });
 
-  sectionMeta.value.forEach((section) => {
+  filteredSectionMeta.value.forEach((section) => {
     const element = document.getElementById(section.id);
     if (element) {
       observer.observe(element);
@@ -312,9 +378,9 @@ onBeforeUnmount(() => {
 
     <!-- Main content -->
     <template v-else>
-    <div class="about-dots">
+    <div v-if="!isSingleSectionPreview" class="about-dots">
       <button
-        v-for="dot in sectionMeta"
+        v-for="dot in filteredSectionMeta"
         :key="dot.id"
         :class="['about-dot', { active: activeSection === dot.id }]"
         :aria-label="dot.title"
@@ -323,7 +389,7 @@ onBeforeUnmount(() => {
       />
     </div>
 
-    <section id="page1" class="about-hero">
+    <section v-if="shouldRenderSection('page1')" id="page1" class="about-hero">
       <img class="hero-image hero-image-pc" :src="heroBannerImage || '/images/banner/banner3.jpg'" alt="About us banner" />
       <img class="hero-image hero-image-mobile" :src="heroBannerImage || '/images/banner/banner3.jpg'" alt="About us mobile banner" />
       <div class="hero-overlay" />
@@ -351,7 +417,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section id="page2" :class="['about-section intro-section', { 'is-visible': isSectionVisible('page2') }]">
+    <section v-if="shouldRenderSection('page2')" id="page2" :class="['about-section intro-section', { 'is-visible': isSectionVisible('page2') }]">
       <div class="section-shell">
         <div class="section-heading intro-heading">
           <h2>{{ introTitle }}</h2>
@@ -385,7 +451,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section id="page3" :class="['about-section speech-section', { 'is-visible': isSectionVisible('page3') }]">
+    <section v-if="shouldRenderSection('page3')" id="page3" :class="['about-section speech-section', { 'is-visible': isSectionVisible('page3') }]">
       <div class="section-shell speech-shell">
         <div class="speech-heading">
           <p class="speech-title">
@@ -420,7 +486,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section id="page4" :class="['about-section chart-section', { 'is-visible': isSectionVisible('page4') }]">
+    <section v-if="shouldRenderSection('page4')" id="page4" :class="['about-section chart-section', { 'is-visible': isSectionVisible('page4') }]">
       <div class="section-shell chart-shell">
         <div class="section-heading chart-heading">
           <p class="chart-title">
@@ -434,7 +500,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section id="page5" :class="['about-section culture-section', { 'is-visible': isSectionVisible('page5') }]">
+    <section v-if="shouldRenderSection('page5')" id="page5" :class="['about-section culture-section', { 'is-visible': isSectionVisible('page5') }]">
       <div class="section-shell">
         <div class="section-heading">
           <span class="eyebrow">{{ heroHeadline }}</span>
@@ -473,7 +539,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section id="page6" :class="['about-section timeline-section', { 'is-visible': isSectionVisible('page6') }]">
+    <section v-if="shouldRenderSection('page6')" id="page6" :class="['about-section timeline-section', { 'is-visible': isSectionVisible('page6') }]">
       <div class="section-shell timeline-shell">
         <div class="timeline-heading">
           <p class="timeline-title">
@@ -503,7 +569,6 @@ onBeforeUnmount(() => {
           </button>
 
           <div class="timeline-track">
-            <div class="timeline-wave" aria-hidden="true" />
             <Swiper
               class="timeline-swiper"
               :modules="timelineModules"
@@ -540,8 +605,8 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div class="sw-f">
-                       <p class="year">{{ item.year }}{{ item.month ? '.' : '' }}</p>
-                       <p v-if="item.month" class="month">{{ item.month }}</p>
+                       <p class="year">{{ item.displayYearLabel || item.year }}</p>
+                       <p v-if="item.displayMonthLabel" class="month">{{ item.displayMonthLabel }}</p>
                     </div>
 
                     <div class="sw-i">
@@ -556,7 +621,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section id="page7" :class="['about-section leadership-section', { 'is-visible': isSectionVisible('page7') }]">
+    <section v-if="shouldRenderSection('page7')" id="page7" :class="['about-section leadership-section', { 'is-visible': isSectionVisible('page7') }]">
       <div class="section-shell leadership-shell">
         <div class="leadership-heading">
           <h2 class="leadership-title">
@@ -592,7 +657,15 @@ onBeforeUnmount(() => {
                 <article class="leadership-card">
                   <div class="leadership-card-frame">
                     <div class="leadership-photo">
-                      <img :src="item.image" alt="Leadership care" loading="lazy" />
+                      <img
+                        :src="item.image"
+                        alt="Leadership care"
+                        loading="lazy"
+                        :style="{
+                          objectFit: item.avatarFit || 'cover',
+                          objectPosition: `${item.avatarFocusX ?? 50}% ${item.avatarFocusY ?? 50}%`,
+                        }"
+                      />
                     </div>
                     <strong class="leadership-year">{{ item.role }}</strong>
                   </div>
@@ -1678,34 +1751,13 @@ onBeforeUnmount(() => {
   transform: translateY(0);
 }
 
-.timeline-wave {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 48%;
-  height: 112px;
-  pointer-events: none;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 120'%3E%3Cpath d='M0 70 C50 30 110 30 160 70 S270 110 320 70 S390 30 420 70' fill='none' stroke='%23131313' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
-      0 50% / 420px 118px repeat-x;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.9s ease 0.2s, transform 0.9s ease 0.2s;
-  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.12));
-}
-
-.timeline-section.is-visible .timeline-wave {
-  opacity: 0.92;
-  transform: translateY(0);
-}
-
 .timeline-swiper {
   height: 100%;
   overflow: visible;
 }
 
 .timeline-swiper :deep(.swiper-wrapper) {
-  align-items: flex-start;
+  align-items: stretch;
   justify-content: center;
 }
 
@@ -1713,30 +1765,24 @@ onBeforeUnmount(() => {
   width: 337px;
   height: 100%;
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   opacity: 1;
   transform: none;
   filter: none;
 }
 
-.timeline-swiper :deep(.swiper-slide:nth-child(2n)) {
-  align-items: flex-end;
-}
-
-.timeline-swiper :deep(.swiper-slide:nth-child(2n)) .timeline-slide-inner {
-  margin-bottom: 40px;
-}
-
 .timeline-slide-inner {
   position: relative;
   width: 100%;
-  margin-top: 40px;
-  padding: 40px;
+  min-height: 372px;
+  margin-top: 0;
+  padding: 28px 24px 20px;
+  display: flex;
+  justify-content: center;
 }
 
 .timeline-slide.ad-image .timeline-slide-inner {
-  margin-top: 0;
-  padding: 0;
+  padding: 12px 24px 20px;
 }
 
 .slide-bg {
@@ -1753,19 +1799,17 @@ onBeforeUnmount(() => {
 
 .sw-image {
   position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  height: auto;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 18px;
+  width: 100%;
   z-index: 2;
 }
 
-.timeline-slide.ad-image .sw-image {
-  align-items: flex-start;
-}
-
+.timeline-slide.ad-image .sw-image,
 .timeline-slide.no-image .sw-image {
-  display: block;
+  display: grid;
 }
 
 .bg-img {
@@ -1835,44 +1879,54 @@ onBeforeUnmount(() => {
 }
 
 .sw-f {
-  flex: 0 0 30%;
-  display: block;
-  color: #b48b61;
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  color: #8f5a2d;
   opacity: 1;
   transform: none;
+  text-align: center;
+  text-shadow: 0 2px 10px rgba(255, 255, 255, 0.85);
 }
 
 .sw-f .year,
 .sw-f .month {
   margin: 0;
   font-family: "Times New Roman", Georgia, serif;
-  line-height: 0.92;
+  line-height: 1;
 }
 
 .sw-f .year {
-  font-size: 60px;
+  font-size: 54px;
   font-weight: 600;
+  letter-spacing: -0.03em;
 }
 
 .sw-f .month {
-  font-size: 46px;
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 600;
 }
 
 .sw-i {
-  flex: 1;
-  padding: 0 0 0 20px;
+  width: 100%;
+  padding: 0;
   opacity: 1;
   transform: none;
+  display: flex;
+  justify-content: center;
 }
 
 .sw-i .tit {
   margin: 0;
-  color: #6c6964;
+  max-width: 226px;
+  color: #2e241d;
   font-size: 16px;
-  line-height: 1.66;
-  text-align: left;
-  font-weight: 400;
-  margin-top: 24px;
+  line-height: 1.72;
+  text-align: center;
+  font-weight: 600;
+  text-shadow: 0 2px 10px rgba(255, 255, 255, 0.9);
 }
 
 .timeline-slide.no-image .bg-img {
@@ -1888,12 +1942,10 @@ onBeforeUnmount(() => {
   box-shadow: none;
 }
 
-.timeline-slide.no-image .sw-f {
-  display: block;
-}
-
+.timeline-slide.no-image .sw-f,
 .timeline-slide.no-image .sw-i {
-  padding: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .timeline-slide.ad-image .sw-i .tit {
@@ -1958,11 +2010,22 @@ onBeforeUnmount(() => {
 
 .timeline-slide.no-image:hover .sw-f p,
 .timeline-slide.no-image:hover .sw-i .tit {
-  color: #ffffff;
+  color: #fef8f2;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+
+.timeline-slide.no-image:hover .sw-f {
+  transform: translateY(-2px);
 }
 
 .timeline-slide.ad-image:hover .hover_after {
   opacity: 1;
+}
+
+.timeline-slide.ad-image:hover .sw-f,
+.timeline-slide.ad-image:hover .sw-i .tit {
+  color: #221914;
+  text-shadow: 0 3px 14px rgba(255, 255, 255, 0.92);
 }
 
 .leadership-stage {
@@ -2651,12 +2714,6 @@ onBeforeUnmount(() => {
     padding: 18px 48px 28px;
   }
 
-  .timeline-wave {
-    top: 238px;
-    height: 104px;
-    background-size: 360px 104px;
-  }
-
   .timeline-title i {
     font-size: 42px;
   }
@@ -2669,6 +2726,11 @@ onBeforeUnmount(() => {
   .timeline-swiper :deep(.swiper-slide) {
     width: 280px;
     height: 390px;
+  }
+
+  .timeline-slide-inner {
+    min-height: 348px;
+    padding: 20px 18px 18px;
   }
 
   .bg-img {
@@ -2689,22 +2751,19 @@ onBeforeUnmount(() => {
   }
 
   .sw-f {
-    padding-left: 24px;
+    gap: 4px;
   }
 
   .sw-f .year {
-    font-size: 48px;
+    font-size: 44px;
   }
 
   .sw-f .month {
-    font-size: 36px;
-  }
-
-  .sw-i {
-    padding: 10px 18px 0 24px;
+    font-size: 20px;
   }
 
   .sw-i .tit {
+    max-width: 210px;
     font-size: 15px;
   }
 
@@ -2922,19 +2981,18 @@ onBeforeUnmount(() => {
     padding: 12px 22px 22px;
   }
 
-  .timeline-wave {
-    top: 240px; /* Hạ thấp sóng xuống để không đè chữ */
-    height: 80px;
-    background-size: 320px 80px;
-  }
-
   .timeline-swiper :deep(.swiper-slide) {
     width: 244px;
     height: 360px;
   }
 
+  .timeline-slide-inner {
+    min-height: 320px;
+    padding: 18px 14px 16px;
+  }
+
   .bg-img {
-    width: 140px; /* Thu nhỏ khung ảnh để không bị tràn */
+    width: 140px;
     height: 110px;
   }
 
@@ -2951,28 +3009,29 @@ onBeforeUnmount(() => {
   }
 
   .sw-f {
-    padding-left: 0;
+    gap: 4px;
     text-align: center;
     width: 100%;
   }
 
   .sw-f .year {
-    font-size: 38px;
+    font-size: 34px;
   }
 
   .sw-f .month {
-    font-size: 28px;
+    font-size: 18px;
+    line-height: 1.35;
   }
 
   .sw-i {
-    padding: 10px 10px 0 10px;
-    flex: 1 0 100%; /* Ép xuống dòng để không đè năm */
+    padding: 0;
+    flex: none;
   }
 
   .sw-i .tit {
+    max-width: 188px;
     font-size: 14px;
     line-height: 1.5;
-    margin-top: 10px;
     text-align: center;
   }
 

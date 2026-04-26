@@ -89,7 +89,6 @@ export const ENTITY_MANAGER_CONFIGS = {
           corporate_culture: '/about/corporate-culture#page5',
           development_course: '/about/development-course#page6',
           leadership_care: '/about/leadership-care#page7',
-          cooperative_partner: '/about/cooperative-partner#page8',
         }
         return aboutRouteMap[record.anchor] || '/about/company-introduction#page1'
       }

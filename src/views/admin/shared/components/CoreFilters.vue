@@ -26,49 +26,204 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  hasAdvancedAboutFilters: {
+    type: Boolean,
+    default: false,
+  },
+  aboutFilterConfig: {
+    type: Object,
+    default: null,
+  },
+  aboutSectionFilter: {
+    type: String,
+    default: '',
+  },
+  aboutBlockFilter: {
+    type: String,
+    default: '',
+  },
+  aboutCompletenessFilter: {
+    type: String,
+    default: '',
+  },
+  aboutMediaFilter: {
+    type: String,
+    default: '',
+  },
+  aboutViewMode: {
+    type: String,
+    default: 'table',
+  },
+  aboutViewModeOptions: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const emit = defineEmits([
   'update:searchKeyword',
   'update:statusFilter',
+  'update:aboutSectionFilter',
+  'update:aboutBlockFilter',
+  'update:aboutCompletenessFilter',
+  'update:aboutMediaFilter',
+  'update:aboutViewMode',
   'search',
+  'reset-about-filters',
 ])
 
 const safeLabel = computed(() => props.config?.label || 'bản ghi')
 const searchPlaceholder = computed(
-  () => `Search ${String(safeLabel.value).toLowerCase()}...`,
+  () => `Tìm kiếm ${String(safeLabel.value).toLowerCase()}...`,
 )
+
+const sectionOptions = computed(
+  () => props.aboutFilterConfig?.sectionOptions || [],
+)
+const blockOptions = computed(
+  () => props.aboutFilterConfig?.blockOptions || [],
+)
+const completenessOptions = computed(
+  () => props.aboutFilterConfig?.completenessOptions || [],
+)
+const mediaStateOptions = computed(() => [
+  { value: 'with_media', label: 'Có media' },
+  { value: 'without_media', label: 'Chưa có media' },
+])
 </script>
 
 <template>
   <div class="filters">
-    <div class="filters__group filters__group--search">
-      <span class="filters__label">Keyword</span>
-      <input
-        :value="searchKeyword"
-        type="search"
-        :placeholder="searchPlaceholder"
-        @input="emit('update:searchKeyword', $event.target.value)"
-        @keyup.enter="emit('search')"
-      />
+    <div class="filters__main-grid">
+      <div class="filters__group filters__group--search">
+        <span class="filters__label">Từ khóa</span>
+        <input
+          id="about-filter-keyword"
+          :value="searchKeyword"
+          type="search"
+          :placeholder="searchPlaceholder"
+          @input="emit('update:searchKeyword', $event.target.value)"
+          @keyup.enter="emit('search')"
+        />
+      </div>
+
+      <div v-if="hasStatusFilter" class="filters__group filters__group--status">
+        <span class="filters__label">Trạng thái</span>
+        <select
+          id="about-filter-status"
+          :value="statusFilter"
+          aria-label="Lọc trạng thái"
+          @change="emit('update:statusFilter', $event.target.value)"
+        >
+          <option value="">Tất cả trạng thái</option>
+          <option
+            v-for="status in statusOptions"
+            :key="status.value"
+            :value="status.value"
+          >
+            {{ status.label }}
+          </option>
+        </select>
+      </div>
+
+      <div
+        v-if="hasAdvancedAboutFilters"
+        class="filters__group filters__group--view-mode"
+      >
+        <span class="filters__label">Chế độ xem</span>
+        <select
+          id="about-filter-view-mode"
+          :value="aboutViewMode"
+          aria-label="Chế độ xem About"
+          @change="emit('update:aboutViewMode', $event.target.value)"
+        >
+          <option
+            v-for="option in aboutViewModeOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
     </div>
 
-    <div v-if="hasStatusFilter" class="filters__group filters__group--status">
-      <span class="filters__label">Status</span>
-      <select
-        :value="statusFilter"
-        aria-label="Status filter"
-        @change="emit('update:statusFilter', $event.target.value)"
-      >
-        <option value="">All statuses</option>
-        <option
-          v-for="status in statusOptions"
-          :key="status.value"
-          :value="status.value"
+    <div v-if="hasAdvancedAboutFilters" class="filters__advanced-grid">
+      <div class="filters__group">
+        <span class="filters__label">Section</span>
+        <select
+          id="about-filter-section"
+          :value="aboutSectionFilter"
+          aria-label="Lọc theo section"
+          @change="emit('update:aboutSectionFilter', $event.target.value)"
         >
-          {{ status.label }}
-        </option>
-      </select>
+          <option value="">Tất cả section</option>
+          <option
+            v-for="option in sectionOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filters__group">
+        <span class="filters__label">Block</span>
+        <select
+          id="about-filter-block"
+          :value="aboutBlockFilter"
+          aria-label="Lọc theo block"
+          @change="emit('update:aboutBlockFilter', $event.target.value)"
+        >
+          <option value="">Tất cả block</option>
+          <option
+            v-for="option in blockOptions"
+            :key="`${option.value}-${option.label}`"
+            :value="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filters__group">
+        <span class="filters__label">Tình trạng dữ liệu</span>
+        <select
+          id="about-filter-completeness"
+          :value="aboutCompletenessFilter"
+          aria-label="Lọc tình trạng dữ liệu"
+          @change="emit('update:aboutCompletenessFilter', $event.target.value)"
+        >
+          <option value="">Tất cả</option>
+          <option
+            v-for="option in completenessOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filters__group">
+        <span class="filters__label">Media</span>
+        <select
+          id="about-filter-media"
+          :value="aboutMediaFilter"
+          aria-label="Lọc media"
+          @change="emit('update:aboutMediaFilter', $event.target.value)"
+        >
+          <option value="">Tất cả</option>
+          <option
+            v-for="option in mediaStateOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <div class="filters__actions">
@@ -78,7 +233,17 @@ const searchPlaceholder = computed(
         :disabled="loading"
         @click="emit('search')"
       >
-        {{ loading ? "Searching..." : "Search" }}
+        {{ loading ? 'Đang lọc...' : 'Áp dụng bộ lọc' }}
+      </button>
+
+      <button
+        v-if="hasAdvancedAboutFilters"
+        type="button"
+        class="btn btn-ghost"
+        :disabled="loading"
+        @click="emit('reset-about-filters')"
+      >
+        Reset About
       </button>
     </div>
   </div>
@@ -86,25 +251,27 @@ const searchPlaceholder = computed(
 
 <style scoped>
 .filters {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 12px;
+}
+
+.filters__main-grid,
+.filters__advanced-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.filters__main-grid {
+  grid-template-columns: minmax(260px, 1.6fr) repeat(2, minmax(180px, 0.9fr));
+}
+
+.filters__advanced-grid {
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
 }
 
 .filters__group {
   display: grid;
-  gap: 4px;
-}
-
-.filters__group--search {
-  flex: 1;
-  min-width: 190px;
-}
-
-.filters__group--status {
-  min-width: 140px;
+  gap: 6px;
 }
 
 .filters__label {
@@ -117,8 +284,9 @@ const searchPlaceholder = computed(
 
 .filters__actions {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 input,
@@ -173,6 +341,12 @@ select:focus {
   border-color: rgba(198, 216, 233, 0.95);
 }
 
+.btn-ghost {
+  color: #385c7d;
+  background: rgba(237, 244, 251, 0.85);
+  border-color: rgba(198, 216, 233, 0.95);
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -180,13 +354,19 @@ button:disabled {
   box-shadow: none !important;
 }
 
-@media (max-width: 860px) {
-  .filters {
-    flex-direction: column;
-    align-items: stretch;
+@media (max-width: 1080px) {
+  .filters__main-grid,
+  .filters__advanced-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .filters__main-grid,
+  .filters__advanced-grid {
+    grid-template-columns: 1fr;
   }
 
-  .filters__group,
   .filters__actions,
   .filters__actions > * {
     width: 100%;

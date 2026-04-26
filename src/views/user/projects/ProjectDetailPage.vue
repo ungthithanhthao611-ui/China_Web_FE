@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowLeft, MapPin, CalendarDays, Ruler, Building2, LayoutGrid } from 'lucide-vue-next'
 import { getProjectDetail } from '@/views/user/services/publicApi'
@@ -9,6 +9,9 @@ const route = useRoute()
 const project = ref(null)
 const loading = ref(true)
 const error = ref(null)
+const materialsSectionRef = ref(null)
+const materialsVisible = ref(false)
+let materialsObserver = null
 
 const imageUrl = (media) => media?.url || ''
 
@@ -55,6 +58,29 @@ const infoItems = computed(() => {
   return result
 })
 
+function setupMaterialsObserver() {
+  if (typeof window === 'undefined' || !materialsSectionRef.value) return
+
+  if (materialsObserver) {
+    materialsObserver.disconnect()
+  }
+
+  materialsObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          materialsVisible.value = true
+          materialsObserver?.disconnect()
+          materialsObserver = null
+        }
+      })
+    },
+    { threshold: 0.22, rootMargin: '0px 0px -40px 0px' },
+  )
+
+  materialsObserver.observe(materialsSectionRef.value)
+}
+
 /* ── Data loading ────────────────────── */
 async function loadProject(slug) {
   loading.value = true
@@ -81,18 +107,30 @@ async function loadProject(slug) {
     project.value = null
   } finally {
     loading.value = false
+    setTimeout(() => {
+      setupMaterialsObserver()
+    }, 0)
   }
 }
 
 watch(
   () => route.params.slug,
-  (slug) => { if (slug) loadProject(slug) },
+  (slug) => {
+    materialsVisible.value = false
+    if (slug) loadProject(slug)
+  },
   { immediate: true }
 )
 
 onMounted(() => {
   uiState.isHeaderHidden = false
   uiState.isFooterHidden = false
+  setupMaterialsObserver()
+})
+
+onBeforeUnmount(() => {
+  materialsObserver?.disconnect()
+  materialsObserver = null
 })
 </script>
 
@@ -194,8 +232,19 @@ onMounted(() => {
               </div>
 
               <!-- Vật liệu sử dụng -->
-              <div v-if="usedProducts.length" class="pd-materials">
-                <h3 class="pd-info-card__title">Vật liệu sử dụng</h3>
+              <div
+                v-if="usedProducts.length"
+                ref="materialsSectionRef"
+                class="pd-materials"
+                :class="{ 'pd-materials--visible': materialsVisible }"
+              >
+                <div class="pd-materials__intro">
+                  <span class="pd-materials__eyebrow">Chạm vào để khám phá</span>
+                  <h3 class="pd-info-card__title pd-materials__title">Vật liệu sử dụng</h3>
+                  <p class="pd-materials__desc">
+                    Những bề mặt tạo nên thần thái công trình — từ chất đá chủ đạo đến vật liệu nhấn, mỗi lựa chọn đều mang một câu chuyện thiết kế riêng.
+                  </p>
+                </div>
                 <div class="pd-material-list">
                   <router-link
                     v-for="prod in usedProducts"
@@ -203,12 +252,15 @@ onMounted(() => {
                     :to="prod.slug ? `/products/${prod.slug}` : '#'"
                     class="pd-material-item"
                   >
-                    <div class="pd-material-item__img">
-                      <img v-if="prod.image_url" :src="prod.image_url" :alt="prod.name" />
-                      <div v-else class="pd-material-item__placeholder" />
+                    <div class="pd-material-item__media">
+                      <div class="pd-material-item__img">
+                        <img v-if="prod.image_url" :src="prod.image_url" :alt="prod.name" />
+                        <div v-else class="pd-material-item__placeholder" />
+                      </div>
                     </div>
                     <div class="pd-material-item__info">
                       <strong>{{ prod.name }}</strong>
+                      <span class="pd-material-item__cta">Khám phá vật liệu <span aria-hidden="true">↗</span></span>
                       <span v-if="prod.note" class="pd-material-item__note">{{ prod.note }}</span>
                     </div>
                   </router-link>
@@ -495,75 +547,235 @@ onMounted(() => {
 
 /* ── Materials ─────────────────────────────────────────── */
 .pd-materials {
-  margin-top: 28px;
-  border: 1px solid #e4e7ec;
-  border-radius: 12px;
-  padding: 28px 24px;
-  background: #fff;
+  position: relative;
+  margin-top: 30px;
+  padding: 28px 24px 24px;
+  border-radius: 28px;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  background:
+    radial-gradient(circle at top right, rgba(199, 162, 110, 0.14), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.98));
+  box-shadow:
+    0 26px 60px -34px rgba(15, 23, 42, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(28px) scale(0.98);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease;
+}
+
+.pd-materials--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.pd-materials::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(199, 162, 110, 0.18), transparent 68%);
+  pointer-events: none;
+}
+
+.pd-materials::after {
+  content: '';
+  position: absolute;
+  inset: auto -40px -60px auto;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.08), transparent 70%);
+  pointer-events: none;
+}
+
+.pd-materials__intro {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 20px;
+}
+
+.pd-materials__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(199, 162, 110, 0.12);
+  border: 1px solid rgba(199, 162, 110, 0.22);
+  color: #9a6f36;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.pd-materials__title {
+  margin-bottom: 10px;
+  color: #1d273a;
+}
+
+.pd-materials__desc {
+  margin: 0;
+  color: #526071;
+  font-size: 0.92rem;
+  line-height: 1.75;
 }
 
 .pd-material-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  display: grid;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
 }
 
 .pd-material-item {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 16px;
   align-items: center;
-  gap: 14px;
   text-decoration: none;
   color: inherit;
-  padding: 8px;
-  border-radius: 10px;
-  transition: background 0.2s;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92)),
+    #ffffff;
+  box-shadow:
+    0 20px 34px -26px rgba(15, 23, 42, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease,
+    border-color 0.28s ease,
+    background 0.28s ease;
+}
+
+.pd-material-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(199, 162, 110, 0.1), transparent 58%);
+  opacity: 0;
+  transition: opacity 0.28s ease;
+  pointer-events: none;
 }
 
 .pd-material-item:hover {
-  background: #f9fafb;
+  transform: translateY(-6px) scale(1.01);
+  border-color: rgba(223, 190, 135, 0.34);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(250, 245, 237, 0.96)),
+    #ffffff;
+  box-shadow:
+    0 28px 44px -26px rgba(15, 23, 42, 0.22),
+    0 0 0 1px rgba(223, 190, 135, 0.08);
+}
+
+.pd-material-item:hover::after {
+  opacity: 1;
+}
+
+.pd-material-item__media {
+  position: relative;
 }
 
 .pd-material-item__img {
-  width: 56px;
-  height: 56px;
+  width: 104px;
+  height: 104px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 18px;
   overflow: hidden;
-  background: #f2f4f7;
+  background: #e5e7eb;
+  box-shadow:
+    0 20px 36px -26px rgba(15, 23, 42, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .pd-material-item__img img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.32s ease, filter 0.32s ease;
+  filter: saturate(1.02) contrast(1.04);
+}
+
+.pd-material-item:hover .pd-material-item__img img {
+  transform: scale(1.08);
+  filter: saturate(1.08) contrast(1.08);
 }
 
 .pd-material-item__placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #e4e7ec, #d0d5dd);
+  background: linear-gradient(135deg, #e5e7eb, #cbd5e1);
 }
 
 .pd-material-item__info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .pd-material-item__info strong {
-  font-size: 0.95rem;
+  font-size: 1.04rem;
   color: #1d273a;
+  line-height: 1.35;
+}
+
+.pd-material-item__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: #9a6f36;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .pd-material-item__note {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: #667085;
-  margin-top: 2px;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .pd-materials {
+    padding: 22px 18px 18px;
+    border-radius: 22px;
+  }
+
+  .pd-material-item {
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 12px;
+    padding: 13px;
+    border-radius: 18px;
+  }
+
+  .pd-material-item__img {
+    width: 84px;
+    height: 84px;
+    border-radius: 16px;
+  }
 }
 
 /* ── Responsive ────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .pd-layout {
-    grid-template-columns: 1fr 280px;
+    grid-template-columns: 1fr 320px;
     gap: 32px;
   }
 }

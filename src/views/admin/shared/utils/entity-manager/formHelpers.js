@@ -4,6 +4,12 @@ import {
   RELATION_ENTITIES,
   SLUG_PATTERN,
 } from "@/views/admin/shared/utils/entity-manager/constants.js";
+import {
+  buildGoogleMapsQueryUrl,
+  extractCoordinatesFromMapInput,
+  formatCoordinateValue,
+  parseCoordinateValue,
+} from "@/shared/utils/maps";
 
 export function createEntityManagerFormHelpers({
   props,
@@ -367,14 +373,38 @@ export function createEntityManagerFormHelpers({
     return String(value).slice(0, 16);
   };
 
-  const parseCoordinateValue = (value) => {
-    const raw = String(value ?? "").trim();
-    if (!raw) {
-      return null;
+  const normalizeContactFields = () => {
+    if (props.entityKey !== "contacts") {
+      return;
     }
 
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : null;
+    const latitudeFromFields = parseCoordinateValue(form.latitude, "lat");
+    const longitudeFromFields = parseCoordinateValue(form.longitude, "lng");
+    const extractedPair = extractCoordinatesFromMapInput(form.map_url);
+
+    const latitude =
+      latitudeFromFields !== null
+        ? latitudeFromFields
+        : extractedPair?.latitude ?? null;
+    const longitude =
+      longitudeFromFields !== null
+        ? longitudeFromFields
+        : extractedPair?.longitude ?? null;
+
+    if (latitude !== null && longitude !== null) {
+      form.latitude = formatCoordinateValue(latitude);
+      form.longitude = formatCoordinateValue(longitude);
+
+      const canonicalMapUrl = buildGoogleMapsQueryUrl(latitude, longitude);
+      if (canonicalMapUrl) {
+        form.map_url = canonicalMapUrl;
+      }
+      return;
+    }
+
+    if ("map_url" in form) {
+      form.map_url = String(form.map_url ?? "").trim();
+    }
   };
 
   const BLOCK_ITEM_KEY_RULES = {
@@ -518,6 +548,8 @@ export function createEntityManagerFormHelpers({
   };
 
   const cleanPayload = () => {
+    normalizeContactFields();
+
     const payload = {};
 
     formFields.value.forEach((field) => {
@@ -544,6 +576,8 @@ export function createEntityManagerFormHelpers({
   };
 
   const validateForm = () => {
+    normalizeContactFields();
+
     const errors = [];
     const requiredFields = config.value?.required || [];
     const metadataValue = parseMetadataJsonSafe();

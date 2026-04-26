@@ -5,6 +5,11 @@ import { AlertCircle, CheckCircle, ChevronRight, ChevronUp, House, Loader2, Send
 import { getContacts } from '@/views/user/services/publicApi'
 import { submitInquiry } from '@/views/user/services/productsApi'
 import { useBootstrapStore } from '@/views/user/stores/bootstrap'
+import {
+  buildGoogleMapsEmbedUrl,
+  normalizeGoogleMapUrl,
+  parseCoordinateValue,
+} from '@/shared/utils/maps'
 import { uiState } from '@/shared/utils/uiState'
 import logoImage from '@/assets/logo-cty.png'
 
@@ -147,86 +152,19 @@ const contactDetails = computed(() => {
   return details
 })
 
-function parseCoordinate(value, axis) {
-  const raw = String(value ?? '').trim()
-  if (!raw) {
-    return null
-  }
-
-  const parsed = Number(raw)
-  if (!Number.isFinite(parsed)) {
-    return null
-  }
-
-  if (axis === 'lat' && (parsed < -90 || parsed > 90)) {
-    return null
-  }
-
-  if (axis === 'lng' && (parsed < -180 || parsed > 180)) {
-    return null
-  }
-
-  return parsed
-}
-
-function buildGoogleEmbedFromCoordinates(latitude, longitude) {
-  const marker = encodeURIComponent(`${latitude.toFixed(6)},${longitude.toFixed(6)}`)
-  return `https://www.google.com/maps?q=${marker}&hl=vi&z=16&output=embed`
-}
-
-function normalizeGoogleMapUrl(mapUrl) {
-  const rawValue = String(mapUrl ?? '').trim()
-  if (!rawValue) {
-    return ''
-  }
-
-  try {
-    const parsedUrl = new URL(rawValue)
-    const hostname = parsedUrl.hostname.toLowerCase()
-    const pathname = parsedUrl.pathname.toLowerCase()
-
-    if (!hostname.includes('google.') && !hostname.includes('goo.gl')) {
-      return ''
-    }
-
-    if (pathname.includes('/maps/embed')) {
-      return rawValue
-    }
-
-    const queryCandidate =
-      parsedUrl.searchParams.get('q') ||
-      parsedUrl.searchParams.get('query') ||
-      parsedUrl.searchParams.get('ll') ||
-      parsedUrl.searchParams.get('center')
-
-    if (queryCandidate) {
-      return `https://www.google.com/maps?q=${encodeURIComponent(queryCandidate)}&hl=vi&z=16&output=embed`
-    }
-
-    const markerMatch = rawValue.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/)
-    if (markerMatch) {
-      return `https://www.google.com/maps?q=${encodeURIComponent(`${markerMatch[1]},${markerMatch[2]}`)}&hl=vi&z=16&output=embed`
-    }
-
-    return `https://www.google.com/maps?q=${encodeURIComponent(rawValue)}&hl=vi&z=16&output=embed`
-  } catch {
-    return `https://www.google.com/maps?q=${encodeURIComponent(rawValue)}&hl=vi&z=16&output=embed`
-  }
-}
-
 const mapEmbed = computed(() => {
   const contact = primaryContact.value
   if (!contact) {
     return fallbackMapEmbed
   }
 
-  const latitude = parseCoordinate(contact.latitude, 'lat')
-  const longitude = parseCoordinate(contact.longitude, 'lng')
+  const latitude = parseCoordinateValue(contact.latitude, 'lat')
+  const longitude = parseCoordinateValue(contact.longitude, 'lng')
   if (latitude !== null && longitude !== null) {
-    return buildGoogleEmbedFromCoordinates(latitude, longitude)
+    return buildGoogleMapsEmbedUrl(latitude, longitude, { language: 'vi', zoom: 16 })
   }
 
-  return normalizeGoogleMapUrl(contact.map_url) || fallbackMapEmbed
+  return normalizeGoogleMapUrl(contact.map_url, { language: 'vi', zoom: 16 }) || fallbackMapEmbed
 })
 
 const hasContactData = computed(() => Boolean(primaryContact.value && contactDetails.value.length))

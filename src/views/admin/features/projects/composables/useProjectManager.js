@@ -10,6 +10,7 @@ import { env } from '@/shared/config/env'
 
 // ─── Module-level singleton state ───
 const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
+const ADMIN_FETCH_PAGE_SIZE = 100
 const GALLERY_GROUP_OPTIONS = [
   { value: 'left_gallery', label: 'Gallery trái' },
   { value: 'right_gallery', label: 'Gallery phải' },
@@ -290,10 +291,17 @@ const availableGalleryMediaOptions = computed(() => {
       .map((item) => String(item.media_id)),
   )
   return [...mediaAssets.value]
-    .filter((item) => String(item.asset_type || 'image') === 'image')
+    .filter((item) => item.asset_type === 'image')
     .filter((item) => !usedIds.has(String(item.id)))
-    .sort((a, b) => String(a.title || a.alt_text || '').localeCompare(String(b.title || b.alt_text || ''), 'vi'))
+    .sort((a, b) => String(a.title || a.file_name || '').localeCompare(String(b.title || b.file_name || ''), 'vi'))
 })
+
+function isProductAlreadySelected(productId) {
+  const normalizedId = String(productId)
+  const isPending = pendingProductSelections.value.some((item) => String(item.product_id) === normalizedId)
+  const isSaved = selectedProjectProducts.value.some((item) => String(item.product_id) === normalizedId)
+  return isPending || isSaved
+}
 
 // ─── Label helpers ───
 function languageLabel(language) {
@@ -601,14 +609,47 @@ async function removePendingGalleryFile(itemId) {
 
 
 // ─── API calls ───
-async function loadProjects() { const r = await listAdminEntityRecords('projects', normalizedToken(), { skip: 0, limit: 100 }); projects.value = r.items || [] }
-async function loadProducts() { const r = await listAdminEntityRecords('products', normalizedToken(), { skip: 0, limit: 100 }); products.value = r.items || [] }
-async function loadProjectProducts() { const r = await listAdminEntityRecords('project_products', normalizedToken(), { skip: 0, limit: 100 }); projectProducts.value = r.items || [] }
-async function loadMediaAssets() { const r = await listAdminEntityRecords('media_assets', normalizedToken(), { skip: 0, limit: 100, status: 'active' }); mediaAssets.value = r.items || [] }
-async function loadGalleryBindings() { const r = await listAdminEntityRecords('entity_media', normalizedToken(), { skip: 0, limit: 100 }); galleryBindings.value = r.items || [] }
+async function loadAllAdminEntityRecords(entityName, query = {}) {
+  const token = normalizedToken()
+  const items = []
+  let skip = 0
+  let total = Infinity
+
+  while (skip < total) {
+    const response = await listAdminEntityRecords(entityName, token, {
+      ...query,
+      skip,
+      limit: ADMIN_FETCH_PAGE_SIZE,
+    })
+
+    const batch = Array.isArray(response?.items) ? response.items : []
+    const paginationTotal = Number(response?.pagination?.total)
+
+    items.push(...batch)
+
+    if (Number.isFinite(paginationTotal) && paginationTotal >= 0) {
+      total = paginationTotal
+    } else if (batch.length < ADMIN_FETCH_PAGE_SIZE) {
+      total = items.length
+    }
+
+    if (!batch.length || batch.length < ADMIN_FETCH_PAGE_SIZE) {
+      break
+    }
+
+    skip += ADMIN_FETCH_PAGE_SIZE
+  }
+
+  return items
+}
+
+async function loadProjects() { projects.value = await loadAllAdminEntityRecords('projects') }
+async function loadProducts() { products.value = await loadAllAdminEntityRecords('products') }
+async function loadProjectProducts() { projectProducts.value = await loadAllAdminEntityRecords('project_products') }
+async function loadMediaAssets() { mediaAssets.value = await loadAllAdminEntityRecords('media_assets', { status: 'active' }) }
+async function loadGalleryBindings() { galleryBindings.value = await loadAllAdminEntityRecords('entity_media') }
 async function loadLanguages() {
-  const r = await listAdminEntityRecords('languages', normalizedToken(), { skip: 0, limit: 100 })
-  languages.value = r.items || []
+  languages.value = await loadAllAdminEntityRecords('languages')
 
   if (isCreatingProject.value && !projectForm.language_id) {
     projectForm.language_id = getDefaultLanguageId()
@@ -683,7 +724,7 @@ async function uploadPendingProjectAssets(projectRecord, token) {
         entity_type: 'project',
         entity_id: Number(projectRecord.id),
         media_id: Number(media.id),
-        group_name: 'main',
+        group_name: 'left_gallery',
         sort_order: maxSort,
         caption: null,
       }, token)
@@ -1193,7 +1234,7 @@ export function useProjectManager() {
     onMultiGalleryFilesSelected, moveGalleryItem,
     onProductSearchInput, onProductSearchFocus, onProductComboClickOutside,
     toggleProductDropdown, selectProductFromSearch, removePendingProductSelection,
-    clearAllPendingProductSelections, cleanupProductSearch,
+    clearAllPendingProductSelections, cleanupProductSearch, isProductAlreadySelected,
     GALLERY_GROUP_OPTIONS,
   }
 }

@@ -107,6 +107,15 @@ export function uploadAdminMediaAsset(token, file, metadata = {}) {
   })
 }
 
+export function importAdminMediaAssetFromUrl(token, payload) {
+  return fetchJson('/admin/media/import-url', {
+    method: 'POST',
+    headers: withAdminHeaders(token),
+    body: payload,
+    timeoutMs: 60000,
+  })
+}
+
 export function listNavigationMenus(token, query = {}) {
   return fetchJson('/admin/navigation/menus', {
     headers: withAdminHeaders(token),

@@ -115,6 +115,7 @@ function normalizeHero(blocks, banners = []) {
 
 function normalizeCompanyIntroduction(blocks) {
   const block = blocks.find((b) => b.block_key === 'intro_media' || b.block_key === 'intro_paragraphs')
+  const titleItem = findItem(blocks, 'intro_media', 'section_title')
   const coverItem = findItem(blocks, 'intro_media', 'cover_image')
   const videoButtonItem = findItem(blocks, 'intro_video', 'video_button')
   const videoUrlItem = findItem(blocks, 'intro_video', 'video_url')
@@ -123,7 +124,7 @@ function normalizeCompanyIntroduction(blocks) {
   )
 
   return {
-    title: block?.title || 'Giới thiệu công ty',
+    title: itemStr(titleItem) || block?.title || 'Giới thiệu công ty',
     coverImage: itemImage(coverItem),
     videoButtonLabel: itemStr(videoButtonItem) || 'XEM VIDEO +',
     videoUrl: videoUrlItem?.link || '',
@@ -133,9 +134,11 @@ function normalizeCompanyIntroduction(blocks) {
 
 function normalizeChairmanSpeech(blocks) {
   const block = blocks.find((b) => b.block_key === 'speech_profile' || b.block_key === 'speech_body')
+  const titleItem = findItem(blocks, 'speech_body', 'section_title')
   const portraitItem = findItem(blocks, 'speech_profile', 'portrait')
   const speechItems = blockItems(blocks, 'speech_body')
   const speechTexts = speechItems
+    .filter((it) => String(it.item_key || '').trim() !== 'section_title')
     .map((it) => it.content || it.title || '')
     .filter(Boolean)
   const visionItem = findItem(blocks, 'speech_body', 'vision')
@@ -147,7 +150,7 @@ function normalizeChairmanSpeech(blocks) {
   const signatureImage = findItem(blocks, 'speech_signature', 'signature_image')
 
   return {
-    title: block?.title || 'Tầm nhìn & Sứ mệnh',
+    title: itemStr(titleItem) || block?.title || 'Tầm nhìn & Sứ mệnh',
     portrait: itemImage(portraitItem),
     vision,
     mission,
@@ -160,9 +163,10 @@ function normalizeChairmanSpeech(blocks) {
 
 function normalizeOrganizationChart(blocks) {
   const block = blocks.find((b) => b.block_key === 'org_chart_image')
+  const titleItem = findItem(blocks, 'org_chart_image', 'section_title')
   const chartItem = findItem(blocks, 'org_chart_image', 'main_chart')
   return {
-    title: block?.title || 'Sơ đồ tổ chức',
+    title: itemStr(titleItem) || block?.title || 'Sơ đồ tổ chức',
     chartImage: itemImage(chartItem),
   }
 }
@@ -175,10 +179,13 @@ function normalizeCorporateCulture(blocks) {
     { key: 'culture_spirit', fallbackTitle: 'Tinh thần doanh nghiệp' },
   ]
 
+  const hiddenItemKeys = new Set(['section_title', 'cover_image'])
+
   const normalized = blockDefs
     .map(({ key, fallbackTitle }) => {
       const block = findBlock(blocks, key)
       const items = blockItems(blocks, key)
+        .filter((it) => !hiddenItemKeys.has(String(it.item_key || '').trim()))
         .filter((it) => (it.title || it.content || '').trim() !== '')
         .map((it) => ({
           label: it.title || '',
@@ -200,14 +207,22 @@ function normalizeCorporateCulture(blocks) {
 function normalizeDevelopmentCourse(blocks) {
   const parseTimelineSubtitle = (subtitle) => {
     const raw = String(subtitle || '').trim()
-    if (!raw) return { year: '', month: '' }
+    if (!raw) return { year: '', month: '', day: '' }
 
-    const matched = raw.match(/^(\d{4})(?:[-/.](\d{1,2}))?$/)
-    if (!matched) return { year: '', month: '' }
+    const matched = raw.match(/^(\d{4})(?:[-/.](\d{1,2}))?(?:[-/.](\d{1,2}))?$/)
+    if (!matched) return { year: '', month: '', day: '' }
     return {
       year: matched[1] || '',
       month: matched[2] ? String(matched[2]).padStart(2, '0') : '',
+      day: matched[3] ? String(matched[3]).padStart(2, '0') : '',
     }
+  }
+
+  const formatTimelinePoint = ({ year, month, day }) => {
+    if (!year) return ''
+    if (year && month && day) return `${year}.${month}.${day}`
+    if (year && month) return `${year}.${month}`
+    return year
   }
 
   const parseYearFromTitle = (title) => {
@@ -216,33 +231,68 @@ function normalizeDevelopmentCourse(blocks) {
     return matched?.[1] || ''
   }
 
-  return blockItems(blocks, 'timeline').map((it) => {
-    const meta = itemMeta(it)
-    const subtitleMeta = parseTimelineSubtitle(it.subtitle)
-    const titleYear = parseYearFromTitle(it.title)
-    const year = String(meta.year ?? subtitleMeta.year ?? titleYear ?? '').trim()
-    const monthRaw = meta.month ?? subtitleMeta.month ?? ''
-    return {
-      year,
-      month: (monthRaw && String(monthRaw).trim() !== '') ? String(monthRaw).padStart(2, '0') : '',
-      title: it.title || '',
-      image: itemImage(it, 'image_url'),
-    }
-  })
+  return blockItems(blocks, 'timeline')
+    .filter((it) => String(it.item_key || '').trim() !== 'section_title')
+    .map((it) => {
+      const startMeta = parseTimelineSubtitle(it.subtitle)
+      const endMeta = parseTimelineSubtitle(it.link)
+      const titleYear = parseYearFromTitle(it.title)
+      const startYear = String(startMeta.year || titleYear || '').trim()
+      const endYear = String(endMeta.year || '').trim()
+      const timeLabelStart = formatTimelinePoint({
+        year: startYear,
+        month: startMeta.month,
+        day: startMeta.day,
+      })
+      const timeLabelEnd = formatTimelinePoint({
+        year: endYear,
+        month: endMeta.month,
+        day: endMeta.day,
+      })
+      return {
+        startYear,
+        startMonth: startMeta.month || '',
+        startDay: startMeta.day || '',
+        endYear,
+        endMonth: endMeta.month || '',
+        endDay: endMeta.day || '',
+        timeLabel: timeLabelEnd ? `${timeLabelStart} - ${timeLabelEnd}` : timeLabelStart,
+        title: it.title || '',
+        content: it.content || '',
+        image: itemImage(it, 'image_url'),
+      }
+    })
 }
 
 
 
 function normalizeLeadershipCare(blocks) {
-  return blockItems(blocks, 'leadership_care_gallery').map((it) => {
-    const meta = itemMeta(it)
-    return {
-      name: it.title || '',
-      role: it.subtitle || meta.role || meta.position || meta.year || '',
-      image: itemImage(it, 'image_url'),
-      text: it.title || '',
-    }
-  })
+  return blockItems(blocks, 'leadership_care_gallery')
+    .filter((it) => String(it.item_key || '').trim() !== 'section_title')
+    .map((it) => {
+      const meta = itemMeta(it)
+      const legacyPreset = String(meta.avatar_focus || '').trim().toLowerCase()
+      const fallbackFocus =
+        legacyPreset === 'top-left'
+          ? { x: 0, y: 0 }
+          : legacyPreset === 'top-right'
+            ? { x: 100, y: 0 }
+            : legacyPreset === 'bottom-left'
+              ? { x: 0, y: 100 }
+              : legacyPreset === 'bottom-right'
+                ? { x: 100, y: 100 }
+                : { x: 50, y: 50 }
+
+      return {
+        name: it.title || '',
+        role: it.subtitle || meta.role || meta.position || meta.year || '',
+        image: itemImage(it, 'image_url'),
+        avatarFocusX: Number.isFinite(Number(meta.focus_x)) ? Number(meta.focus_x) : fallbackFocus.x,
+        avatarFocusY: Number.isFinite(Number(meta.focus_y)) ? Number(meta.focus_y) : fallbackFocus.y,
+        avatarFit: meta.avatar_fit === 'contain' ? 'contain' : 'cover',
+        text: it.title || '',
+      }
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -288,7 +338,13 @@ export function normalizeAboutPage(raw, banners = []) {
   const sections = raw.sections || []
 
   const sectionMeta = buildSectionMeta(sections)
+  const introTitleItem = findItem(blocks, 'intro_media', 'section_title')
+  const speechTitleItem = findItem(blocks, 'speech_body', 'section_title')
+  const orgChartTitleItem = findItem(blocks, 'org_chart_image', 'section_title')
   const cultureCoverItem = findItem(blocks, 'culture_values', 'cover_image')
+  const cultureTitleItem = findItem(blocks, 'culture_values', 'section_title')
+  const timelineTitleItem = findItem(blocks, 'timeline', 'section_title')
+  const leadershipTitleItem = findItem(blocks, 'leadership_care_gallery', 'section_title')
   const cultureCoverFallbackItem =
     blockItems(blocks, 'culture_values').find((item) => itemImage(item)) || null
 
@@ -310,15 +366,23 @@ export function normalizeAboutPage(raw, banners = []) {
     organizationChart: normalizeOrganizationChart(blocks),
     cultureBlocks: normalizeCorporateCulture(blocks),
     cultureSection: {
-      title: sectionTitle(sections, 'corporate_culture', 'Giá trị cốt lõi'),
+      title: cultureTitleItem?.title || sectionTitle(sections, 'corporate_culture', 'Giá trị cốt lõi'),
       coverImage:
         sectionImage(sections, 'corporate_culture') ||
         itemImage(cultureCoverItem) ||
         itemImage(cultureCoverFallbackItem),
     },
     timelineEntries: normalizeDevelopmentCourse(blocks),
-    timelineSectionTitle: sectionTitle(sections, 'development_course', 'Lịch sử phát triển'),
+    timelineSectionTitle:
+      itemStr(timelineTitleItem) || sectionTitle(sections, 'development_course', 'Lịch sử phát triển'),
     leadershipItems: normalizeLeadershipCare(blocks),
-    leadershipSectionTitle: sectionTitle(sections, 'leadership_care', 'Ban lãnh đạo'),
+    leadershipSectionTitle:
+      itemStr(leadershipTitleItem) || sectionTitle(sections, 'leadership_care', 'Ban lãnh đạo'),
+    introSectionTitle:
+      itemStr(introTitleItem) || sectionTitle(sections, 'company_introduction', 'Giới thiệu công ty'),
+    speechSectionTitle:
+      itemStr(speechTitleItem) || sectionTitle(sections, 'chairman_speech', 'Tầm nhìn & Sứ mệnh'),
+    organizationChartSectionTitle:
+      itemStr(orgChartTitleItem) || sectionTitle(sections, 'organization_chart', 'Sơ đồ tổ chức'),
   }
 }

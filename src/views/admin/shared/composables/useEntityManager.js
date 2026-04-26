@@ -29,7 +29,10 @@ import {
 } from '@/views/admin/shared/config/entityConfigs'
 import { env } from '@/shared/config/env'
 import { createEntityManagerBannerHelpers } from '@/views/admin/shared/utils/entity-manager/bannerHelpers.js'
-import { FIELD_GROUPS } from '@/views/admin/shared/utils/entity-manager/constants.js'
+import {
+  FIELD_GROUPS,
+  getAboutSectionFromBlockKey,
+} from '@/views/admin/shared/utils/entity-manager/constants.js'
 import { createEntityManagerFormHelpers } from '@/views/admin/shared/utils/entity-manager/formHelpers'
 import { createEntityManagerPreviewHelpers } from '@/views/admin/shared/utils/entity-manager/previewHelpers'
 
@@ -60,6 +63,11 @@ export function useEntityManager(props, emit) {
   const relationOptions = reactive({})
   const searchKeyword = ref('')
   const statusFilter = ref('')
+  const aboutSectionFilter = ref('')
+  const aboutBlockFilter = ref('')
+  const aboutCompletenessFilter = ref('')
+  const aboutMediaFilter = ref('')
+  const aboutViewMode = ref('table')
   const currentPage = ref(1)
   const pageSize = ref(10)
   const totalRecords = ref(0)
@@ -229,6 +237,21 @@ export function useEntityManager(props, emit) {
     if (!mediaOptions.value.length) return []
     return mediaOptions.value.filter((media) => isVideoMediaRecord(media))
   })
+  const isAboutContentBlockItemsEntity = computed(
+    () => resolvedEntityKey.value === 'content_block_items',
+  )
+  const aboutAdminConfig = computed(() => config.value?.aboutAdmin || null)
+  const aboutFilterConfig = computed(() => aboutAdminConfig.value?.filters || null)
+  const aboutViewModeOptions = computed(() => {
+    if (!aboutAdminConfig.value?.groupedView) return []
+    return [
+      { value: 'table', label: 'Danh sách bảng' },
+      { value: 'grouped', label: 'Grouped view' },
+    ]
+  })
+  const hasAdvancedAboutFilters = computed(
+    () => isAboutContentBlockItemsEntity.value && Boolean(aboutFilterConfig.value),
+  )
 
   // ═══════════════════════════════════════════════════════════
   // PREVIEW HELPERS
@@ -586,6 +609,77 @@ export function useEntityManager(props, emit) {
     return Number.isFinite(rawValue) && rawValue > 0 ? rawValue : 10
   }
 
+  function resetAboutFilters() {
+    aboutSectionFilter.value = ''
+    aboutBlockFilter.value = ''
+    aboutCompletenessFilter.value = ''
+    aboutMediaFilter.value = ''
+    aboutViewMode.value =
+      config.value?.aboutAdmin?.defaultViewMode ||
+      (config.value?.aboutAdmin?.groupedView ? 'grouped' : 'table')
+  }
+
+  function normalizeAboutRecordText(record) {
+    return [record?.title, record?.subtitle, record?.content]
+      .map((value) => String(value || '').trim())
+      .filter(Boolean)
+      .join(' ')
+  }
+
+  function aboutRecordHasMedia(record) {
+    return Boolean(record?.image_id || previewMedia(record)?.url)
+  }
+
+  function matchesAboutCompleteness(record) {
+    const mode = String(aboutCompletenessFilter.value || '').trim()
+    if (!mode) return true
+
+    const hasText = Boolean(normalizeAboutRecordText(record))
+    const hasMedia = aboutRecordHasMedia(record)
+    const hasLink = Boolean(String(record?.link || '').trim())
+
+    if (mode === 'missing_content') return !hasText
+    if (mode === 'missing_image') return !hasMedia
+    if (mode === 'missing_link') return !hasLink
+    if (mode === 'complete') return hasText && hasMedia
+    return true
+  }
+
+  function matchesAboutMediaFilter(record) {
+    const mode = String(aboutMediaFilter.value || '').trim()
+    if (!mode) return true
+
+    const hasMedia = aboutRecordHasMedia(record)
+    if (mode === 'with_media') return hasMedia
+    if (mode === 'without_media') return !hasMedia
+    return true
+  }
+
+  function matchesAdvancedAboutFilters(record) {
+    if (!hasAdvancedAboutFilters.value) return true
+
+    const blockKey = String(record?.block_key || record?.block?.block_key || '').trim().toLowerCase()
+    const sectionKey = getAboutSectionFromBlockKey(blockKey)
+
+    if (aboutSectionFilter.value && sectionKey !== aboutSectionFilter.value) {
+      return false
+    }
+
+    if (aboutBlockFilter.value && blockKey !== aboutBlockFilter.value) {
+      return false
+    }
+
+    if (!matchesAboutCompleteness(record)) {
+      return false
+    }
+
+    if (!matchesAboutMediaFilter(record)) {
+      return false
+    }
+
+    return true
+  }
+
   // ═══════════════════════════════════════════════════════════
   // DATA LOADING
   // ═══════════════════════════════════════════════════════════
@@ -744,6 +838,12 @@ export function useEntityManager(props, emit) {
       }
       if (hasStatusFilter.value && statusFilter.value)
         query.status = statusFilter.value
+      if (hasAdvancedAboutFilters.value) {
+        query.section_key = aboutSectionFilter.value || undefined
+        query.block_key = aboutBlockFilter.value || undefined
+        query.completeness = aboutCompletenessFilter.value || undefined
+        query.media_state = aboutMediaFilter.value || undefined
+      }
       const response = await listAdminEntityRecords(
         resolvedEntityKey.value,
         token,
@@ -755,8 +855,11 @@ export function useEntityManager(props, emit) {
         requestKey !== entityRequestKey()
       )
         return
-      records.value = response.items || []
-      totalRecords.value = response.pagination?.total || 0
+      const nextRecords = response.items || []
+      records.value = hasAdvancedAboutFilters.value
+        ? nextRecords.filter((record) => matchesAdvancedAboutFilters(record))
+        : nextRecords
+      totalRecords.value = response.pagination?.total || records.value.length
     } catch (error) {
       if (
         !isComponentAlive ||
@@ -766,7 +869,7 @@ export function useEntityManager(props, emit) {
         return
       records.value = []
       totalRecords.value = 0
-      notifyError(error.message || 'Failed to load content records.')
+      notifyError(error.message || 'Không thể tải dữ liệu nội dung.')
     } finally {
       if (
         isComponentAlive &&
@@ -1154,6 +1257,7 @@ export function useEntityManager(props, emit) {
       pageSize.value = configuredPageSize()
       statusFilter.value = ''
       searchKeyword.value = ''
+      resetAboutFilters()
       closeForm()
       closeActionConfirmDialog(false)
       resetEntityState()
@@ -1256,6 +1360,11 @@ export function useEntityManager(props, emit) {
     relationOptions,
     searchKeyword,
     statusFilter,
+    aboutSectionFilter,
+    aboutBlockFilter,
+    aboutCompletenessFilter,
+    aboutMediaFilter,
+    aboutViewMode,
     currentPage,
     pageSize,
     totalRecords,
@@ -1308,6 +1417,11 @@ export function useEntityManager(props, emit) {
     featuredTableFields,
     previewMediaOptions,
     videoLibraryOptions,
+    isAboutContentBlockItemsEntity,
+    aboutAdminConfig,
+    aboutFilterConfig,
+    aboutViewModeOptions,
+    hasAdvancedAboutFilters,
     // preview functions
     resolveMediaUrl,
     isDirectVideoFile,
