@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ChevronDown, Mail, MapPin, Menu, Phone, Search, X } from 'lucide-vue-next'
@@ -258,8 +258,13 @@ const isMobileGroupExpanded = (name) => mobileExpandedGroups.value.includes(name
 const getLinkProps = (item) => toLinkProps(item)
 
 const setBodyLock = (locked) => {
+  if (typeof document === 'undefined') return
   const isProjectCaseLocked = document.body.dataset.projectCaseScrollLock === 'true'
-  document.body.style.overflow = locked || isProjectCaseLocked ? 'hidden' : ''
+  const isSearchLocked = isSearchOpen.value
+  const needsLock = locked || isProjectCaseLocked || isSearchLocked
+  
+  document.body.style.overflow = needsLock ? 'hidden' : ''
+  document.body.style.paddingRight = needsLock ? `${window.innerWidth - document.documentElement.clientWidth}px` : ''
 }
 
 const syncHeaderOffset = () => {

@@ -1,5 +1,7 @@
 <script setup>
+import { computed } from 'vue'
 import { ArrowRight } from 'lucide-vue-next'
+import { useAboutPage } from '@/views/user/about/composables/useAboutPage'
 
 defineProps({
   active: {
@@ -7,6 +9,16 @@ defineProps({
     default: false
   }
 })
+
+const { aboutView, loading } = useAboutPage()
+
+const introData = computed(() => aboutView.value?.companyIntroduction)
+const introTitle = computed(() => aboutView.value?.introSectionTitle || 'VỀ CHÚNG TÔI')
+const introDescription = computed(() => {
+  const paragraphs = introData.value?.paragraphs || []
+  return paragraphs.join('\n\n')
+})
+const introImage = computed(() => introData.value?.coverImage || 'https://res.cloudinary.com/db1b15yn4/image/upload/f_auto,q_auto/v1776694061/Image_20260418142414_10_3_rj9klh.jpg')
 </script>
 
 <template>
@@ -18,7 +30,7 @@ defineProps({
       <div class="building-layer" :class="{ 'reveal-building': active }">
         <img
           class="building-img"
-          src="https://res.cloudinary.com/db1b15yn4/image/upload/f_auto,q_auto/v1776694061/Image_20260418142414_10_3_rj9klh.jpg"
+          :src="introImage"
           alt="Building"
         />
         <div class="building-mask"></div>
@@ -29,16 +41,29 @@ defineProps({
         <div class="content-left" :class="{ 'reveal-content': active }">
           <div class="tit">
             <div class="tit-row">
-              <h2>VỀ CHÚNG TÔI</h2>
+              <h2>{{ introTitle }}</h2>
             </div>
             <div class="title-line"></div>
           </div>
 
-          <div class="des">
+          <div class="des" v-if="introDescription">
+            {{ introDescription }}
+          </div>
+          <div class="des" v-else-if="!loading">
             CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ THIÊN ĐỒNG VIỆT NAM chuyên cung cấp các dòng đá mềm – tấm ốp linh hoạt cao cấp, ứng dụng trong trang trí nội thất và ngoại thất hiện đại. Chúng tôi cam kết mang đến những giải pháp vật liệu ốp lát bền đẹp, tối ưu chi phí, giúp khách hàng nâng tầm không gian sống và công trình xây dựng.
           </div>
 
-
+          <div class="one_btn">
+            <router-link to="/about" class="more more-red">
+              <span>XEM THÊM</span>
+              <div class="me_btn">
+                <img src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/bd97f2ca-79a8-43ee-8efa-5b6056d5b1c1.png" alt="" />
+                <div class="ic">
+                  <ArrowRight :size="16" color="#fff" />
+                </div>
+              </div>
+            </router-link>
+          </div>
         </div>
       </div>
 

@@ -42,7 +42,7 @@ const frameImage =
         <span>{{ variant === 'gallery' ? 'Factory' : 'Certificate' }}</span>
       </div>
     </div>
-    <div class="honor-card__content">
+    <div v-if="variant !== 'gallery'" class="honor-card__content">
       <h3>{{ item.title }}</h3>
       <p v-if="item.year || item.issued_by" class="meta">
         <span v-if="item.year">{{ item.year }}</span>

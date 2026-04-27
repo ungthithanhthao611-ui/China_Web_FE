@@ -55,6 +55,10 @@ const SETTING_META = {
     group_name: 'capability',
     description: 'Trạng thái hiển thị hero module Năng lực',
   },
+  capability_hero_banners_json: {
+    group_name: 'capability',
+    description: 'JSON danh sách các banner trượt (Hero slider)',
+  },
   capability_factory_overview_title: {
     group_name: 'capability',
     description: 'Tiêu đề section tổng quan nhà máy',
@@ -116,6 +120,16 @@ const defaultFactoryStats = () => [
   { label: 'Chứng nhận', value: '' },
 ]
 
+const defaultHeroBanners = () => [
+  {
+    title: 'NĂNG LỰC',
+    subtitle: 'Hình ảnh nhà máy, công nghệ sản xuất, công suất thực tế và các chứng nhận tiêu chuẩn.',
+    background_image_url: '',
+    mobile_background_image_url: '',
+    is_active: true,
+  },
+]
+
 const defaultProductionCards = () => [
   {
     title: 'Dây chuyền sản xuất hiện đại',
@@ -169,14 +183,8 @@ const confirmDialog = reactive({
 let confirmDialogResolver = null
 
 const form = reactive({
-  capability_hero_title: 'NĂNG LỰC',
-  capability_hero_subtitle:
-    'Hình ảnh nhà máy, công nghệ sản xuất, công suất thực tế và các chứng nhận tiêu chuẩn.',
-  capability_hero_background_image_url: '',
-  capability_hero_mobile_background_image_url: '',
-  capability_seal_text: '资质',
-  capability_seal_image_url: '',
   capability_hero_is_active: true,
+  hero_banners: defaultHeroBanners(),
   capability_factory_overview_title: 'Tổng quan nhà máy',
   factory_name: '',
   factory_address: '',
@@ -196,13 +204,23 @@ const listEditorState = reactive({
   stats: {},
   production: {},
   gallery: {},
+  banners: {},
 })
 
 const hasUnsavedListEdits = computed(() => (
   Object.values(listEditorState).some((bucket) =>
     Object.values(bucket || {}).some((entry) => entry?.editing),
-  )
+  ) || itemModal.visible
 ))
+
+const itemModal = reactive({
+  visible: false,
+  type: '', // 'stats' | 'production' | 'gallery'
+  item: null,
+  index: -1,
+  isNew: false,
+  title: '',
+})
 
 
 
@@ -317,6 +335,10 @@ function imageUploadKey(fieldKey) {
 
 function galleryImageUploadKey(item, index) {
   return `capability-gallery:${normalizeText(item?.id) || index}`
+}
+
+function bannerImageUploadKey(item, index, type = 'pc') {
+  return `capability-banner-${type}:${index}`
 }
 
 function imagePreviewSource(key, currentValue = '') {
@@ -522,6 +544,7 @@ function clearListItemEdit(type, item, index) {
 function listCollectionByType(type) {
   if (type === 'stats') return form.factory_stats
   if (type === 'production') return form.production_capabilities
+  if (type === 'banners') return form.hero_banners
   return form.factory_gallery
 }
 
@@ -529,7 +552,7 @@ function reindexListCollection(type) {
   const collection = listCollectionByType(type)
   if (!Array.isArray(collection)) return
 
-  if (type === 'production' || type === 'gallery') {
+  if (type === 'production' || type === 'gallery' || type === 'banners') {
     collection.forEach((item, index) => {
       item.sort_order = index
     })
@@ -577,6 +600,27 @@ function listTypeMeta(type) {
     }
   }
 
+  if (type === 'banners') {
+    return {
+      singular: 'banner',
+      plural: 'danh sách banner',
+      block: 'block hero slider',
+      validate: (item) => normalizeText(item?.background_image_url),
+      restore: (target, snapshot) => {
+        target.title = normalizeText(snapshot?.title)
+        target.subtitle = normalizeText(snapshot?.subtitle)
+        target.background_image_url = normalizeText(snapshot?.background_image_url)
+        target.mobile_background_image_url = normalizeText(snapshot?.mobile_background_image_url)
+        target.is_active = Boolean(snapshot?.is_active)
+      },
+      createDuplicate: (item) => ({
+        ...cloneListItem(item),
+        title: normalizeText(item?.title) ? `${normalizeText(item.title)} (bản sao)` : '',
+      }),
+    }
+  }
+
+  // Default: gallery
   return {
     singular: 'ảnh gallery',
     plural: 'danh sách ảnh gallery',
@@ -590,14 +634,14 @@ function listTypeMeta(type) {
       target.sort_order = Number.isFinite(Number(snapshot?.sort_order)) ? Number(snapshot.sort_order) : 0
       target.is_active = Boolean(snapshot?.is_active)
     },
-      createDuplicate: (item, index) => ({
-        id: `${normalizeText(item?.id || `factory-gallery-${index + 1}`)}-copy-${Date.now()}`,
-        title: normalizeText(item?.title) ? `${normalizeText(item.title)} (bản sao)` : `Hình ảnh nhà máy ${index + 2}`,
-        description: normalizeText(item?.description),
-        image_url: normalizeText(item?.image_url),
-        sort_order: index + 1,
-        is_active: Boolean(item?.is_active),
-      }),
+    createDuplicate: (item, index) => ({
+      id: `${normalizeText(item?.id || `factory-gallery-${index + 1}`)}-copy-${Date.now()}`,
+      title: normalizeText(item?.title) ? `${normalizeText(item.title)} (bản sao)` : `Hình ảnh nhà máy ${index + 2}`,
+      description: normalizeText(item?.description),
+      image_url: normalizeText(item?.image_url),
+      sort_order: index + 1,
+      is_active: Boolean(item?.is_active),
+    }),
   }
 }
 
@@ -655,16 +699,48 @@ async function moveListItem(type, index, direction) {
 
 async function editListItem(type, item, index) {
   const meta = listTypeMeta(type)
+  
+  itemModal.type = type
+  itemModal.index = index
+  itemModal.item = cloneListItem(item)
+  itemModal.isNew = false
+  itemModal.title = `Chỉnh sửa ${meta.singular}`
+  itemModal.visible = true
+}
+
+function closeItemModal() {
+  itemModal.visible = false
+  itemModal.item = null
+}
+
+async function saveModalItem() {
+  const { type, index, item } = itemModal
+  const meta = listTypeMeta(type)
+  
+  if (!meta.validate(item)) {
+    notifyError(`Vui lòng nhập đầy đủ thông tin bắt buộc trước khi lưu ${meta.singular}.`)
+    return
+  }
+
   const confirmed = await askForConfirmation({
-    eyebrow: 'Mở chỉnh sửa',
-    title: `Xác nhận chỉnh sửa ${meta.singular}?`,
-    message: `Bạn sẽ chuyển ${meta.singular} này sang chế độ chỉnh sửa trong ${meta.block}.`,
-    confirmText: 'Sửa',
+    eyebrow: 'Lưu thay đổi',
+    title: `Xác nhận lưu ${meta.singular}?`,
+    message: `Các thay đổi sẽ được áp dụng vào danh sách và lưu xuống hệ thống.`,
+    confirmText: 'Lưu',
   })
   if (!confirmed) return
 
-  beginListItemEdit(type, item, index)
-  notifySuccess(`Đã bật chế độ chỉnh sửa cho ${meta.singular}.`)
+  const collection = listCollectionByType(type)
+  if (itemModal.isNew) {
+    collection.push(item)
+  } else {
+    collection[index] = item
+  }
+  
+  reindexListCollection(type)
+  closeItemModal()
+  
+  await persistCapabilitySettings(`Đã lưu ${meta.singular} thành công.`)
 }
 
 async function cancelListItemEdit(type, item, index) {
@@ -744,12 +820,8 @@ onBeforeUnmount(() => {
 
 function resetForm() {
   Object.assign(form, {
-    capability_hero_title: 'NĂNG LỰC',
-    capability_hero_subtitle:
-      'Hình ảnh nhà máy, công nghệ sản xuất, công suất thực tế và các chứng nhận tiêu chuẩn.',
-    capability_hero_background_image_url: '',
-    capability_hero_mobile_background_image_url: '',
     capability_hero_is_active: true,
+    hero_banners: defaultHeroBanners(),
     capability_factory_overview_title: 'Tổng quan nhà máy',
     factory_name: '',
     factory_address: '',
@@ -813,96 +885,49 @@ function toCapabilitiesPayload(items = []) {
 
 function toGalleryPayload(items = []) {
   return items
-    .map((item, index) => ({
-      id: normalizeText(item?.id || `factory-gallery-${index + 1}`),
-      title: normalizeText(item?.title) || `Hình ảnh nhà máy ${index + 1}`,
+    .map((item) => ({
+      id: normalizeText(item?.id),
+      title: normalizeText(item?.title),
       description: normalizeText(item?.description),
-      image_url: normalizeText(item?.image_url || item?.url),
-      sort_order: Number.isFinite(Number(item?.sort_order))
-        ? Number(item.sort_order)
-        : index,
+      image_url: normalizeText(item?.image_url),
+      sort_order: Number(item?.sort_order || 0),
       is_active: Boolean(item?.is_active),
     }))
     .filter((item) => item.image_url)
 }
 
+function toBannersPayload(items = []) {
+  return items
+    .map((item) => ({
+      title: normalizeText(item?.title),
+      subtitle: normalizeText(item?.subtitle),
+      background_image_url: normalizeText(item?.background_image_url),
+      mobile_background_image_url: normalizeText(item?.mobile_background_image_url),
+      is_active: Boolean(item?.is_active),
+    }))
+    .filter((item) => item.background_image_url)
+}
+
 function applySettingsToForm(records = []) {
   resetForm()
+  records.forEach((record) => {
+    const key = record.config_key
+    const value = record.config_value
 
-  const map = new Map(
-    records.map((record) => [normalizeText(record.config_key), record]),
-  )
-
-  form.capability_hero_title =
-    map.get('capability_hero_title')?.config_value || form.capability_hero_title
-  form.capability_hero_subtitle =
-    map.get('capability_hero_subtitle')?.config_value ||
-    form.capability_hero_subtitle
-  form.capability_hero_background_image_url =
-    map.get('capability_hero_background_image_url')?.config_value
-    || map.get('capability_hero_mobile_background_image_url')?.config_value
-    || ''
-  form.capability_hero_mobile_background_image_url =
-    form.capability_hero_background_image_url
-  form.capability_seal_text =
-    map.get('capability_seal_text')?.config_value || form.capability_seal_text
-  form.capability_seal_image_url =
-    map.get('capability_seal_image_url')?.config_value || ''
-  form.capability_hero_is_active = parseBoolean(
-    map.get('capability_hero_is_active')?.config_value,
-    true,
-  )
-  form.capability_factory_overview_title =
-    map.get('capability_factory_overview_title')?.config_value ||
-    form.capability_factory_overview_title
-  form.factory_name = map.get('factory_name')?.config_value || ''
-  form.factory_address = map.get('factory_address')?.config_value || ''
-  form.factory_location =
-    map.get('factory_location')?.config_value || form.factory_location
-  form.factory_overview_description =
-    map.get('factory_overview_description')?.config_value || ''
-  form.factory_technology = map.get('factory_technology')?.config_value || ''
-  form.machinery_process = map.get('machinery_process')?.config_value || ''
-  form.factory_capacity = map.get('factory_capacity')?.config_value || ''
-  form.factory_output_description =
-    map.get('factory_output_description')?.config_value || ''
-  form.factory_main_image_url =
-    map.get('factory_main_image_url')?.config_value || ''
-
-  form.factory_stats = parseJsonArray(
-    map.get('factory_stats_json')?.config_value,
-    defaultFactoryStats,
-  ).map((item) => ({
-    label: normalizeText(item?.label),
-    value: normalizeText(item?.value),
-  }))
-
-  form.production_capabilities = parseJsonArray(
-    map.get('production_capabilities_json')?.config_value,
-    defaultProductionCards,
-  ).map((item, index) => ({
-    title: normalizeText(item?.title),
-    description: normalizeText(item?.description),
-    icon: normalizeText(item?.icon || 'factory') || 'factory',
-    sort_order: Number.isFinite(Number(item?.sort_order))
-      ? Number(item.sort_order)
-      : index,
-    is_active: parseBoolean(item?.is_active, true),
-  }))
-
-  form.factory_gallery = parseJsonArray(
-    map.get('capability_factory_gallery_json')?.config_value,
-    defaultGallery,
-  ).map((item, index) => ({
-    id: normalizeText(item?.id || `factory-gallery-${index + 1}`),
-    title: normalizeText(item?.title) || `Hình ảnh nhà máy ${index + 1}`,
-    description: normalizeText(item?.description),
-    image_url: normalizeText(item?.image_url || item?.url),
-    sort_order: Number.isFinite(Number(item?.sort_order))
-      ? Number(item.sort_order)
-      : index,
-    is_active: parseBoolean(item?.is_active, true),
-  }))
+    if (key === 'capability_hero_is_active') {
+      form.capability_hero_is_active = parseBoolean(value)
+    } else if (key === 'factory_stats_json') {
+      form.factory_stats = parseJsonArray(value, defaultFactoryStats)
+    } else if (key === 'production_capabilities_json') {
+      form.production_capabilities = parseJsonArray(value, defaultProductionCards)
+    } else if (key === 'capability_factory_gallery_json') {
+      form.factory_gallery = parseJsonArray(value, defaultGallery)
+    } else if (key === 'capability_hero_banners_json') {
+      form.hero_banners = parseJsonArray(value, defaultHeroBanners)
+    } else if (Object.prototype.hasOwnProperty.call(form, key)) {
+      form[key] = value
+    }
+  })
 }
 
 async function loadCapabilitySettings() {
@@ -948,18 +973,45 @@ async function loadCapabilitySettings() {
 }
 
 async function addFactoryStat() {
+  const meta = listTypeMeta('stats')
+  itemModal.type = 'stats'
+  itemModal.index = form.factory_stats.length
+  itemModal.item = { label: '', value: '' }
+  itemModal.isNew = true
+  itemModal.title = `Thêm ${meta.singular} mới`
+  itemModal.visible = true
+}
+
+async function addHeroBanner() {
+  const meta = listTypeMeta('banners')
+  itemModal.type = 'banners'
+  itemModal.index = form.hero_banners.length
+  itemModal.item = {
+    title: '',
+    subtitle: '',
+    background_image_url: '',
+    mobile_background_image_url: '',
+    is_active: true,
+  }
+  itemModal.isNew = true
+  itemModal.title = `Thêm ${meta.singular} mới`
+  itemModal.visible = true
+}
+
+async function removeHeroBanner(index) {
+  const item = form.hero_banners[index]
+  const itemLabel = normalizeText(item?.title) || `Banner ${index + 1}`
   const confirmed = await askForConfirmation({
-    eyebrow: 'Thêm chỉ số',
-    title: 'Xác nhận thêm chỉ số mới?',
-    message: 'Một chỉ số tổng quan mới sẽ được thêm vào block thống kê nhà máy.',
-    confirmText: 'Thêm chỉ số',
+    tone: 'danger',
+    eyebrow: 'Xóa banner',
+    title: 'Xác nhận xóa banner?',
+    message: `${itemLabel} sẽ bị xóa khỏi hero slider.`,
+    confirmText: 'Xóa banner',
   })
   if (!confirmed) return
 
-  const newItem = { label: '', value: '' }
-  form.factory_stats.push(newItem)
-  beginListItemEdit('stats', newItem, form.factory_stats.length - 1, { isNew: true, snapshot: null })
-  notifySuccess('Đã thêm một chỉ số mới vào block thống kê.')
+  form.hero_banners.splice(index, 1)
+  notifySuccess(`Đã xóa ${itemLabel.toLowerCase()} khỏi hero slider.`)
 }
 
 async function removeFactoryStat(index) {
@@ -980,24 +1032,19 @@ async function removeFactoryStat(index) {
 }
 
 async function addCapabilityCard() {
-  const confirmed = await askForConfirmation({
-    eyebrow: 'Thêm card năng lực',
-    title: 'Xác nhận thêm card năng lực sản xuất?',
-    message: 'Một card năng lực sản xuất mới sẽ được thêm vào block công nghệ.',
-    confirmText: 'Thêm card',
-  })
-  if (!confirmed) return
-
-  const newItem = {
+  const meta = listTypeMeta('production')
+  itemModal.type = 'production'
+  itemModal.index = form.production_capabilities.length
+  itemModal.item = {
     title: '',
     description: '',
     icon: 'factory',
     sort_order: form.production_capabilities.length,
     is_active: true,
   }
-  form.production_capabilities.push(newItem)
-  beginListItemEdit('production', newItem, form.production_capabilities.length - 1, { isNew: true, snapshot: null })
-  notifySuccess('Đã thêm card mới vào block năng lực sản xuất.')
+  itemModal.isNew = true
+  itemModal.title = `Thêm ${meta.singular} mới`
+  itemModal.visible = true
 }
 
 async function removeCapabilityCard(index) {
@@ -1018,15 +1065,10 @@ async function removeCapabilityCard(index) {
 }
 
 async function addGalleryItem() {
-  const confirmed = await askForConfirmation({
-    eyebrow: 'Thêm ảnh gallery',
-    title: 'Xác nhận thêm ảnh mới vào gallery?',
-    message: 'Một item ảnh mới sẽ được thêm vào block gallery nhà máy.',
-    confirmText: 'Thêm ảnh',
-  })
-  if (!confirmed) return
-
-  const newItem = {
+  const meta = listTypeMeta('gallery')
+  itemModal.type = 'gallery'
+  itemModal.index = form.factory_gallery.length
+  itemModal.item = {
     id: `factory-gallery-${Date.now()}`,
     title: `Hình ảnh nhà máy ${form.factory_gallery.length + 1}`,
     description: '',
@@ -1034,9 +1076,9 @@ async function addGalleryItem() {
     sort_order: form.factory_gallery.length,
     is_active: true,
   }
-  form.factory_gallery.push(newItem)
-  beginListItemEdit('gallery', newItem, form.factory_gallery.length - 1, { isNew: true, snapshot: null })
-  notifySuccess('Đã thêm item mới vào block gallery nhà máy.')
+  itemModal.isNew = true
+  itemModal.title = `Thêm ${meta.singular} mới`
+  itemModal.visible = true
 }
 
 async function removeGalleryItem(index) {
@@ -1059,12 +1101,12 @@ async function removeGalleryItem(index) {
 function validateBeforeSave() {
   const errors = []
 
-  if (!normalizeText(form.capability_hero_title)) {
-    errors.push('Tiêu đề hero không được để trống.')
-  }
-
   if (!normalizeText(form.capability_factory_overview_title)) {
     errors.push('Tiêu đề tổng quan nhà máy không được để trống.')
+  }
+
+  if (!form.hero_banners.some(b => b.is_active && normalizeText(b.background_image_url))) {
+    errors.push('Cần ít nhất 1 banner được kích hoạt.')
   }
 
   if (!normalizeText(form.factory_name)) {
@@ -1085,17 +1127,8 @@ function validateBeforeSave() {
 
 function buildPayloadMap() {
   return {
-    capability_hero_title: normalizeText(form.capability_hero_title),
-    capability_hero_subtitle: normalizeText(form.capability_hero_subtitle),
-    capability_hero_background_image_url: normalizeText(
-      form.capability_hero_background_image_url,
-    ),
-    capability_hero_mobile_background_image_url: normalizeText(
-      form.capability_hero_background_image_url,
-    ),
-    capability_seal_text: normalizeText(form.capability_seal_text) || '资质',
-    capability_seal_image_url: normalizeText(form.capability_seal_image_url),
     capability_hero_is_active: form.capability_hero_is_active ? 'true' : 'false',
+    capability_hero_banners_json: JSON.stringify(toBannersPayload(form.hero_banners), null, 2),
     capability_factory_overview_title: normalizeText(
       form.capability_factory_overview_title,
     ),
@@ -1157,7 +1190,9 @@ async function persistCapabilitySettings(successMessage) {
       }
     }
 
-    await loadCapabilitySettings()
+    // We don't necessarily need to reload everything if we just updated site_settings
+    // but we update the existingSettings to match the new state
+    // await loadCapabilitySettings()
     notifySuccess(
       successMessage
       || 'Đã lưu cấu hình module Năng lực thành công. Dữ liệu public và admin đã được đồng bộ từ site_settings.',
@@ -1257,13 +1292,8 @@ const summaryCards = computed(() => {
 
 function sectionCompletion(sectionKey) {
   if (sectionKey === 'hero') {
-    const score = [
-      normalizeText(form.capability_hero_title),
-      normalizeText(form.capability_hero_subtitle),
-      normalizeText(form.capability_hero_background_image_url),
-    ].filter(Boolean).length
-    if (score >= 3) return 'complete'
-    if (score >= 1) return 'partial'
+    const score = form.hero_banners.filter(b => b.is_active && b.background_image_url).length
+    if (score >= 1) return 'complete'
     return 'empty'
   }
 
@@ -1327,8 +1357,7 @@ function firstNonEmptyGalleryImage() {
 
 function previewImageForSection(sectionKey) {
   if (sectionKey === 'hero') {
-    return normalizeText(form.capability_hero_background_image_url)
-      || normalizeText(form.capability_hero_mobile_background_image_url)
+    return normalizeText(form.hero_banners[0]?.background_image_url)
       || firstNonEmptyGalleryImage()
   }
 
@@ -1341,13 +1370,12 @@ function previewImageForSection(sectionKey) {
   }
 
   return normalizeText(form.factory_main_image_url)
-    || normalizeText(form.capability_hero_background_image_url)
     || firstNonEmptyGalleryImage()
 }
 
 function previewCaptionForSection(sectionKey) {
   if (sectionKey === 'hero') {
-    return normalizeText(form.capability_hero_title) || 'Hero capability'
+    return normalizeText(form.hero_banners[0]?.title) || 'Hero slider'
   }
   if (sectionKey === 'overview') {
     return normalizeText(form.factory_name) || 'Factory overview'
@@ -1371,17 +1399,18 @@ function previewMetricForSection(sectionKey) {
   if (sectionKey === 'stats') {
     return `${summaryCards.value.find((item) => item.key === 'stats')?.value || 0} chỉ số`
   }
-  if (sectionKey === 'production') {
-    return `${summaryCards.value.find((item) => item.key === 'production')?.value || 0} card hoạt động`
+  if (sectionKey === 'hero') {
+    return `${form.hero_banners.length} banner`
   }
   return `${summaryCards.value.find((item) => item.key === 'gallery')?.value || 0} ảnh hoạt động`
 }
 
 function isListSection(sectionKey) {
-  return ['stats', 'production', 'gallery'].includes(sectionKey)
+  return ['hero', 'stats', 'production', 'gallery'].includes(sectionKey)
 }
 
 function listSectionCount(sectionKey) {
+  if (sectionKey === 'hero') return form.hero_banners.length
   if (sectionKey === 'stats') return form.factory_stats.length
   if (sectionKey === 'production') return form.production_capabilities.length
   if (sectionKey === 'gallery') return form.factory_gallery.length
@@ -1394,6 +1423,7 @@ function listSectionEditingCount(sectionKey) {
 }
 
 function listSectionAddLabel(sectionKey) {
+  if (sectionKey === 'hero') return 'Thêm banner'
   if (sectionKey === 'stats') return 'Thêm chỉ số'
   if (sectionKey === 'production') return 'Thêm card'
   if (sectionKey === 'gallery') return 'Thêm ảnh'
@@ -1401,6 +1431,10 @@ function listSectionAddLabel(sectionKey) {
 }
 
 async function addListItemFromSection(sectionKey) {
+  if (sectionKey === 'hero') {
+    await addHeroBanner()
+    return
+  }
   if (sectionKey === 'stats') {
     await addFactoryStat()
     return
@@ -1419,14 +1453,14 @@ const capabilitySections = computed(() => [
   {
     key: 'hero',
     eyebrow: 'Page 1 Hero',
-    title: 'Banner đầu trang',
+    title: 'Banner trượt (Slider)',
     description:
-      'Quản lý tiêu đề lớn, subtitle, ảnh nền desktop/mobile và trạng thái hiển thị của hero Năng lực.',
+      'Quản lý danh sách các slide banner đầu trang. Mỗi slide có ảnh riêng, tiêu đề và mô tả riêng.',
     previewLabel: 'Xem ngoài web',
     previewPath: '/honors#page1',
     stats: [
-      `${normalizeText(form.capability_hero_title) ? 'Có tiêu đề' : 'Thiếu tiêu đề'}`,
-      `${normalizeText(form.capability_hero_background_image_url) ? 'Có ảnh desktop' : 'Thiếu ảnh desktop'}`,
+      `${form.hero_banners.length} banner`,
+      `${form.hero_banners.filter(b => b.is_active).length} đang bật`,
       `${form.capability_hero_is_active ? 'Hero đang bật' : 'Hero đang tắt'}`,
     ],
   },
@@ -1623,125 +1657,45 @@ watch(
           <template v-if="section.key === 'hero'">
             <div class="editor-head">
               <div>
-                <p class="editor-eyebrow">Hero Banner</p>
-                <h4>Banner đầu trang Năng lực</h4>
+                <p class="editor-eyebrow">Hero Slider</p>
+                <h4>Danh sách Banner trượt</h4>
               </div>
-              <span class="editor-hint">Điều khiển full-screen hero ở đầu trang public.</span>
+              <button type="button" class="btn btn-inline" @click="addHeroBanner">
+                + Thêm Banner
+              </button>
             </div>
 
-            <div class="field-grid field-grid--two">
-              <label class="field">
-                <span>Tiêu đề lớn</span>
-                <input v-model="form.capability_hero_title" type="text" placeholder="NĂNG LỰC" />
-              </label>
+            <div class="field-grid">
               <label class="field field--toggle">
-                <span>Kích hoạt hero</span>
+                <span>Kích hoạt Hero Section</span>
                 <input v-model="form.capability_hero_is_active" type="checkbox" />
               </label>
             </div>
 
-            <div class="field-grid field-grid--two">
-              <label class="field">
-                <span>Seal text</span>
-                <input v-model="form.capability_seal_text" type="text" placeholder="资质" />
-              </label>
-              <label class="field">
-                <span>Ảnh badge / seal</span>
-                <input
-                  v-model="form.capability_seal_image_url"
-                  type="url"
-                  placeholder="https://... hoặc upload qua media khác"
-                />
-              </label>
-            </div>
-
-            <label class="field">
-              <span>Subtitle</span>
-              <textarea
-                v-model="form.capability_hero_subtitle"
-                rows="4"
-                placeholder="Mô tả ngắn hiển thị dưới line đỏ trong hero..."
-              />
-            </label>
-
-            <div class="image-manager">
-              <div class="image-manager__head">
-                <span>Ảnh nền hero</span>
-                <div class="image-mode-switch">
-                  <button
-                    type="button"
-                    class="image-mode-btn"
-                    :class="{ 'image-mode-btn--active': imageUploadMode(imageUploadKey('capability_hero_background_image_url')) === 'file' }"
-                    @click="setImageUploadMode(imageUploadKey('capability_hero_background_image_url'), 'file', form.capability_hero_background_image_url)"
-                  >
-                    Tải file
-                  </button>
-                  <button
-                    type="button"
-                    class="image-mode-btn"
-                    :class="{ 'image-mode-btn--active': imageUploadMode(imageUploadKey('capability_hero_background_image_url')) === 'url' }"
-                    @click="setImageUploadMode(imageUploadKey('capability_hero_background_image_url'), 'url', form.capability_hero_background_image_url)"
-                  >
-                    Import URL
-                  </button>
+            <div class="stack-list">
+              <div
+                v-for="(item, index) in form.hero_banners"
+                :key="`hero-banner-${index}`"
+                class="editor-item"
+              >
+                <div class="editor-item__head">
+                  <div class="editor-item__title-wrap">
+                    <img v-if="item.background_image_url" :src="resolvePreviewUrl(item.background_image_url)" class="item-mini-thumb" />
+                    <strong>{{ item.title || `Slide ${index + 1}` }}</strong>
+                    <div class="editor-item__badges">
+                      <span v-if="!item.is_active" class="item-badge item-badge--disabled">Đã tắt</span>
+                    </div>
+                  </div>
+                  <div class="editor-item__actions">
+                    <button type="button" class="btn btn-secondary-inline" @click="editListItem('banners', item, index)">
+                      Sửa
+                    </button>
+                    <button type="button" class="btn btn-danger-inline" @click="removeHeroBanner(index)">
+                      Xóa
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <p class="editor-hint">
-                Chỉ dùng 1 ảnh nền duy nhất cho hero. Giao diện mobile sẽ tự responsive từ cùng ảnh này.
-              </p>
-
-              <div class="image-preview-card" :class="{ 'image-preview-card--empty': !imagePreviewSource(imageUploadKey('capability_hero_background_image_url'), form.capability_hero_background_image_url) }">
-                <img
-                  v-if="imagePreviewSource(imageUploadKey('capability_hero_background_image_url'), form.capability_hero_background_image_url)"
-                  :src="imagePreviewSource(imageUploadKey('capability_hero_background_image_url'), form.capability_hero_background_image_url)"
-                  alt="Hero background preview"
-                />
-                <div v-else class="image-preview-card__placeholder">Chưa có ảnh nền hero</div>
-              </div>
-
-              <div v-if="imageUploadMode(imageUploadKey('capability_hero_background_image_url')) === 'file'" class="image-control-stack">
-                <input type="file" accept="image/*" @change="onSelectImageFile(imageUploadKey('capability_hero_background_image_url'), $event)" />
-              </div>
-              <div v-else class="image-control-stack">
-                <input
-                  :value="imageUploadStateMeta(imageUploadKey('capability_hero_background_image_url')).sourceUrl"
-                  type="url"
-                  placeholder="https://..."
-                  @input="onChangeImageUrl(imageUploadKey('capability_hero_background_image_url'), $event.target.value)"
-                />
-              </div>
-
-              <input
-                :value="form.capability_hero_background_image_url"
-                type="text"
-                readonly
-                placeholder="URL ảnh nền đã gán sẽ hiển thị ở đây"
-              />
-
-              <button
-                type="button"
-                class="btn btn-inline"
-                :disabled="imageUploadStateMeta(imageUploadKey('capability_hero_background_image_url')).uploading"
-                @click="uploadImageForField('capability_hero_background_image_url', {
-                  assetFolder: 'capability/hero',
-                  publicIdBase: 'hero-background',
-                  title: `${form.capability_hero_title || 'Capability'} hero background`,
-                  altText: form.capability_hero_title || 'Capability hero background',
-                })"
-              >
-                {{ imageActionLabel(imageUploadKey('capability_hero_background_image_url')) }}
-              </button>
-
-              <p
-                v-if="imageUploadStateMeta(imageUploadKey('capability_hero_background_image_url')).storageBackend"
-                class="image-upload-feedback"
-              >
-                Đích lưu: {{ imageUploadStateMeta(imageUploadKey('capability_hero_background_image_url')).storageBackend }}
-                <span v-if="imageUploadStateMeta(imageUploadKey('capability_hero_background_image_url')).fallbackReason">
-                  • Fallback: {{ imageUploadStateMeta(imageUploadKey('capability_hero_background_image_url')).fallbackReason }}
-                </span>
-              </p>
             </div>
           </template>
 
@@ -2301,6 +2255,130 @@ watch(
         </div>
       </article>
     </section>
+
+    <Teleport to="body">
+      <div v-if="itemModal.visible" class="item-modal-overlay" @click.self="closeItemModal">
+        <div class="item-modal">
+          <header class="item-modal__head">
+            <h3>{{ itemModal.title }}</h3>
+            <button type="button" class="btn-close" @click="closeItemModal">✕</button>
+          </header>
+          
+          <div class="item-modal__body">
+            <template v-if="itemModal.type === 'stats' && itemModal.item">
+              <div class="field-grid">
+                <label class="field">
+                  <span>Nhãn chỉ số</span>
+                  <input v-model="itemModal.item.label" type="text" placeholder="Ví dụ: Diện tích" />
+                </label>
+                <label class="field">
+                  <span>Giá trị</span>
+                  <input v-model="itemModal.item.value" type="text" placeholder="Ví dụ: 50.000 m2" />
+                </label>
+              </div>
+            </template>
+
+            <template v-else-if="itemModal.type === 'production' && itemModal.item">
+              <div class="field-grid">
+                <label class="field">
+                  <span>Tiêu đề năng lực</span>
+                  <input v-model="itemModal.item.title" type="text" placeholder="Dây chuyền hiện đại" />
+                </label>
+                <label class="field">
+                  <span>Icon</span>
+                  <input v-model="itemModal.item.icon" type="text" placeholder="factory / cog / shield" />
+                </label>
+              </div>
+              <label class="field">
+                <span>Mô tả chi tiết</span>
+                <textarea v-model="itemModal.item.description" rows="4" placeholder="Nhập mô tả cho card năng lực này..." />
+              </label>
+              <label class="field field--toggle">
+                <span>Trạng thái hiển thị</span>
+                <input v-model="itemModal.item.is_active" type="checkbox" />
+              </label>
+            </template>
+
+            <template v-else-if="itemModal.type === 'gallery' && itemModal.item">
+              <div class="field-grid">
+                <label class="field">
+                  <span>Tiêu đề ảnh</span>
+                  <input v-model="itemModal.item.title" type="text" placeholder="Khu vực sản xuất" />
+                </label>
+                <label class="field">
+                   <span>ID kỹ thuật</span>
+                   <input v-model="itemModal.item.id" type="text" />
+                </label>
+              </div>
+              
+              <div class="image-manager">
+                 <div class="image-preview-card">
+                   <img v-if="itemModal.item.image_url" :src="resolvePreviewUrl(itemModal.item.image_url)" alt="Preview" />
+                   <div v-else class="image-preview-card__placeholder">Chưa có ảnh</div>
+                 </div>
+                 <div class="field">
+                   <span>URL ảnh</span>
+                   <input v-model="itemModal.item.image_url" type="text" placeholder="https://..." />
+                 </div>
+              </div>
+
+              <label class="field">
+                <span>Mô tả ảnh</span>
+                <textarea v-model="itemModal.item.description" rows="3" placeholder="Nhập mô tả ngắn cho ảnh..." />
+              </label>
+              <label class="field field--toggle">
+                <span>Trạng thái hiển thị</span>
+                <input v-model="itemModal.item.is_active" type="checkbox" />
+              </label>
+            </template>
+
+            <template v-else-if="itemModal.type === 'banners' && itemModal.item">
+              <div class="field-grid">
+                <label class="field">
+                  <span>Tiêu đề Slide</span>
+                  <input v-model="itemModal.item.title" type="text" placeholder="NĂNG LỰC" />
+                </label>
+                <label class="field">
+                  <span>Subtitle</span>
+                  <input v-model="itemModal.item.subtitle" type="text" placeholder="Mô tả ngắn..." />
+                </label>
+              </div>
+
+              <div class="field-grid">
+                <div class="image-manager">
+                   <span>Ảnh PC (Desktop)</span>
+                   <div class="image-preview-card">
+                     <img v-if="itemModal.item.background_image_url" :src="resolvePreviewUrl(itemModal.item.background_image_url)" alt="PC Preview" />
+                     <div v-else class="image-preview-card__placeholder">Chưa có ảnh PC</div>
+                   </div>
+                   <input v-model="itemModal.item.background_image_url" type="text" placeholder="URL ảnh PC..." />
+                </div>
+                <div class="image-manager">
+                   <span>Ảnh Mobile</span>
+                   <div class="image-preview-card">
+                     <img v-if="itemModal.item.mobile_background_image_url" :src="resolvePreviewUrl(itemModal.item.mobile_background_image_url)" alt="Mobile Preview" />
+                     <div v-else class="image-preview-card__placeholder">Chưa có ảnh Mobile</div>
+                   </div>
+                   <input v-model="itemModal.item.mobile_background_image_url" type="text" placeholder="URL ảnh Mobile..." />
+                </div>
+              </div>
+
+              <label class="field field--toggle">
+                <span>Kích hoạt slide này</span>
+                <input v-model="itemModal.item.is_active" type="checkbox" />
+              </label>
+            </template>
+          </div>
+
+          <footer class="item-modal__footer">
+            <button type="button" class="btn btn-soft" @click="closeItemModal">Hủy bỏ</button>
+            <button type="button" class="btn btn-primary" @click="saveModalItem">
+              {{ itemModal.isNew ? 'Thêm mới' : 'Lưu thay đổi' }}
+            </button>
+          </footer>
+        </div>
+      </div>
+    </Teleport>
 
     <CoreConfirmDialog
       :visible="confirmDialog.visible"
@@ -3019,5 +3097,96 @@ watch(
   .image-preview-card {
     height: 170px;
   }
+}
+
+.item-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.item-modal {
+  width: min(100%, 640px);
+  max-height: calc(100vh - 48px);
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.24);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.item-modal__head {
+  padding: 24px 32px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.item-modal__head h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #0f172a;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.item-modal__body {
+  padding: 32px;
+  overflow-y: auto;
+  display: grid;
+  gap: 20px;
+}
+
+.item-modal__footer {
+  padding: 24px 32px;
+  background: #f8fafc;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.image-preview-card {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 12px;
+  background: #f1f5f9;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.image-preview-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-preview-card__placeholder {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+}
+
+.item-mini-thumb {
+  width: 48px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 12px;
+  background: #f1f5f9;
 }
 </style>

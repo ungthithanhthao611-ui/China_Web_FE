@@ -20,6 +20,7 @@ const honorSections = [
   { id: 'page2b', label: 'Tổng quan nhà máy' },
   { id: 'page2c', label: 'Công nghệ sản xuất' },
   { id: 'page3', label: 'Chứng nhận & Năng lực' },
+  { id: 'page3b', label: 'Công nghệ & ISO' },
   { id: 'page4', label: 'Liên hệ' },
 ]
 
@@ -30,12 +31,10 @@ const primaryContact = ref(null)
 const activeCertificateTab = ref('all')
 
 const hero = ref({
-  title: 'NĂNG LỰC',
-  description: 'Hình ảnh nhà máy, công nghệ sản xuất, công suất thực tế và các chứng nhận ISO, CE.',
-  background: '',
-  mobile_background: '',
+  banners: [],
   accent: '',
   seal_text: '资质',
+  is_active: true,
 })
 const factoryOverview = ref({
   title: 'Tổng quan nhà máy',
@@ -281,17 +280,42 @@ async function loadHonors() {
 
     const payload = await getHonorsPageData()
 
-    const heroBackground =
-      payload.hero_banner?.background_image_url || payload.hero?.background || hero.value.background
+    const bannersRaw = payload.hero?.banners_json || payload.capability_hero_banners_json || ''
+    let banners = []
+    try {
+      if (bannersRaw) {
+        banners = typeof bannersRaw === 'string' ? JSON.parse(bannersRaw) : bannersRaw
+      }
+    } catch (e) {
+      console.warn('Failed to parse hero banners:', e)
+    }
+
+    if (!Array.isArray(banners) || banners.length === 0) {
+      const heroTitle = payload.hero_banner?.title || payload.hero?.title || 'NĂNG LỰC'
+      const heroDesc = payload.hero_banner?.subtitle || payload.hero?.description || 'Hình ảnh nhà máy, công nghệ sản xuất, công suất thực tế.'
+      const heroBg = payload.hero_banner?.background_image_url || payload.hero?.background || ''
+      
+      if (heroBg) {
+        banners = [{
+          title: heroTitle,
+          subtitle: heroDesc,
+          background_image_url: heroBg,
+          mobile_background_image_url: payload.hero_banner?.mobile_background_image_url || payload.hero?.mobile_background || heroBg,
+          is_active: true
+        }]
+      }
+    }
 
     hero.value = {
-      title: payload.hero_banner?.title || payload.hero?.title || hero.value.title,
-      description: payload.hero_banner?.subtitle || payload.hero?.description || hero.value.description,
-      background: heroBackground,
-      mobile_background:
-        payload.hero_banner?.mobile_background_image_url || payload.hero?.mobile_background || heroBackground,
-      accent: payload.hero_banner?.seal_image_url || payload.hero?.accent || '',
+      banners: banners.filter(b => b.is_active).map(b => ({
+        title: b.title,
+        description: b.subtitle || b.description,
+        background: resolveImageUrl(b.background_image_url),
+        mobile_background: resolveImageUrl(b.mobile_background_image_url || b.background_image_url)
+      })),
+      accent: resolveImageUrl(payload.hero_banner?.seal_image_url || payload.hero?.accent || ''),
       seal_text: payload.hero_banner?.seal_text || payload.hero?.seal_text || '资质',
+      is_active: payload.hero_banner?.is_active ?? payload.hero?.is_active ?? true
     }
 
     factoryOverview.value = {
@@ -848,7 +872,7 @@ onBeforeUnmount(() => {
 }
 
 .capability-stage {
-  width: min(1320px, calc(100% - 56px));
+  width: min(1320px, calc(100% - 48px));
   margin: 0 auto;
 }
 
@@ -1163,6 +1187,11 @@ onBeforeUnmount(() => {
   margin: 0;
   color: rgba(255, 245, 230, 0.78);
   line-height: 1.75;
+}
+
+.capability-grid {
+  display: grid;
+  gap: 22px;
 }
 
 .capability-grid--certificates {
@@ -1570,6 +1599,14 @@ onBeforeUnmount(() => {
   .contact-info-grid,
   .capability-form__row {
     grid-template-columns: 1fr;
+  }
+
+  .overview-highlights {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 22px;
   }
 
   .capability-feature-card {

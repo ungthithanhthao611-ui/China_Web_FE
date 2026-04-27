@@ -47,30 +47,30 @@ onBeforeUnmount(() => {
   min-height: 100vh;
   color: #17324d;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --admin-sidebar-width: clamp(220px, 16vw, 232px);
-  --admin-sidebar-padding: clamp(12px, 1.1vw, 14px);
-  --admin-content-padding: clamp(10px, 1.15vw, 14px);
-  --admin-panel-padding: clamp(12px, 1.15vw, 14px);
-  --admin-section-gap: clamp(10px, 1vw, 12px);
-  --admin-card-radius: 18px;
-  --admin-card-radius-lg: 22px;
-  --admin-card-radius-sm: 12px;
-  --admin-card-border: 1px solid rgba(198, 216, 233, 0.72);
-  --admin-card-shadow: 0 10px 22px rgba(18, 43, 71, 0.07);
-  --admin-card-shadow-soft: 0 8px 18px rgba(17, 41, 67, 0.06);
+  --admin-sidebar-width: clamp(210px, 14vw, 220px);
+  --admin-sidebar-padding: clamp(10px, 1vw, 12px);
+  --admin-content-padding: clamp(12px, 1.2vw, 16px);
+  --admin-panel-padding: clamp(14px, 1.4vw, 18px);
+  --admin-section-gap: clamp(12px, 1.2vw, 14px);
+  --admin-card-radius: 16px;
+  --admin-card-radius-lg: 20px;
+  --admin-card-radius-sm: 10px;
+  --admin-card-border: 1px solid rgba(198, 216, 233, 0.64);
+  --admin-card-shadow: 0 8px 18px rgba(18, 43, 71, 0.05);
+  --admin-card-shadow-soft: 0 6px 12px rgba(17, 41, 67, 0.04);
   --admin-card-bg:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 249, 255, 0.94));
-  --admin-title-size: clamp(24px, 2.3vw, 34px);
-  --admin-heading-size: clamp(19px, 1.6vw, 24px);
-  --admin-subheading-size: clamp(18px, 1.45vw, 22px);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 251, 255, 0.96));
+  --admin-title-size: clamp(22px, 2.1vw, 30px);
+  --admin-heading-size: clamp(18px, 1.5vw, 22px);
+  --admin-subheading-size: clamp(16px, 1.3vw, 20px);
   --admin-body-size: 13px;
   --admin-body-size-sm: 12px;
-  --admin-label-size: 11px;
+  --admin-label-size: 10.5px;
   --admin-control-height: 38px;
-  --admin-control-radius: 12px;
+  --admin-control-radius: 10px;
   --admin-button-height: 36px;
   --admin-sidebar-item-height: 36px;
-  --admin-stat-card-height: 102px;
+  --admin-stat-card-height: 98px;
 }
 
 :global(body.admin-body) {

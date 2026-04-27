@@ -386,7 +386,7 @@ defineExpose({
   margin: 4px 0 0;
   font-size: clamp(22px, 2.4vw, 30px);
   line-height: 0.98;
-  font-weight: 800;
+  font-weight: 600;
   color: #151b2d;
 }
 
@@ -434,7 +434,7 @@ defineExpose({
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #73839a;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .filter-box input,
@@ -485,12 +485,12 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   color: #6f8199;
 }
 
 .title-cell {
-  font-weight: 700;
+  font-weight: 500;
   color: #1f2f45;
   display: inline-block;
   line-height: 1.45;
@@ -500,7 +500,7 @@ th {
   border-radius: 999px;
   font-size: 10px;
   padding: 4px 8px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
 }
 
@@ -516,7 +516,7 @@ th {
 
 .status-chip {
   color: #4138d2;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .status-chip.inactive {
@@ -560,7 +560,7 @@ th {
   background: #fff;
   color: #495f7b;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -655,7 +655,7 @@ th {
   color: #77869b;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .close-btn {
@@ -685,7 +685,7 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #728197;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .drawer-body input,
@@ -739,7 +739,7 @@ th {
   border-radius: var(--admin-control-radius, 14px);
   padding: 0 12px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   border: 1px solid transparent;
   transition: all 0.2s ease;

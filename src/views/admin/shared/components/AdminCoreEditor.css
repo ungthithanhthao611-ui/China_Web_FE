@@ -63,7 +63,7 @@
   background: rgba(73, 147, 220, 0.1);
   color: #22567d;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .eyebrow {
@@ -72,7 +72,7 @@
   font-size: var(--admin-label-size, 11px);
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .editor-head h3 {
@@ -96,7 +96,7 @@
   border: 1px solid transparent;
   min-height: var(--admin-button-height, 40px);
   padding: 0 14px;
-  font-weight: 700;
+  font-weight: 500;
   font-size: 13px;
   cursor: pointer;
   transition:
@@ -197,7 +197,7 @@
 .editor-field > span {
   color: #3c5975;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -279,7 +279,7 @@ input[type="checkbox"] {
 
 .field-help--selected {
   color: #1f6eb4;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .relation-combobox {
@@ -470,7 +470,7 @@ input[type="checkbox"] {
   place-items: center;
   color: rgba(243, 248, 255, 0.86);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -502,7 +502,7 @@ input[type="checkbox"] {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 234, 213, 0.96);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -533,7 +533,7 @@ input[type="checkbox"] {
 .banner-preview-card__content small {
   color: rgba(255, 222, 188, 0.95);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .banner-focus-indicator {
@@ -596,7 +596,7 @@ input[type="checkbox"] {
   background: rgba(255, 255, 255, 0.92);
   color: #3c5975;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .content-item-preview__card {
@@ -644,7 +644,7 @@ input[type="checkbox"] {
 
 .content-item-preview__timeline {
   color: #1f6eb4 !important;
-  font-weight: 700;
+  font-weight: 500;
   font-size: 13px !important;
 }
 
@@ -755,7 +755,7 @@ button:disabled {
   background: #ebf4ff;
   color: #3182ce;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 500;
   border-radius: 4px;
   letter-spacing: 0.5px;
 }
@@ -797,7 +797,7 @@ button:disabled {
 
 .upload-input-group label {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: #4a5568;
 }
 
@@ -866,7 +866,7 @@ button:disabled {
   color: #fff;
   border: none;
   border-radius: 8px;
-  font-weight: 700;
+  font-weight: 500;
   font-size: 15px;
   cursor: pointer;
   transition: all 0.2s;
@@ -948,7 +948,7 @@ button:disabled {
   background: rgba(73, 147, 220, 0.1);
   color: #3b82f6;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* ── Gallery Preview Grid ── */
@@ -992,7 +992,7 @@ button:disabled {
   background: rgba(239, 68, 68, 0.85);
   color: #fff;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -1021,7 +1021,7 @@ button:disabled {
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   backdrop-filter: blur(4px);
 }
 

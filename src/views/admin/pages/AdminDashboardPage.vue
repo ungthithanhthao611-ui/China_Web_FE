@@ -653,14 +653,14 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
   letter-spacing: 0.22em;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .sidebar h2 {
   margin: 6px 0 0;
   font-size: clamp(28px, 2vw, 32px);
   line-height: 0.92;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.04em;
   color: #f7fbff;
 }
@@ -686,7 +686,7 @@ onBeforeUnmount(() => {
   font-size: var(--admin-label-size);
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .nav-item-shell {
@@ -716,7 +716,7 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.05);
   color: #f4f8fe;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .nav-item:hover,
@@ -761,7 +761,7 @@ onBeforeUnmount(() => {
 
 .nav-subitem.active {
   color: #fff;
-  font-weight: 600;
+  font-weight: 500;
   border-color: rgba(94, 201, 241, 0.36);
   background: rgba(79, 194, 238, 0.2);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -816,14 +816,14 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-size: var(--admin-label-size);
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .topbar h1 {
   margin: 4px 0 0;
   font-size: var(--admin-title-size);
   line-height: 1;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.04em;
   color: #14304c;
 }
@@ -877,7 +877,7 @@ onBeforeUnmount(() => {
   padding: 0 12px;
   min-height: var(--admin-button-height);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   cursor: pointer;
   border: 1px solid transparent;
   transition:
@@ -1061,14 +1061,14 @@ onBeforeUnmount(() => {
   margin: 0;
   font-size: clamp(22px, 2vw, 30px);
   line-height: 1;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.04em;
 }
 
 .stat-title {
   margin: 6px 0 0;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .stat-sub {

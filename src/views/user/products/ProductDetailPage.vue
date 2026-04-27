@@ -7,6 +7,7 @@ import {
   ZoomIn,
   X,
   ChevronLeft,
+  ChevronDown,
   Send,
   Download,
   Play,
@@ -33,6 +34,7 @@ const activeMediaIndex = ref(0)
 const lightboxOpen = ref(false)
 const showInquiry = ref(false)
 const relatedPage = ref(0)
+const isDescExpanded = ref(false)
 const viewportWidth = ref(typeof window === 'undefined' ? 1200 : window.innerWidth)
 
 const primaryImage = computed(() => {
@@ -212,9 +214,14 @@ const specRows = computed(() => {
     { label: 'Kích thước', value: product.value.size },
     { label: 'Chất liệu', value: product.value.material },
     { label: 'Màu sắc', value: product.value.color },
-    { label: 'Ứng dụng', value: product.value.use_case },
   ].filter((item) => String(item.value || '').trim())
 })
+
+const activeAccordion = ref('specs')
+
+function toggleAccordion(key) {
+  activeAccordion.value = activeAccordion.value === key ? null : key
+}
 
 const descriptionText = computed(() => {
   const fullDesc = String(product.value?.full_desc || '').trim()
@@ -435,14 +442,48 @@ onBeforeUnmount(() => {
               {{ product.short_desc || 'Giải pháp đá mềm linh hoạt với thẩm mỹ hiện đại, bền đẹp và phù hợp cho nhiều phong cách nội thất.' }}
             </p>
 
-            <div v-if="specRows.length" class="prod-specs">
-              <h2 class="prod-section-title">Đặc tính kỹ thuật:</h2>
-              <dl class="prod-specs__list">
-                <div v-for="item in specRows" :key="item.label" class="prod-specs__row">
-                  <dt>{{ item.label }}:</dt>
-                  <dd>{{ item.value }}</dd>
+            <div class="prod-accordion">
+              <!-- Thông số kỹ thuật -->
+              <div v-if="specRows.length" class="acc-item" :class="{ 'acc-item--active': activeAccordion === 'specs' }">
+                <button class="acc-item__head" type="button" @click="toggleAccordion('specs')">
+                  <span>Thông số kỹ thuật</span>
+                  <ChevronDown :size="18" />
+                </button>
+                <div class="acc-item__content">
+                  <dl class="prod-specs__list">
+                    <div v-for="item in specRows" :key="item.label" class="prod-specs__row">
+                      <dt>{{ item.label }}:</dt>
+                      <dd>{{ item.value }}</dd>
+                    </div>
+                  </dl>
                 </div>
-              </dl>
+              </div>
+
+              <!-- Ứng dụng -->
+              <div v-if="product.use_case" class="acc-item" :class="{ 'acc-item--active': activeAccordion === 'usecase' }">
+                <button class="acc-item__head" type="button" @click="toggleAccordion('usecase')">
+                  <span>Ứng dụng thực tế</span>
+                  <ChevronDown :size="18" />
+                </button>
+                <div class="acc-item__content">
+                  <p class="acc-text">{{ product.use_case }}</p>
+                </div>
+              </div>
+
+              <!-- Mô tả chi tiết -->
+              <div v-if="detailDescriptionParagraphs.length" class="acc-item" :class="{ 'acc-item--active': activeAccordion === 'desc' }">
+                <button class="acc-item__head" type="button" @click="toggleAccordion('desc')">
+                  <span>Mô tả chi tiết</span>
+                  <ChevronDown :size="18" />
+                </button>
+                <div class="acc-item__content">
+                  <div class="acc-rich-text">
+                    <p v-for="(paragraph, index) in detailDescriptionParagraphs" :key="index">
+                      {{ paragraph }}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="prod-actions">
@@ -478,19 +519,6 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-      <section v-if="detailDescriptionParagraphs.length" class="prod-detail__desc">
-        <div class="prod-detail__desc-inner">
-          <div class="prod-block-heading">
-            <span class="prod-block-heading__line" />
-            <h2>Mô tả sản phẩm</h2>
-          </div>
-          <div class="prod-detail__desc-content">
-            <p v-for="(paragraph, index) in detailDescriptionParagraphs" :key="index">
-              {{ paragraph }}
-            </p>
-          </div>
-        </div>
-      </section>
 
       <section v-if="relatedProducts.length" class="prod-related">
         <div class="prod-related__inner">
@@ -722,9 +750,9 @@ onBeforeUnmount(() => {
 
 .prod-gallery__thumbs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 14px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .thumb-btn {
@@ -998,8 +1026,8 @@ onBeforeUnmount(() => {
 
 .prod-related__grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .rel-card {
@@ -1097,7 +1125,7 @@ onBeforeUnmount(() => {
   display: block;
   color: #111827;
   text-decoration: none;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.35;
 }
@@ -1126,8 +1154,78 @@ onBeforeUnmount(() => {
   text-decoration: none;
 }
 
-.rel-card__cta:hover {
+/* Accordion */
+.prod-accordion {
+  margin: 32px 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.acc-item {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.acc-item__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0;
+  background: none;
+  border: none;
+  color: #1e293b;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.acc-item__head:hover {
   color: #8a745b;
+}
+
+.acc-item__head svg {
+  color: #94a3b8;
+  transition: transform 0.3s ease;
+}
+
+.acc-item--active .acc-item__head {
+  color: #8a745b;
+}
+
+.acc-item--active .acc-item__head svg {
+  transform: rotate(180deg);
+  color: #8a745b;
+}
+
+.acc-item__content {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+}
+
+.acc-item--active .acc-item__content {
+  max-height: 1000px;
+  padding-bottom: 24px;
+  opacity: 1;
+}
+
+.acc-text {
+  margin: 0;
+  color: #475569;
+  line-height: 1.7;
+  font-size: 15px;
+}
+
+.acc-rich-text p {
+  margin: 0 0 16px;
+  color: #475569;
+  line-height: 1.7;
+  font-size: 15px;
+}
+
+.acc-rich-text p:last-child {
+  margin-bottom: 0;
 }
 
 
@@ -1238,8 +1336,8 @@ onBeforeUnmount(() => {
   }
 
   .prod-gallery__thumbs {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .prod-specs__row {
@@ -1259,7 +1357,7 @@ onBeforeUnmount(() => {
   }
 
   .prod-related__grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .prod-related__carousel {
@@ -1282,7 +1380,8 @@ onBeforeUnmount(() => {
   }
 
   .prod-gallery__thumbs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .prod-related__intro {

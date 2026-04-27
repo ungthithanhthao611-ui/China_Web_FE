@@ -1080,7 +1080,7 @@ onBeforeUnmount(() => {
 .intro-visual {
   position: absolute;
   right: 0;
-  bottom: 0;
+  bottom: 8vh;
   width: min(44vw, 830px);
   height: 85vh;
   z-index: 1;
@@ -1091,7 +1091,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  object-position: right bottom;
+  object-position: right center;
 }
 
 .intro-watermark {
@@ -2921,12 +2921,28 @@ onBeforeUnmount(() => {
   }
 
   .hero-content {
-    padding: 104px 18px 132px;
+    padding: 104px 20px 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 50vh;
   }
 
   .hero-title-row {
-    align-items: end;
-    gap: 14px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+
+    h1 {
+      font-size: 38px;
+      line-height: 1.1;
+      text-align: left;
+    }
+  }
+
+  .hero-line {
+    margin-bottom: 24px;
   }
 
   .hero-description {
@@ -3089,8 +3105,8 @@ onBeforeUnmount(() => {
   }
 
   .intro-section {
-    padding-top: 88px;
-    padding-bottom: 52px;
+    padding-top: 72px;
+    padding-bottom: 42px;
   }
 
   .intro-layout {

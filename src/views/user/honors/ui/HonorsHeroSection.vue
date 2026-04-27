@@ -1,4 +1,11 @@
 <script setup>
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import { Autoplay, Pagination, EffectFade } from 'swiper/modules'
+
+import 'swiper/css'
+import 'swiper/css/pagination'
+import 'swiper/css/effect-fade'
+
 defineProps({
   hero: {
     type: Object,
@@ -7,62 +14,87 @@ defineProps({
 })
 
 const emit = defineEmits(['go-section'])
+
+const swiperModules = [Autoplay, Pagination, EffectFade]
 </script>
 
 <template>
-  <section id="page1" class="hero">
-    <div class="hero-media">
-      <img :src="hero.background" :alt="hero.title" loading="eager" decoding="async" />
-    </div>
-    <div class="shade"></div>
-    <div class="hero-noise"></div>
-
-    <div class="content">
-      <div class="content__copy">
-        <span class="hero-kicker">China Decor / Capability Profile</span>
-
-        <div class="title-row">
-          <div class="seal-chip">
-            <img v-if="hero.accent" :src="hero.accent" alt="" aria-hidden="true" />
-            <span>{{ hero.seal_text || '资质' }}</span>
+  <section id="page1" class="hero" v-if="hero.is_active">
+    <Swiper
+      :modules="swiperModules"
+      :slides-per-view="1"
+      :loop="hero.banners.length > 1"
+      :effect="'fade'"
+      :autoplay="{
+        delay: 5000,
+        disableOnInteraction: false,
+      }"
+      :pagination="{
+        clickable: true,
+        dynamicBullets: true,
+      }"
+      class="hero-swiper"
+    >
+      <SwiperSlide v-for="(slide, index) in hero.banners" :key="index">
+        <div class="hero-slide-content">
+          <div class="hero-media">
+            <picture>
+              <source :srcSet="slide.mobile_background" media="(max-width: 767px)" />
+              <img :src="slide.background" :alt="slide.title" loading="eager" />
+            </picture>
           </div>
-          <h1>{{ hero.title }}</h1>
-        </div>
+          <div class="shade"></div>
+          <div class="hero-noise"></div>
 
-        <div class="line"></div>
-        <p>{{ hero.description }}</p>
+          <div class="content">
+            <div class="content__copy">
+              <span class="hero-kicker">China Decor / Capability Profile</span>
 
-        <div class="hero-actions">
-          <button type="button" class="hero-btn hero-btn--primary" @click="emit('go-section', 'page2')">
-            Khám phá nhà máy
-          </button>
-          <button type="button" class="hero-btn hero-btn--ghost" @click="emit('go-section', 'page3')">
-            Xem chứng nhận
-          </button>
-        </div>
-      </div>
+              <div class="title-row">
+                <div class="seal-chip">
+                  <img v-if="hero.accent" :src="hero.accent" alt="" aria-hidden="true" />
+                  <span>{{ hero.seal_text || '资质' }}</span>
+                </div>
+                <h1>{{ slide.title }}</h1>
+              </div>
 
-      <aside class="hero-panel">
-        <div class="hero-panel__card">
-          <span>Factory Showcase</span>
-          <strong>Thiết kế không gian trưng bày năng lực theo phong cách premium.</strong>
-          <p>
-            Tổng hợp hình ảnh nhà máy, quy trình, công nghệ và chứng chỉ trong một trải nghiệm
-            liền mạch.
-          </p>
+              <div class="line"></div>
+              <p>{{ slide.description }}</p>
+
+              <div class="hero-actions">
+                <button type="button" class="hero-btn hero-btn--primary" @click="emit('go-section', 'page2')">
+                  Khám phá nhà máy
+                </button>
+                <button type="button" class="hero-btn hero-btn--ghost" @click="emit('go-section', 'page3')">
+                  Xem chứng nhận
+                </button>
+              </div>
+            </div>
+
+            <aside class="hero-panel">
+              <div class="hero-panel__card">
+                <span>Factory Showcase</span>
+                <strong>Thiết kế không gian trưng bày năng lực theo phong cách premium.</strong>
+                <p>
+                  Tổng hợp hình ảnh nhà máy, quy trình, công nghệ và chứng chỉ trong một trải nghiệm
+                  liền mạch.
+                </p>
+              </div>
+              <div class="hero-panel__metrics">
+                <article>
+                  <span>Section</span>
+                  <strong>04+</strong>
+                </article>
+                <article>
+                  <span>Profile</span>
+                  <strong>Live CMS</strong>
+                </article>
+              </div>
+            </aside>
+          </div>
         </div>
-        <div class="hero-panel__metrics">
-          <article>
-            <span>Section</span>
-            <strong>04+</strong>
-          </article>
-          <article>
-            <span>Profile</span>
-            <strong>Live CMS</strong>
-          </article>
-        </div>
-      </aside>
-    </div>
+      </SwiperSlide>
+    </Swiper>
 
     <div class="hero-tabs">
       <button type="button" @click="emit('go-section', 'page2')">Hình ảnh nhà máy</button>
@@ -83,7 +115,24 @@ const emit = defineEmits(['go-section'])
   overflow: hidden;
 }
 
+.hero-swiper {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.hero-slide-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .hero-media,
+.hero-media picture,
 .hero-media img {
   position: absolute;
   inset: 0;
@@ -509,6 +558,32 @@ p {
   .hero-panel__metrics article,
   .hero-panel__card {
     padding: 18px;
+  }
+}
+
+:deep(.swiper-pagination-bullet) {
+  background: #fff;
+  opacity: 0.5;
+}
+
+:deep(.swiper-pagination-bullet-active) {
+  background: #d90017;
+  opacity: 1;
+}
+
+:deep(.swiper-pagination) {
+  bottom: 100px !important;
+}
+
+@media (max-width: 991px) {
+  :deep(.swiper-pagination) {
+    bottom: 130px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  :deep(.swiper-pagination) {
+    bottom: 170px !important;
   }
 }
 </style>

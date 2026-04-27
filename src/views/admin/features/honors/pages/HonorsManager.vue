@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { computed, reactive, ref, watch } from 'vue'
 
 import { uploadAdminMediaAsset } from '@/views/admin/shared/api/adminApi.js'
@@ -931,19 +931,32 @@ watch(pageSize, async (nextSize, previousSize) => {
       </div>
     </section>
 
-    <aside v-if="showHonorsSection && honorFormOpen" class="overlay" @click.self="closeHonorForm">
-      <section class="panel form-panel">
-        <div class="form-head">
-          <h3>{{ honorFormMode === 'create' ? 'Tạo mục năng lực' : 'Chỉnh sửa mục năng lực' }}</h3>
-          <button type="button" class="icon-btn" @click="closeHonorForm">x</button>
-        </div>
+    <teleport to="body">
+      <div v-if="showHonorsSection && honorFormOpen" class="editor-shell editor-shell--modal" @click.self="closeHonorForm">
+        <aside class="editor-panel editor-panel--modal" @click.stop>
+          <div class="editor-head">
+            <div class="editor-head__content">
+              <div class="editor-head__badge-wrap">
+                <p class="eyebrow">{{ honorFormMode === 'create' ? 'Create' : 'Edit' }}</p>
+                <span class="editor-head__badge">Năng Lực</span>
+              </div>
+              <h3>{{ honorFormMode === 'create' ? 'Tạo mục năng lực' : 'Chỉnh sửa mục năng lực' }}</h3>
+              <p class="editor-head__copy">Cập nhật thông tin chi tiết, metadata và hình ảnh năng lực.</p>
+            </div>
+            <button type="button" class="icon-btn" @click="closeHonorForm">×</button>
+          </div>
 
         <div v-if="honorFormErrors.length" class="errors">
           <p v-for="error in honorFormErrors" :key="error">{{ error }}</p>
         </div>
 
-        <div class="upload-row">
-          <input type="file" accept="image/*" @change="onFileSelected" />
+        <div class="upload-box">
+          <div class="upload-box__head">
+            <strong>Tải ảnh lên</strong>
+            <p class="upload-box__copy">Chọn file ảnh từ máy để tải lên cho chứng nhận này.</p>
+          </div>
+          <div class="upload-row">
+            <input type="file" accept="image/*" @change="onFileSelected" />
           <input v-model="honorForm.uploadTitle" type="text" placeholder="Tiêu đề ảnh tải lên" />
           <input v-model="honorForm.uploadAltText" type="text" placeholder="Alt text của ảnh" />
           <button type="button" class="btn btn-primary" :disabled="uploading" @click="uploadHonorImage">
@@ -961,9 +974,10 @@ watch(pageSize, async (nextSize, previousSize) => {
             Lý do fallback: {{ uploadFallbackReason }}
           </p>
         </div>
+        </div>
 
-        <form class="form-grid" @submit.prevent="submitHonorForm">
-          <label>
+        <form class="dynamic-form" @submit.prevent="submitHonorForm">
+          <label class="editor-field">
             <span>Danh mục</span>
             <select v-model="honorForm.category_id">
               <option disabled value="">Chọn danh mục</option>
@@ -973,32 +987,32 @@ watch(pageSize, async (nextSize, previousSize) => {
             </select>
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Tiêu đề</span>
             <input v-model="honorForm.title" type="text" />
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Slug</span>
             <input v-model="honorForm.slug" type="text" placeholder="Không bắt buộc, sẽ tự tạo nếu để trống" />
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>URL hình ảnh</span>
             <input v-model="honorForm.image_url" type="text" />
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Năm</span>
             <input v-model="honorForm.year" type="number" />
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Đơn vị cấp</span>
             <input v-model="honorForm.issued_by" type="text" />
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Kiểu hiển thị</span>
             <select v-model="honorForm.display_type">
               <option value="qualification_certificate">Chứng chỉ năng lực</option>
@@ -1007,12 +1021,12 @@ watch(pageSize, async (nextSize, previousSize) => {
             </select>
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Thứ tự</span>
             <input v-model="honorForm.sort_order" type="number" />
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Trạng thái</span>
             <select v-model="honorForm.is_active">
               <option :value="true">Đang hiển thị</option>
@@ -1020,7 +1034,7 @@ watch(pageSize, async (nextSize, previousSize) => {
             </select>
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Nổi bật</span>
             <select v-model="honorForm.is_featured">
               <option :value="false">Không</option>
@@ -1028,44 +1042,53 @@ watch(pageSize, async (nextSize, previousSize) => {
             </select>
           </label>
 
-          <label class="wide">
+          <label class="editor-field wide">
             <span>Mô tả ngắn</span>
             <textarea v-model="honorForm.short_description" rows="4"></textarea>
           </label>
 
-          <div class="form-actions">
+          <div class="form-actions wide">
             <button type="button" class="btn btn-secondary" @click="closeHonorForm">Hủy</button>
             <button type="submit" class="btn btn-primary" :disabled="saving">
               {{ saving ? 'Đang lưu...' : honorFormMode === 'create' ? 'Tạo mới' : 'Cập nhật' }}
             </button>
           </div>
         </form>
-      </section>
-    </aside>
+        </aside>
+      </div>
+    </teleport>
 
-    <aside v-if="showCategorySection && categoryFormOpen" class="overlay" @click.self="closeCategoryForm">
-      <section class="panel category-form-panel">
-        <div class="form-head">
-          <h3>{{ categoryFormMode === 'create' ? 'Tạo danh mục' : 'Chỉnh sửa danh mục' }}</h3>
-          <button type="button" class="icon-btn" @click="closeCategoryForm">x</button>
-        </div>
+    <teleport to="body">
+      <div v-if="showCategorySection && categoryFormOpen" class="editor-shell editor-shell--modal" @click.self="closeCategoryForm">
+        <aside class="editor-panel editor-panel--modal" @click.stop>
+          <div class="editor-head">
+            <div class="editor-head__content">
+              <div class="editor-head__badge-wrap">
+                <p class="eyebrow">{{ categoryFormMode === 'create' ? 'Create' : 'Edit' }}</p>
+                <span class="editor-head__badge">Danh Mục Năng Lực</span>
+              </div>
+              <h3>{{ categoryFormMode === 'create' ? 'Tạo danh mục' : 'Chỉnh sửa danh mục' }}</h3>
+              <p class="editor-head__copy">Sắp xếp và quản lý phân cấp danh mục năng lực.</p>
+            </div>
+            <button type="button" class="icon-btn" @click="closeCategoryForm">×</button>
+          </div>
 
         <div v-if="categoryFormErrors.length" class="errors">
           <p v-for="error in categoryFormErrors" :key="error">{{ error }}</p>
         </div>
 
-        <form class="form-grid" @submit.prevent="submitCategoryForm">
-          <label>
+        <form class="dynamic-form" @submit.prevent="submitCategoryForm">
+          <label class="editor-field">
             <span>Tên danh mục</span>
             <input v-model="categoryForm.name" type="text" />
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Slug</span>
             <input v-model="categoryForm.slug" type="text" placeholder="Không bắt buộc, sẽ tự tạo nếu để trống" />
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Loại</span>
             <select v-model="categoryForm.type">
               <option v-for="option in categoryTypeOptions" :key="option.value" :value="option.value">
@@ -1074,7 +1097,7 @@ watch(pageSize, async (nextSize, previousSize) => {
             </select>
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Danh mục cha</span>
             <select v-model="categoryForm.parent_id">
               <option value="">Không có danh mục cha</option>
@@ -1084,12 +1107,12 @@ watch(pageSize, async (nextSize, previousSize) => {
             </select>
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Thứ tự</span>
             <input v-model="categoryForm.sort_order" type="number" />
           </label>
 
-          <label>
+          <label class="editor-field">
             <span>Trạng thái</span>
             <select v-model="categoryForm.is_active">
               <option :value="true">Đang hiển thị</option>
@@ -1097,20 +1120,21 @@ watch(pageSize, async (nextSize, previousSize) => {
             </select>
           </label>
 
-          <label class="wide">
+          <label class="editor-field wide">
             <span>Mô tả</span>
             <textarea v-model="categoryForm.description" rows="4"></textarea>
           </label>
 
-          <div class="form-actions">
+          <div class="form-actions wide">
             <button type="button" class="btn btn-secondary" @click="closeCategoryForm">Hủy</button>
             <button type="submit" class="btn btn-primary" :disabled="categorySaving">
               {{ categorySaving ? 'Đang lưu...' : categoryFormMode === 'create' ? 'Tạo mới' : 'Cập nhật' }}
             </button>
           </div>
         </form>
-      </section>
-    </aside>
+        </aside>
+      </div>
+    </teleport>
 
     <CoreConfirmDialog
       :visible="confirmDialog.visible"
@@ -1123,6 +1147,7 @@ watch(pageSize, async (nextSize, previousSize) => {
 </template>
 
 <style scoped>
+@import '@/views/admin/shared/components/AdminCoreEditor.css';
 .honors-admin {
   margin-top: var(--admin-section-gap, 16px);
   display: grid;
