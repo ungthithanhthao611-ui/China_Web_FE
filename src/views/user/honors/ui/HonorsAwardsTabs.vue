@@ -223,111 +223,106 @@ watch(activeTab, () => {
 }
 
 .section-bg {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(96deg, rgba(22, 17, 11, 0.94) 0%, rgba(60, 48, 35, 0.88) 38%, rgba(164, 142, 105, 0.68) 100%),
-    url('https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/ee391405-cb7a-4434-91fa-fcf427544b97.jpg');
-  background-size: cover;
-  background-position: center right;
-  filter: saturate(0.92);
+  display: none;
 }
 
 .stage {
   position: relative;
   z-index: 1;
-  width: min(1320px, calc(100% - 56px));
+  width: min(1080px, calc(100% - 44px));
   margin: 0 auto;
 }
 
 .section-top {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 20px 24px;
+  gap: 14px 16px;
   align-items: end;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .section-top__copy {
-  max-width: 780px;
+  max-width: 620px;
 }
 
 .eyebrow {
   display: inline-block;
-  margin-bottom: 12px;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 12px;
+  margin-bottom: 8px;
+  color: #c2410c;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .section-top h2 {
   margin: 0;
-  color: #fff;
+  color: #0f172a;
   font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
-  font-size: clamp(2.3rem, 1.9rem + 1.2vw, 3.5rem);
-  line-height: 1.08;
+  font-size: clamp(1.7rem, 1.45rem + 0.8vw, 2.45rem);
+  line-height: 1.1;
 }
 
 .section-top p {
-  margin: 14px 0 0;
-  max-width: 680px;
-  color: rgba(255, 255, 255, 0.84);
-  font-size: 16px;
-  line-height: 1.72;
+  margin: 8px 0 0;
+  max-width: 560px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.58;
 }
 
 .section-top__aside {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .tabs {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .tabs button {
-  min-width: 170px;
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid rgba(214, 168, 97, 0.16);
-  background: rgba(17, 16, 19, 0.42);
-  color: #fff;
+  min-width: 132px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
   cursor: pointer;
   border-radius: 999px;
   backdrop-filter: blur(10px);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
 }
 
 .tabs button.active {
-  background: linear-gradient(135deg, #751810, #c24726);
+  background: linear-gradient(135deg, #dc2626, #f97316);
   border-color: transparent;
-  box-shadow: 0 12px 28px rgba(114, 30, 17, 0.24);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.14);
 }
 
 .tabs button:hover {
   transform: translateY(-1px);
-  border-color: rgba(214, 168, 97, 0.28);
+  border-color: rgba(239, 68, 68, 0.18);
 }
 
 .grid {
   display: grid;
-  gap: 22px;
+  gap: 14px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
 }
 
 .empty {
-  color: rgba(255, 255, 255, 0.86);
+  color: #475569;
   text-align: left;
-  padding: 22px 0 6px;
+  padding: 14px 0 2px;
 }
 
 @media (max-width: 1024px) {
@@ -347,11 +342,11 @@ watch(activeTab, () => {
 
 @media (max-width: 767px) {
   .section {
-    padding: 48px 0 34px;
+    padding: 40px 0 28px;
   }
 
   .stage {
-    width: calc(100% - 24px);
+    width: calc(100% - 16px);
   }
 
   .tabs button {
@@ -360,7 +355,7 @@ watch(activeTab, () => {
   }
 
   .section-top p {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .grid {
@@ -381,18 +376,18 @@ watch(activeTab, () => {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: rgba(255, 255, 255, 0.88);
+  color: #475569;
 }
 
 .section-toolbar__summary strong {
-  color: #fff8eb;
+  color: #0f172a;
   font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
   font-size: 28px;
   line-height: 1;
 }
 
 .section-toolbar__summary span {
-  color: rgba(255, 255, 255, 0.72);
+  color: #64748b;
   font-size: 13px;
   letter-spacing: 0.04em;
 }
@@ -410,17 +405,18 @@ watch(activeTab, () => {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid rgba(214, 168, 97, 0.22);
-  background: rgba(17, 16, 19, 0.48);
-  color: #fff;
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
 .pager__btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: rgba(214, 168, 97, 0.42);
-  background: rgba(117, 24, 16, 0.72);
+  border-color: rgba(239, 68, 68, 0.22);
+  background: rgba(254, 242, 242, 0.98);
 }
 
 .pager__btn:disabled {
@@ -431,7 +427,7 @@ watch(activeTab, () => {
 .pager__status {
   min-width: 68px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.82);
+  color: #475569;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;

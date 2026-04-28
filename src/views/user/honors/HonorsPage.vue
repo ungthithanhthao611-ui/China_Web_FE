@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { Building2, Cog, MapPin, MapPinned, Users } from 'lucide-vue-next'
 
 import { env } from '@/shared/config/env'
 import { getContacts } from '@/views/user/services/publicApi'
@@ -16,12 +17,7 @@ const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
 
 const honorSections = [
   { id: 'page1', label: 'Top' },
-  { id: 'page2', label: 'Hình ảnh nhà máy' },
   { id: 'page2b', label: 'Tổng quan nhà máy' },
-  { id: 'page2c', label: 'Công nghệ sản xuất' },
-  { id: 'page3', label: 'Chứng nhận & Năng lực' },
-  { id: 'page3b', label: 'Công nghệ & ISO' },
-  { id: 'page4', label: 'Liên hệ' },
 ]
 
 const activeSection = ref('page1')
@@ -29,6 +25,7 @@ const loading = ref(false)
 const contacts = ref([])
 const primaryContact = ref(null)
 const activeCertificateTab = ref('all')
+const activeOverviewImage = ref('')
 
 const hero = ref({
   banners: [],
@@ -118,23 +115,110 @@ const isInquiryFormValid = computed(() =>
 )
 const overviewHighlights = computed(() => [
   {
-    label: 'Tên nhà máy',
+    label: 'TÊN NHÀ MÁY',
     value: companyName.value,
+    icon: Building2,
   },
   {
-    label: 'Địa chỉ',
+    label: 'ĐỊA CHỈ',
     value:
       contactInfo.value.address ||
       factoryOverview.value.factory_address ||
       'Đang cập nhật địa chỉ nhà máy.',
+    icon: MapPinned,
   },
   {
-    label: 'Công suất',
+    label: 'CÔNG SUẤT',
     value:
       factoryOverview.value.production_capacity ||
       'Đang cập nhật công suất thực tế.',
+    icon: Cog,
   },
 ])
+
+const overviewGalleryImages = computed(() => {
+  const imageMap = new Map()
+
+  factoryGallery.value
+    .filter((item) => item?.is_active !== false && item?.image_url)
+    .sort((left, right) => Number(left?.sort_order || 0) - Number(right?.sort_order || 0))
+    .forEach((item, index) => {
+      const normalizedUrl = resolveImageUrl(item.image_url)
+      if (!normalizedUrl || imageMap.has(normalizedUrl)) {
+        return
+      }
+
+      imageMap.set(normalizedUrl, {
+        ...item,
+        image_url: item.image_url,
+        _preview_url: normalizedUrl,
+        _index: index,
+      })
+    })
+
+  return Array.from(imageMap.values()).slice(0, 4)
+})
+
+const overviewDisplayImage = computed(() => {
+  const active = activeOverviewImage.value
+  const activeInGallery = overviewGalleryImages.value.some((item) => item.image_url === active)
+
+  if (active && activeInGallery) {
+    return active
+  }
+
+  return overviewGalleryImages.value[0]?.image_url || factoryOverview.value.main_image_url || active || ''
+})
+
+const overviewMetricCards = computed(() => {
+  const fallbackCards = [
+    {
+      value: '20,000',
+      unit: 'm2',
+      label: 'Di?n t?ch nh? m?y',
+      icon: Building2,
+    },
+    {
+      value: '500',
+      unit: '',
+      label: 'Nh?n s? c? kinh nghi?m',
+      icon: Users,
+    },
+  ]
+
+  if (!hasFactoryStats.value) {
+    return fallbackCards
+  }
+
+  return fallbackCards.map((fallbackCard, index) => {
+    const metric = factoryOverview.value.stats[index]
+    const rawValue = String(metric?.value || '').trim()
+    const numericMatch = rawValue.match(/^[\d.,]+\+?/)
+    const unitMatch = rawValue.match(/(m?|m2|sqm|%)/i)
+
+    return {
+      value: numericMatch?.[0] || fallbackCard.value,
+      unit: unitMatch?.[0] || fallbackCard.unit,
+      label: fallbackCard.label,
+      icon: fallbackCard.icon,
+    }
+  })
+})
+
+const factoryMapLink = computed(() => {
+  const directLink = String(contactInfo.value.google_map_url || '').trim()
+  if (directLink) {
+    return directLink
+  }
+
+  const address = String(contactInfo.value.address || factoryOverview.value.factory_address || '').trim()
+  if (!address) {
+    return 'https://www.google.com/maps'
+  }
+
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address)
+})
+
 const capabilityNarratives = computed(() =>
   [
     {
@@ -390,6 +474,18 @@ watch(
   },
 )
 
+watch(
+  overviewGalleryImages,
+  (images) => {
+    const active = activeOverviewImage.value
+    const activeExists = images.some((item) => item.image_url === active)
+    if (active && activeExists) return
+
+    activeOverviewImage.value = images[0]?.image_url || String(factoryOverview.value.main_image_url || '').trim()
+  },
+  { immediate: true },
+)
+
 watch(activeSection, (value) => {
   if (route.path === '/honors') {
     window.history.replaceState(null, '', `/honors#${value}`)
@@ -414,340 +510,123 @@ onBeforeUnmount(() => {
   <main class="honors-page">
     <div class="honors-page__ambience honors-page__ambience--left"></div>
     <div class="honors-page__ambience honors-page__ambience--right"></div>
-    <aside class="dots" aria-label="Honors section navigation">
-      <button
-        v-for="item in honorSections"
-        :id="`honors-dot-${item.id}`"
-        :key="item.id"
-        class="dots__item"
-        :class="{ active: activeSection === item.id }"
-        type="button"
-        :aria-label="`Đi tới ${item.label}`"
-        @click="scrollToSection(item.id)"
-      >
-        <span></span>
-      </button>
-    </aside>
+
 
     <HonorsHeroSection :hero="hero" @go-section="scrollToSection" />
-    <HonorsQualificationList :items="factoryGallery" :image-resolver="resolveImageUrl" />
+
 
     <section
       id="page2b"
       class="capability-section capability-section--light capability-section--overview"
     >
-      <div class="stage capability-stage capability-stage--overview">
+      <div class="stage capability-stage capability-stage--overview capability-stage--overview-refined">
         <div class="capability-overview__media-shell">
-          <div class="capability-overview__media">
+          <div class="capability-overview__media capability-overview__media--refined">
             <img
-              v-if="factoryOverview.main_image_url"
-              :src="resolveImageUrl(factoryOverview.main_image_url)"
+              v-if="overviewDisplayImage"
+              :src="resolveImageUrl(overviewDisplayImage)"
               :alt="factoryOverview.factory_name || 'Nhà máy sản xuất'"
             />
             <div v-else class="capability-overview__placeholder">
               <span>{{ companyName.slice(0, 1) }}</span>
             </div>
-            <div class="capability-overview__floating-card">
-              <span>{{ factoryOverview.factory_location || 'Factory Location' }}</span>
-              <strong>{{ contactInfo.address || factoryOverview.factory_address || 'Địa chỉ đang cập nhật' }}</strong>
+
+            <div class="capability-overview__footer-card">
+              <div class="capability-overview__footer-location">
+                <div class="capability-overview__footer-icon">
+                  <MapPin :size="20" />
+                </div>
+                <div>
+                  <span>Vị trí nhà máy</span>
+                  <strong>{{ contactInfo.address || factoryOverview.factory_address || 'Địa chỉ đang cập nhật' }}</strong>
+                </div>
+              </div>
+
+              <a
+                :href="factoryMapLink"
+                class="capability-overview__footer-map"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <div class="capability-overview__footer-map-icon">
+                  <MapPinned :size="18" />
+                </div>
+                <span>Xem trên bản đồ</span>
+              </a>
             </div>
+          </div>
+
+          <div v-if="overviewGalleryImages.length" class="capability-overview__thumb-grid">
+            <button
+              v-for="(item, index) in overviewGalleryImages"
+              :id="'factory-overview-thumb-' + (index + 1)"
+              :key="item.id || ((item.title || 'img') + '-' + index)"
+              type="button"
+              class="capability-overview__thumb-card"
+              :class="{ 'capability-overview__thumb-card--active': item.image_url === overviewDisplayImage }"
+              @click="activeOverviewImage = item.image_url"
+            >
+              <img
+                :src="item._preview_url || resolveImageUrl(item.image_url)"
+                :alt="item.title || ('Hình ảnh nhà máy ' + (index + 1))"
+              />
+            </button>
           </div>
         </div>
 
-        <div class="capability-overview__content">
-          <header class="capability-heading capability-heading--dark-text">
+        <div class="capability-overview__content capability-overview__content--refined">
+          <header class="capability-heading capability-heading--dark-text capability-heading--overview-refined">
             <span class="eyebrow">NĂNG LỰC NHÀ MÁY</span>
+            <span class="capability-heading__accent"></span>
             <h2>{{ factoryOverview.title || 'Tổng quan nhà máy' }}</h2>
             <p>
               {{
                 factoryOverview.description ||
-                'Không gian vận hành, năng lực cung ứng và quy trình kiểm soát chất lượng được chuẩn hóa cho các dự án quy mô lớn.'
+                'Nhà máy được đầu tư hiện đại với dây chuyền công nghệ tiên tiến, đáp ứng tiêu chuẩn chất lượng quốc tế.'
               }}
             </p>
           </header>
 
-          <div class="overview-highlights">
+          <div class="overview-highlights overview-highlights--refined">
             <article
               v-for="item in overviewHighlights"
               :key="item.label"
-              class="overview-highlight"
+              class="overview-highlight overview-highlight--refined"
             >
-              <span class="overview-highlight__label">{{ item.label }}</span>
-              <strong>{{ item.value }}</strong>
+              <div class="overview-highlight__icon overview-highlight__icon--refined">
+                <component :is="item.icon" :size="22" />
+              </div>
+              <div class="overview-highlight__body">
+                <span class="overview-highlight__label">{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
             </article>
           </div>
 
-          <div v-if="hasFactoryStats" class="output-grid output-grid--light">
+          <div class="output-grid output-grid--light output-grid--overview-refined">
             <div
-              v-for="(metric, index) in factoryOverview.stats"
-              :key="`${metric.label}-${index}`"
-              class="output-card output-card--light"
+              v-for="(metric, index) in overviewMetricCards"
+              :key="metric.label + '-' + index"
+              class="output-card output-card--light output-card--overview-refined"
             >
-              <strong>{{ metric.value }}</strong>
-              <span>{{ metric.label }}</span>
+              <div class="output-card__icon-badge">
+                <component :is="metric.icon" :size="22" />
+              </div>
+              <div class="output-card__content">
+                <strong>
+                  {{ metric.value }}
+                  <small v-if="metric.unit">{{ metric.unit }}</small>
+                </strong>
+                <span>{{ metric.label }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="page2c" class="capability-section capability-section--dark capability-section--full">
-      <div class="stage capability-stage capability-stage--tech">
-        <header class="capability-heading capability-heading--split capability-heading--split-dark">
-          <div>
-            <span class="eyebrow">CÔNG NGHỆ SẢN XUẤT</span>
-            <h2>Hệ năng lực vận hành</h2>
-          </div>
-          <p>
-            {{
-              factoryOverview.production_technology ||
-              factoryOverview.machinery_process ||
-              'Các module công nghệ, máy móc và quy trình được chuẩn hóa để đáp ứng tiến độ và chất lượng dự án.'
-            }}
-          </p>
-        </header>
 
-        <div class="capability-story-grid">
-          <article
-            v-for="item in capabilityNarratives"
-            :key="item.key"
-            class="capability-story-card"
-          >
-            <span>{{ item.label }}</span>
-            <p>{{ item.value }}</p>
-          </article>
-        </div>
 
-        <div v-if="productionCapabilities.length" class="capability-feature-grid">
-          <article
-            v-for="(item, index) in productionCapabilities"
-            :key="`${item.title}-${index}`"
-            class="capability-feature-card"
-          >
-            <div class="capability-feature-card__index">0{{ index + 1 }}</div>
-            <div class="capability-feature-card__body">
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.description || 'Đang cập nhật mô tả chi tiết cho hạng mục năng lực sản xuất này.' }}</p>
-            </div>
-          </article>
-        </div>
-
-        <div v-else class="empty-state empty-state--dark">Chưa có dữ liệu công nghệ sản xuất.</div>
-      </div>
-    </section>
-
-    <section
-      id="page3"
-      class="capability-section capability-section--light capability-section--certificates"
-    >
-      <div class="stage capability-stage">
-        <header class="capability-heading capability-heading--dark-text capability-heading--split">
-          <div>
-            <span class="eyebrow">CHỨNG NHẬN & NĂNG LỰC</span>
-            <h2>Hồ sơ chứng nhận nổi bật</h2>
-            <p>
-              Các chứng chỉ, hồ sơ năng lực và thành tựu dự án được quản lý tập trung từ admin và
-              phản ánh trực tiếp trên trang public.
-            </p>
-          </div>
-
-          <div class="certificate-filters" role="tablist" aria-label="Lọc chứng nhận năng lực">
-            <button
-              id="capability-filter-all"
-              type="button"
-              :class="{ active: activeCertificateTab === 'all' }"
-              @click="activeCertificateTab = 'all'"
-            >
-              Tất cả
-            </button>
-            <button
-              id="capability-filter-qualification"
-              type="button"
-              :class="{ active: activeCertificateTab === 'qualification' }"
-              @click="activeCertificateTab = 'qualification'"
-            >
-              Hồ sơ năng lực
-            </button>
-            <button
-              id="capability-filter-corporate"
-              type="button"
-              :class="{ active: activeCertificateTab === 'corporate' }"
-              @click="activeCertificateTab = 'corporate'"
-            >
-              ISO & CE
-            </button>
-            <button
-              id="capability-filter-project"
-              type="button"
-              :class="{ active: activeCertificateTab === 'project' }"
-              @click="activeCertificateTab = 'project'"
-            >
-              Dự án tiêu biểu
-            </button>
-          </div>
-        </header>
-
-        <div v-if="filteredCertificates.length" class="capability-grid capability-grid--certificates">
-          <article
-            v-for="item in filteredCertificates"
-            :key="item.id"
-            class="certificate-card"
-          >
-            <div class="certificate-card__visual">
-              <img :src="resolveImageUrl(item.image_url)" :alt="item.title" />
-              <span class="certificate-card__category">{{ item.category || 'Certificate' }}</span>
-            </div>
-            <div class="certificate-card__content">
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.description || 'Đang cập nhật mô tả chứng nhận.' }}</p>
-              <div class="certificate-card__meta">
-                <span v-if="item.year">{{ item.year }}</span>
-                <span v-if="item.issuer || item.issued_by">{{ item.issuer || item.issued_by }}</span>
-              </div>
-            </div>
-          </article>
-        </div>
-
-        <div v-else class="empty-state">Chưa có dữ liệu chứng nhận để hiển thị.</div>
-      </div>
-    </section>
-
-    <HonorsAwardsTabs
-      :corporate-items="corporateItems"
-      :project-items="projectItems"
-      :image-resolver="resolveImageUrl"
-    />
-
-    <section id="page4" class="capability-section capability-section--contact">
-      <div class="stage capability-stage capability-stage--contact">
-        <div class="contact-panel">
-          <div class="contact-panel__map">
-            <iframe
-              :src="resolvedMapEmbed"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-            ></iframe>
-            <div v-if="companyName" class="contact-map__marker">
-              <div class="contact-map__brand">
-                <img :src="logoImage" :alt="companyName" />
-              </div>
-              <div class="contact-map__label">
-                <strong>{{ companyName }}</strong>
-                <span>{{ contactInfo.address || 'Địa chỉ đang được cập nhật.' }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="contact-panel__content">
-            <header class="capability-heading capability-heading--dark-text">
-              <span class="eyebrow">LIÊN HỆ HỢP TÁC</span>
-              <h2>Sẵn sàng kết nối dự án</h2>
-              <p>
-                Gửi yêu cầu tư vấn về năng lực sản xuất, hồ sơ nhà máy hoặc chứng nhận chất lượng.
-                Đội ngũ sẽ phản hồi nhanh qua email hoặc điện thoại.
-              </p>
-            </header>
-
-            <div class="contact-info-grid">
-              <article class="contact-info-card">
-                <span>Email</span>
-                <strong>{{ contactInfo.email || 'Đang cập nhật' }}</strong>
-              </article>
-              <article class="contact-info-card">
-                <span>Điện thoại</span>
-                <strong>{{ contactInfo.phone || 'Đang cập nhật' }}</strong>
-              </article>
-              <article class="contact-info-card">
-                <span>Giờ làm việc</span>
-                <strong>{{ contactInfo.working_hours || 'Thứ 2 - Thứ 7' }}</strong>
-              </article>
-            </div>
-
-            <form
-              v-if="inquiryStatus !== 'success'"
-              class="capability-form"
-              @submit.prevent="handleInquirySubmit"
-              novalidate
-            >
-              <div class="capability-form__row">
-                <label>
-                  <span>Họ và tên *</span>
-                  <input
-                    id="capability-contact-name"
-                    v-model="inquiryForm.full_name"
-                    type="text"
-                    placeholder="Nguyễn Văn A"
-                  />
-                </label>
-                <label>
-                  <span>Email *</span>
-                  <input
-                    id="capability-contact-email"
-                    v-model="inquiryForm.email"
-                    type="email"
-                    placeholder="email@example.com"
-                  />
-                </label>
-              </div>
-              <div class="capability-form__row">
-                <label>
-                  <span>Số điện thoại</span>
-                  <input
-                    id="capability-contact-phone"
-                    v-model="inquiryForm.phone"
-                    type="tel"
-                    placeholder="0901 234 567"
-                  />
-                </label>
-                <label>
-                  <span>Công ty</span>
-                  <input
-                    id="capability-contact-company"
-                    v-model="inquiryForm.company"
-                    type="text"
-                    placeholder="Tên công ty"
-                  />
-                </label>
-              </div>
-              <label>
-                <span>Chủ đề</span>
-                <input
-                  id="capability-contact-subject"
-                  v-model="inquiryForm.subject"
-                  type="text"
-                  placeholder="Tư vấn hồ sơ năng lực"
-                />
-              </label>
-              <label>
-                <span>Nội dung *</span>
-                <textarea
-                  id="capability-contact-message"
-                  v-model="inquiryForm.message"
-                  rows="5"
-                  placeholder="Mô tả nhu cầu, số lượng, hạng mục quan tâm..."
-                ></textarea>
-              </label>
-              <p v-if="inquiryStatus === 'error'" class="capability-form__error">{{ inquiryError }}</p>
-              <div class="capability-form__footer">
-                <p>Thông tin sẽ được gửi trực tiếp tới bộ phận phụ trách năng lực sản xuất.</p>
-                <button
-                  id="capability-contact-submit"
-                  type="submit"
-                  :disabled="!isInquiryFormValid || inquiryStatus === 'loading'"
-                >
-                  {{ inquiryStatus === 'loading' ? 'Đang gửi...' : 'Gửi yêu cầu' }}
-                </button>
-              </div>
-            </form>
-
-            <div v-else class="capability-form__success">
-              <strong>Đã gửi thành công.</strong>
-              <p>Chúng tôi sẽ phản hồi trong thời gian sớm nhất.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <div v-if="loading" class="loading-mask">Đang tải dữ liệu năng lực...</div>
   </main>
@@ -860,9 +739,7 @@ onBeforeUnmount(() => {
 }
 
 .capability-section--light {
-  background:
-    linear-gradient(180deg, rgba(23, 15, 10, 0.98), rgba(40, 26, 17, 0.98)),
-    radial-gradient(circle at top right, rgba(170, 112, 57, 0.22), transparent 32%);
+  background: #ffffff;
 }
 
 .capability-section--dark {
@@ -915,7 +792,7 @@ onBeforeUnmount(() => {
 
 .capability-section--light .capability-heading h2,
 .capability-section--light .capability-heading p {
-  color: rgba(255, 245, 230, 0.92);
+  color: #1a1a1a;
 }
 
 .capability-section--dark .capability-heading h2,
@@ -954,12 +831,20 @@ onBeforeUnmount(() => {
   min-height: 680px;
   border-radius: 34px;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
-    linear-gradient(135deg, #7c4f29, #2b1b12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
   box-shadow:
     0 32px 80px rgba(8, 5, 3, 0.32),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.capability-stage--overview-refined {
+  grid-template-columns: minmax(360px, 0.92fr) minmax(340px, 0.78fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.capability-overview__media--refined {
+  min-height: 500px;
 }
 
 .capability-overview__media img,
@@ -981,31 +866,41 @@ onBeforeUnmount(() => {
   font-size: clamp(4rem, 3rem + 4vw, 7rem);
 }
 
-.capability-overview__floating-card {
-  position: absolute;
-  left: 24px;
-  right: 24px;
-  bottom: 24px;
+.capability-overview__thumb-grid {
+  margin-top: 10px;
   display: grid;
-  gap: 8px;
-  padding: 18px 20px;
-  border-radius: 22px;
-  background: rgba(17, 16, 19, 0.58);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(14px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
 }
 
-.capability-overview__floating-card span {
-  color: rgba(255, 255, 255, 0.74);
-  font-size: 12px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+.capability-overview__thumb-card {
+  position: relative;
+  border: 0;
+  padding: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  aspect-ratio: 1.08;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
 }
 
-.capability-overview__floating-card strong {
-  color: #fff;
-  font-size: 18px;
-  line-height: 1.45;
+.capability-overview__thumb-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.14);
+}
+
+.capability-overview__thumb-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.capability-overview__thumb-card--active {
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.55);
+  opacity: 1;
 }
 
 .capability-overview__content {
@@ -1014,43 +909,100 @@ onBeforeUnmount(() => {
 }
 
 .capability-overview__content::before {
-  content: '';
-  position: absolute;
-  left: -18px;
-  top: 4px;
-  bottom: 4px;
-  width: 1px;
-  background: linear-gradient(180deg, rgba(214, 168, 97, 0), rgba(214, 168, 97, 0.28), rgba(214, 168, 97, 0));
+  display: none;
+}
+
+.capability-heading--overview-refined {
+  margin-bottom: 18px;
+}
+
+.capability-heading--overview-refined h2 {
+  color: #0f172a;
+  font-family: 'Manrope', 'Segoe UI', Arial, sans-serif;
+  font-size: clamp(2.25rem, 1.9rem + 1vw, 3.2rem);
+  line-height: 1.06;
+  font-weight: 800;
+}
+
+.capability-heading--overview-refined p {
+  color: #0f2947;
+  font-size: 13px;
+  line-height: 1.58;
+  max-width: 620px;
+}
+
+.capability-section--light .capability-heading--overview-refined .eyebrow {
+  color: #c2410c;
+}
+
+.capability-heading__accent {
+  display: block;
+  width: 44px;
+  height: 3px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, #f97316, #ef4444);
 }
 
 .overview-highlights {
   display: grid;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+}
+
+.overview-highlights--refined {
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
 .overview-highlight {
   display: grid;
   gap: 8px;
-  padding: 18px 20px;
-  border-radius: 24px;
-  border: 1px solid rgba(214, 168, 97, 0.16);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-  box-shadow: 0 18px 40px rgba(8, 5, 3, 0.18);
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.overview-highlight--refined {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.overview-highlight__icon--refined {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  background: linear-gradient(180deg, rgba(254, 242, 242, 0.98), rgba(255, 255, 255, 0.98));
+  border: 1px solid rgba(226, 232, 240, 0.96);
+}
+
+.overview-highlight__body {
+  min-width: 0;
 }
 
 .overview-highlight__label {
-  color: #d7a56b;
-  font-size: 11px;
+  color: #4f6b8a;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
-.overview-highlight strong {
-  color: rgba(255, 245, 230, 0.94);
-  font-size: 18px;
-  line-height: 1.6;
+.overview-highlight--refined strong {
+  display: block;
+  margin-top: 4px;
+  color: #0b2045;
+  font-size: 15px;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .output-grid {
@@ -1062,36 +1014,153 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.output-grid--overview-refined {
+  max-width: 440px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .output-card {
-  padding: 24px 22px;
-  border-radius: 26px;
+  padding: 18px;
+  border-radius: 20px;
   text-align: left;
 }
 
 .output-card--light {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(214, 168, 97, 0.18);
-  box-shadow:
-    0 20px 48px rgba(8, 5, 3, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.07);
+}
+
+.output-card--overview-refined {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 104px;
+}
+
+.output-card__icon-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: #fff;
+  box-shadow: 0 10px 18px rgba(220, 38, 38, 0.18);
+}
+
+.output-card__content {
+  min-width: 0;
 }
 
 .output-card strong {
   display: block;
-  color: #fff2dc;
+  color: #0b2045;
   font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.8rem, 1.4rem + 1.5vw, 3rem);
-  line-height: 1;
+  font-size: clamp(1.45rem, 1.2rem + 0.65vw, 1.85rem);
+  line-height: 1.02;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.output-card strong small {
+  font-size: 0.5em;
+  font-weight: 700;
 }
 
 .output-card span {
   display: block;
-  margin-top: 10px;
-  color: rgba(255, 233, 201, 0.72);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  margin-top: 8px;
+  color: #4f6b8a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  line-height: 1.45;
+}
+
+.capability-overview__footer-card {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.04), rgba(15, 23, 42, 0.84));
+}
+
+.capability-overview__footer-location {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.capability-overview__footer-icon,
+.capability-overview__footer-map-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.capability-overview__footer-icon {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.24);
+}
+
+.capability-overview__footer-location span {
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.capability-overview__footer-location strong {
+  display: block;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.capability-overview__footer-map {
+  min-width: 148px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  text-decoration: none;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.14);
+}
+
+.capability-overview__footer-map-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(254, 242, 242, 0.96);
+  color: #dc2626;
+}
+
+.capability-overview__footer-map span {
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .capability-story-grid {

@@ -39,10 +39,6 @@ const SETTING_META = {
     group_name: 'capability',
     description: 'Ảnh nền desktop hero module Năng lực',
   },
-  capability_hero_mobile_background_image_url: {
-    group_name: 'capability',
-    description: 'Ảnh nền mobile hero module Năng lực',
-  },
   capability_seal_text: {
     group_name: 'capability',
     description: 'Nội dung badge seal của hero module Năng lực',
@@ -58,6 +54,10 @@ const SETTING_META = {
   capability_hero_banners_json: {
     group_name: 'capability',
     description: 'JSON danh sách các banner trượt (Hero slider)',
+  },
+  capability_hero_banners_version: {
+    group_name: 'capability',
+    description: 'Version cache-busting cho banner trượt module Năng lực',
   },
   capability_factory_overview_title: {
     group_name: 'capability',
@@ -113,11 +113,11 @@ const SETTING_META = {
   },
 }
 
+const HIDDEN_FACTORY_STATS_LABELS = new Set(['Dây chuyền sản xuất', 'Chứng nhận', 'Chứng nhận quốc tế'])
+
 const defaultFactoryStats = () => [
   { label: 'Diện tích nhà máy', value: '' },
   { label: 'Công suất mỗi năm', value: '' },
-  { label: 'Dây chuyền sản xuất', value: '' },
-  { label: 'Chứng nhận', value: '' },
 ]
 
 const defaultHeroBanners = () => [
@@ -125,7 +125,6 @@ const defaultHeroBanners = () => [
     title: 'NĂNG LỰC',
     subtitle: 'Hình ảnh nhà máy, công nghệ sản xuất, công suất thực tế và các chứng nhận tiêu chuẩn.',
     background_image_url: '',
-    mobile_background_image_url: '',
     is_active: true,
   },
 ]
@@ -222,11 +221,23 @@ const itemModal = reactive({
   title: '',
 })
 
+const galleryBatchUploadState = reactive({
+  uploading: false,
+  total: 0,
+  completed: 0,
+  source: '',
+})
+
+const galleryBatchInputRef = ref(null)
+const galleryFolderInputRef = ref(null)
+
 
 
 function normalizedToken() {
   return String(props.token || '').trim()
 }
+
+const MAX_FACTORY_OVERVIEW_THUMBS = 4
 
 function normalizeText(value) {
   return String(value || '').trim()
@@ -508,6 +519,207 @@ function uploadGalleryImage(item, index) {
   })
 }
 
+function uploadBannerImage() {
+  if (!itemModal.item) {
+    notifyError('Không tìm thấy dữ liệu banner để tải ảnh lên.')
+    return false
+  }
+
+  const key = bannerImageUploadKey(itemModal.item, itemModal.index, 'pc')
+  const bannerTitle = normalizeText(itemModal.item.title) || `banner-${itemModal.index + 1}`
+
+  return submitImageAsset({
+    key,
+    currentValue: itemModal.item.background_image_url,
+    assetFolder: 'capability/hero',
+    publicIdBase: `${bannerTitle}-desktop`,
+    title: `${bannerTitle} desktop`,
+    altText: normalizeText(itemModal.item.subtitle) || bannerTitle,
+    onSuccess: (url) => {
+      itemModal.item.background_image_url = url
+    },
+  })
+}
+
+function hasPendingBannerImageUpload() {
+  if (!itemModal.item || itemModal.type !== 'banners') {
+    return false
+  }
+
+  const state = imageUploadStateMeta(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc'))
+  if (state.file) {
+    return true
+  }
+
+  if (state.mode === 'url' && normalizeText(state.sourceUrl) && normalizeText(state.sourceUrl) !== normalizeText(itemModal.item.background_image_url)) {
+    return true
+  }
+
+  return false
+}
+
+function hasPendingFieldImageUpload(fieldKey, currentValue = '') {
+  const state = imageUploadStateMeta(imageUploadKey(fieldKey))
+  if (state.file) {
+    return true
+  }
+
+  return state.mode === 'url'
+    && normalizeText(state.sourceUrl)
+    && normalizeText(state.sourceUrl) !== normalizeText(currentValue)
+}
+
+function hasPendingGalleryItemUpload(item, index) {
+  const state = imageUploadStateMeta(galleryImageUploadKey(item, index))
+  if (state.file) {
+    return true
+  }
+
+  return state.mode === 'url'
+    && normalizeText(state.sourceUrl)
+    && normalizeText(state.sourceUrl) !== normalizeText(item?.image_url)
+}
+
+async function flushPendingOverviewUploads() {
+  if (hasPendingFieldImageUpload('factory_main_image_url', form.factory_main_image_url)) {
+    const uploadedMainImage = await uploadImageForField('factory_main_image_url', {
+      assetFolder: 'capability/factory',
+      publicIdBase: normalizeText(form.factory_name) || 'factory-overview',
+      title: normalizeText(form.factory_name) || 'Factory overview',
+      altText: normalizeText(form.factory_name) || 'Factory overview',
+    })
+
+    if (!uploadedMainImage) {
+      throw new Error('Không thể tải ảnh lớn chính của tổng quan nhà máy trước khi lưu.')
+    }
+  }
+
+  for (const [index, item] of form.factory_gallery.entries()) {
+    if (!hasPendingGalleryItemUpload(item, index)) {
+      continue
+    }
+
+    const uploadedGalleryImage = await uploadGalleryImage(item, index)
+    if (!uploadedGalleryImage) {
+      throw new Error(`Không thể tải ảnh gallery #${index + 1} trước khi lưu.`)
+    }
+  }
+}
+
+function resetGalleryBatchUploadState() {
+  galleryBatchUploadState.uploading = false
+  galleryBatchUploadState.total = 0
+  galleryBatchUploadState.completed = 0
+  galleryBatchUploadState.source = ''
+}
+
+function normalizeGalleryTitleFromFileName(fileName = '', fallbackIndex = 0) {
+  const baseName = String(fileName || '')
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return baseName || `Hình ảnh nhà máy ${fallbackIndex + 1}`
+}
+
+function buildGalleryIdFromFileName(fileName = '', fallbackIndex = 0) {
+  const slug = String(fileName || '')
+    .replace(/\.[^.]+$/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return slug ? `factory-gallery-${slug}` : `factory-gallery-${Date.now()}-${fallbackIndex + 1}`
+}
+
+function createGalleryItemFromUpload(file, url, index) {
+  const title = normalizeGalleryTitleFromFileName(file?.name, index)
+  return {
+    id: buildGalleryIdFromFileName(file?.name, index),
+    title,
+    description: '',
+    image_url: normalizeText(url),
+    sort_order: form.factory_gallery.length + index,
+    is_active: true,
+  }
+}
+
+function openGalleryBatchPicker() {
+  galleryBatchInputRef.value?.click()
+}
+
+function openGalleryFolderPicker() {
+  galleryFolderInputRef.value?.click()
+}
+
+async function uploadGalleryBatchFiles(fileList, sourceLabel = 'nhiều ảnh') {
+  const token = normalizedToken()
+  if (!token) return
+
+  const availableSlots = Math.max(MAX_FACTORY_OVERVIEW_THUMBS - form.factory_gallery.length, 0)
+  if (!availableSlots) {
+    notifyError(`Gallery overview chỉ cho phép tối đa ${MAX_FACTORY_OVERVIEW_THUMBS} ảnh nhỏ.`)
+    return
+  }
+
+  const files = Array.from(fileList || []).filter((file) => String(file?.type || '').startsWith('image/'))
+  if (!files.length) {
+    notifyError('Không tìm thấy file ảnh hợp lệ để tải lên.')
+    return
+  }
+
+  const limitedFiles = files.slice(0, availableSlots)
+  if (limitedFiles.length < files.length) {
+    notifySuccess(`Chỉ lấy ${limitedFiles.length}/${files.length} ảnh đầu tiên vì gallery overview tối đa ${MAX_FACTORY_OVERVIEW_THUMBS} ảnh nhỏ.`)
+  }
+
+  galleryBatchUploadState.uploading = true
+  galleryBatchUploadState.total = limitedFiles.length
+  galleryBatchUploadState.completed = 0
+  galleryBatchUploadState.source = sourceLabel
+
+  const uploadedItems = []
+
+  try {
+    for (const [index, file] of limitedFiles.entries()) {
+      const media = await uploadAdminMediaAsset(token, file, {
+        title: normalizeGalleryTitleFromFileName(file.name, index),
+        altText: normalizeGalleryTitleFromFileName(file.name, index),
+        assetFolder: 'capability/gallery',
+        publicIdBase: buildGalleryIdFromFileName(file.name, index),
+      })
+
+      uploadedItems.push(createGalleryItemFromUpload(file, media?.url, index))
+      galleryBatchUploadState.completed = index + 1
+    }
+
+    form.factory_gallery.push(...uploadedItems)
+    reindexListCollection('gallery')
+    notifySuccess(`Đã tải ${uploadedItems.length} ảnh từ ${sourceLabel}. Hãy bấm "Lưu section này" để lưu cấu hình.`)
+  } catch (error) {
+    notifyError(error.message || 'Không thể tải ảnh hàng loạt cho gallery.')
+  } finally {
+    resetGalleryBatchUploadState()
+  }
+}
+
+async function onSelectGalleryBatchFiles(event) {
+  const files = event?.target?.files || []
+  await uploadGalleryBatchFiles(files, 'danh sách ảnh')
+  if (event?.target) {
+    event.target.value = ''
+  }
+}
+
+async function onSelectGalleryFolder(event) {
+  const files = event?.target?.files || []
+  await uploadGalleryBatchFiles(files, 'thư mục')
+  if (event?.target) {
+    event.target.value = ''
+  }
+}
+
 function cloneListItem(item) {
   return JSON.parse(JSON.stringify(item || {}))
 }
@@ -610,7 +822,6 @@ function listTypeMeta(type) {
         target.title = normalizeText(snapshot?.title)
         target.subtitle = normalizeText(snapshot?.subtitle)
         target.background_image_url = normalizeText(snapshot?.background_image_url)
-        target.mobile_background_image_url = normalizeText(snapshot?.mobile_background_image_url)
         target.is_active = Boolean(snapshot?.is_active)
       },
       createDuplicate: (item) => ({
@@ -716,9 +927,20 @@ function closeItemModal() {
 async function saveModalItem() {
   const { type, index, item } = itemModal
   const meta = listTypeMeta(type)
-  
+
+  if (type === 'banners' && hasPendingBannerImageUpload()) {
+    const uploaded = await uploadBannerImage()
+    if (!uploaded) {
+      notifyError('Không thể tải ảnh banner mới lên. Vui lòng kiểm tra lại file hoặc URL ảnh.')
+      return
+    }
+  }
+
   if (!meta.validate(item)) {
-    notifyError(`Vui lòng nhập đầy đủ thông tin bắt buộc trước khi lưu ${meta.singular}.`)
+    const message = type === 'banners'
+      ? 'Vui lòng tải ảnh banner lên thành công trước khi lưu.'
+      : `Vui lòng nhập đầy đủ thông tin bắt buộc trước khi lưu ${meta.singular}.`
+    notifyError(message)
     return
   }
 
@@ -736,10 +958,10 @@ async function saveModalItem() {
   } else {
     collection[index] = item
   }
-  
+
   reindexListCollection(type)
   closeItemModal()
-  
+
   await persistCapabilitySettings(`Đã lưu ${meta.singular} thành công.`)
 }
 
@@ -847,6 +1069,12 @@ function parseBoolean(value, fallback = true) {
   return fallback
 }
 
+function sanitizeFactoryStats(items = []) {
+  return items
+    .filter((item) => !HIDDEN_FACTORY_STATS_LABELS.has(normalizeText(item?.label)))
+    .slice(0, 2)
+}
+
 function parseJsonArray(rawValue, fallbackFactory) {
   if (!normalizeText(rawValue)) {
     return fallbackFactory()
@@ -861,7 +1089,7 @@ function parseJsonArray(rawValue, fallbackFactory) {
 }
 
 function toStatsPayload(items = []) {
-  return items
+  return sanitizeFactoryStats(items)
     .map((item) => ({
       label: normalizeText(item?.label),
       value: normalizeText(item?.value),
@@ -902,7 +1130,6 @@ function toBannersPayload(items = []) {
       title: normalizeText(item?.title),
       subtitle: normalizeText(item?.subtitle),
       background_image_url: normalizeText(item?.background_image_url),
-      mobile_background_image_url: normalizeText(item?.mobile_background_image_url),
       is_active: Boolean(item?.is_active),
     }))
     .filter((item) => item.background_image_url)
@@ -917,7 +1144,7 @@ function applySettingsToForm(records = []) {
     if (key === 'capability_hero_is_active') {
       form.capability_hero_is_active = parseBoolean(value)
     } else if (key === 'factory_stats_json') {
-      form.factory_stats = parseJsonArray(value, defaultFactoryStats)
+      form.factory_stats = sanitizeFactoryStats(parseJsonArray(value, defaultFactoryStats))
     } else if (key === 'production_capabilities_json') {
       form.production_capabilities = parseJsonArray(value, defaultProductionCards)
     } else if (key === 'capability_factory_gallery_json') {
@@ -990,7 +1217,6 @@ async function addHeroBanner() {
     title: '',
     subtitle: '',
     background_image_url: '',
-    mobile_background_image_url: '',
     is_active: true,
   }
   itemModal.isNew = true
@@ -1065,6 +1291,11 @@ async function removeCapabilityCard(index) {
 }
 
 async function addGalleryItem() {
+  if (form.factory_gallery.length >= MAX_FACTORY_OVERVIEW_THUMBS) {
+    notifyError(`Gallery overview chỉ cho phép tối đa ${MAX_FACTORY_OVERVIEW_THUMBS} ảnh nhỏ.`)
+    return
+  }
+
   const meta = listTypeMeta('gallery')
   itemModal.type = 'gallery'
   itemModal.index = form.factory_gallery.length
@@ -1113,6 +1344,10 @@ function validateBeforeSave() {
     errors.push('Tên nhà máy không được để trống.')
   }
 
+  if (form.factory_gallery.length > MAX_FACTORY_OVERVIEW_THUMBS) {
+    errors.push(`Gallery overview chỉ cho phép tối đa ${MAX_FACTORY_OVERVIEW_THUMBS} ảnh nhỏ.`)
+  }
+
   const hasMainGalleryImage = form.factory_gallery.some((item) =>
     normalizeText(item.image_url),
   )
@@ -1126,9 +1361,12 @@ function validateBeforeSave() {
 }
 
 function buildPayloadMap() {
+  const heroBannersVersion = new Date().toISOString()
+
   return {
     capability_hero_is_active: form.capability_hero_is_active ? 'true' : 'false',
     capability_hero_banners_json: JSON.stringify(toBannersPayload(form.hero_banners), null, 2),
+    capability_hero_banners_version: heroBannersVersion,
     capability_factory_overview_title: normalizeText(
       form.capability_factory_overview_title,
     ),
@@ -1163,6 +1401,7 @@ async function persistCapabilitySettings(successMessage) {
   clearNotify()
 
   try {
+    await flushPendingOverviewUploads()
     validateBeforeSave()
 
     const payloadMap = buildPayloadMap()
@@ -1264,7 +1503,7 @@ const summaryCards = computed(() => {
   const activeCapabilities = form.production_capabilities.filter(
     (item) => (normalizeText(item.title) || normalizeText(item.description)) && item.is_active,
   ).length
-  const activeStats = form.factory_stats.filter(
+  const activeStats = sanitizeFactoryStats(form.factory_stats).filter(
     (item) => normalizeText(item.label) && normalizeText(item.value),
   ).length
 
@@ -1290,6 +1529,25 @@ const summaryCards = computed(() => {
   ]
 })
 
+const overviewMetricCards = computed(() => {
+  const fallbackCards = [
+    {
+      value: '20,000',
+      unit: 'm²',
+      label: 'Diện tích nhà máy',
+      icon: Building2,
+    },
+    {
+      value: '500+',
+      unit: '',
+      label: 'Nhân sự có kinh nghiệm',
+      icon: Users,
+    },
+  ]
+  const stats = sanitizeFactoryStats(form.factory_stats)
+  return stats.length >= 2 ? stats.slice(0, 2) : fallbackCards
+})
+
 function sectionCompletion(sectionKey) {
   if (sectionKey === 'hero') {
     const score = form.hero_banners.filter(b => b.is_active && b.background_image_url).length
@@ -1311,10 +1569,10 @@ function sectionCompletion(sectionKey) {
   }
 
   if (sectionKey === 'stats') {
-    const total = form.factory_stats.filter(
+    const total = sanitizeFactoryStats(form.factory_stats).filter(
       (item) => normalizeText(item.label) && normalizeText(item.value),
     ).length
-    if (total >= 3) return 'complete'
+    if (total >= 2) return 'complete'
     if (total >= 1) return 'partial'
     return 'empty'
   }
@@ -1406,14 +1664,13 @@ function previewMetricForSection(sectionKey) {
 }
 
 function isListSection(sectionKey) {
-  return ['hero', 'stats', 'production', 'gallery'].includes(sectionKey)
+  return ['hero', 'stats', 'production'].includes(sectionKey)
 }
 
 function listSectionCount(sectionKey) {
   if (sectionKey === 'hero') return form.hero_banners.length
   if (sectionKey === 'stats') return form.factory_stats.length
   if (sectionKey === 'production') return form.production_capabilities.length
-  if (sectionKey === 'gallery') return form.factory_gallery.length
   return 0
 }
 
@@ -1426,7 +1683,6 @@ function listSectionAddLabel(sectionKey) {
   if (sectionKey === 'hero') return 'Thêm banner'
   if (sectionKey === 'stats') return 'Thêm chỉ số'
   if (sectionKey === 'production') return 'Thêm card'
-  if (sectionKey === 'gallery') return 'Thêm ảnh'
   return 'Thêm item'
 }
 
@@ -1441,10 +1697,6 @@ async function addListItemFromSection(sectionKey) {
   }
   if (sectionKey === 'production') {
     await addCapabilityCard()
-    return
-  }
-  if (sectionKey === 'gallery') {
-    await addGalleryItem()
   }
 }
 
@@ -1469,13 +1721,13 @@ const capabilitySections = computed(() => [
     eyebrow: 'Page 2 Tổng quan',
     title: 'Tổng quan nhà máy',
     description:
-      'Nơi nhập tên nhà máy, địa chỉ, mô tả tổng quan, công nghệ, quy trình và ảnh overview chính.',
+      'Nơi nhập tên nhà máy, địa chỉ, mô tả tổng quan, công nghệ, quy trình cùng 1 ảnh lớn và nhiều ảnh nhỏ cho block overview.',
     previewLabel: 'Xem ngoài web',
     previewPath: '/honors#page2b',
     stats: [
       normalizeText(form.factory_name) || 'Chưa có tên nhà máy',
       normalizeText(form.factory_address) || 'Chưa có địa chỉ nhà máy',
-      normalizeText(form.factory_main_image_url) ? 'Có ảnh overview' : 'Thiếu ảnh overview',
+      (firstNonEmptyGalleryImage() || normalizeText(form.factory_main_image_url)) ? 'Có ảnh overview' : 'Thiếu ảnh overview',
     ],
   },
   {
@@ -1483,7 +1735,7 @@ const capabilitySections = computed(() => [
     eyebrow: 'Page 2 Stats',
     title: 'Thống kê nổi bật',
     description:
-      'Các chỉ số ngắn hiển thị cạnh phần tổng quan như diện tích, công suất, số dây chuyền và chứng nhận.',
+      'Các chỉ số ngắn hiển thị cạnh phần tổng quan như diện tích và công suất nổi bật của nhà máy.',
     previewLabel: 'Xem ngoài web',
     previewPath: '/honors#page2b',
     stats: [`${summaryCards.value.find((item) => item.key === 'stats')?.value || 0} chỉ số hợp lệ`],
@@ -1497,16 +1749,6 @@ const capabilitySections = computed(() => [
     previewLabel: 'Xem ngoài web',
     previewPath: '/honors#page2c',
     stats: [`${summaryCards.value.find((item) => item.key === 'production')?.value || 0} card đang hoạt động`],
-  },
-  {
-    key: 'gallery',
-    eyebrow: 'Page 4 Gallery',
-    title: 'Gallery ảnh nhà máy',
-    description:
-      'Quản lý bộ ảnh hiển thị trong tab Hình ảnh nhà máy. Mỗi ảnh có tiêu đề, mô tả, sort order và trạng thái hiển thị.',
-    previewLabel: 'Xem ngoài web',
-    previewPath: '/honors#page2',
-    stats: [`${summaryCards.value.find((item) => item.key === 'gallery')?.value || 0} ảnh đang hoạt động`],
   },
 ])
 
@@ -1781,9 +2023,66 @@ watch(
               </label>
             </div>
 
-            <div class="image-manager">
+            <div class="image-manager image-manager--overview-gallery">
+              <div class="image-manager__head image-manager__head--split">
+                <div>
+                  <span>Hệ ảnh tổng quan nhà máy</span>
+                  <p class="editor-hint">Thiết lập 1 ảnh gốc hiển thị to và nhiều ảnh nhỏ phía dưới ngay trong block tổng quan nhà máy.</p>
+                </div>
+                <div class="overview-gallery-admin__toolbar">
+                  <input
+                    ref="galleryBatchInputRef"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    class="sr-only"
+                    @change="onSelectGalleryBatchFiles"
+                  />
+                  <input
+                    ref="galleryFolderInputRef"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    webkitdirectory
+                    directory
+                    class="sr-only"
+                    @change="onSelectGalleryFolder"
+                  />
+                  <button type="button" class="btn btn-soft" :disabled="galleryBatchUploadState.uploading" @click="openGalleryBatchPicker">
+                    Chọn nhiều ảnh
+                  </button>
+                  <button type="button" class="btn btn-soft" :disabled="galleryBatchUploadState.uploading" @click="openGalleryFolderPicker">
+                    Tải từ thư mục
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-inline"
+                    :disabled="galleryBatchUploadState.uploading || form.factory_gallery.length >= MAX_FACTORY_OVERVIEW_THUMBS"
+                    @click="addGalleryItem"
+                  >
+                    + Thêm ảnh nhỏ
+                  </button>
+                </div>
+              </div>
+
+              <p v-if="galleryBatchUploadState.uploading" class="image-upload-feedback image-upload-feedback--strong">
+                Đang tải {{ galleryBatchUploadState.completed }}/{{ galleryBatchUploadState.total }} ảnh từ {{ galleryBatchUploadState.source }}...
+              </p>
+              <p class="editor-hint">
+                Bên ngoài user sẽ hiển thị <strong>1 ảnh lớn + tối đa {{ MAX_FACTORY_OVERVIEW_THUMBS }} ảnh nhỏ</strong>.
+              </p>
+
+              <div class="image-preview-card image-preview-card--overview-hero" :class="{ 'image-preview-card--empty': !imagePreviewSource(imageUploadKey('factory_main_image_url'), form.factory_main_image_url) }">
+                <img
+                  v-if="imagePreviewSource(imageUploadKey('factory_main_image_url'), form.factory_main_image_url)"
+                  :src="imagePreviewSource(imageUploadKey('factory_main_image_url'), form.factory_main_image_url)"
+                  alt="Factory overview preview"
+                />
+                <div v-else class="image-preview-card__placeholder">Chưa có ảnh lớn overview</div>
+              </div>
+
               <div class="image-manager__head">
-                <span>Ảnh chính section overview</span>
+                <span>Ảnh lớn chính</span>
                 <div class="image-mode-switch">
                   <button
                     type="button"
@@ -1804,15 +2103,6 @@ watch(
                 </div>
               </div>
 
-              <div class="image-preview-card" :class="{ 'image-preview-card--empty': !imagePreviewSource(imageUploadKey('factory_main_image_url'), form.factory_main_image_url) }">
-                <img
-                  v-if="imagePreviewSource(imageUploadKey('factory_main_image_url'), form.factory_main_image_url)"
-                  :src="imagePreviewSource(imageUploadKey('factory_main_image_url'), form.factory_main_image_url)"
-                  alt="Factory overview preview"
-                />
-                <div v-else class="image-preview-card__placeholder">Chưa có ảnh overview</div>
-              </div>
-
               <div v-if="imageUploadMode(imageUploadKey('factory_main_image_url')) === 'file'" class="image-control-stack">
                 <input type="file" accept="image/*" @change="onSelectImageFile(imageUploadKey('factory_main_image_url'), $event)" />
               </div>
@@ -1829,22 +2119,12 @@ watch(
                 :value="form.factory_main_image_url"
                 type="text"
                 readonly
-                placeholder="URL đã gán sẽ hiển thị ở đây"
+                placeholder="URL đã gán sẽ hiển thị ở đây sau khi lưu block"
               />
 
-              <button
-                type="button"
-                class="btn btn-inline"
-                :disabled="imageUploadStateMeta(imageUploadKey('factory_main_image_url')).uploading"
-                @click="uploadImageForField('factory_main_image_url', {
-                  assetFolder: 'capability/factory',
-                  publicIdBase: normalizeText(form.factory_name) || 'factory-overview',
-                  title: normalizeText(form.factory_name) || 'Factory overview',
-                  altText: normalizeText(form.factory_name) || 'Factory overview',
-                })"
-              >
-                {{ imageActionLabel(imageUploadKey('factory_main_image_url')) }}
-              </button>
+              <p class="image-upload-feedback image-upload-feedback--strong">
+                Ảnh lớn sẽ tự động tải lên khi bạn bấm <strong>Lưu section này</strong>.
+              </p>
 
               <p
                 v-if="imageUploadStateMeta(imageUploadKey('factory_main_image_url')).storageBackend"
@@ -1855,6 +2135,99 @@ watch(
                   • Fallback: {{ imageUploadStateMeta(imageUploadKey('factory_main_image_url')).fallbackReason }}
                 </span>
               </p>
+
+              <div class="overview-gallery-admin">
+                <div
+                  v-for="(item, index) in form.factory_gallery"
+                  :key="item.id || `overview-gallery-${index}`"
+                  class="overview-gallery-admin__item"
+                >
+                  <div class="overview-gallery-admin__preview">
+                    <img
+                      v-if="imagePreviewSource(galleryImageUploadKey(item, index), item.image_url)"
+                      :src="imagePreviewSource(galleryImageUploadKey(item, index), item.image_url)"
+                      :alt="item.title || `Ảnh nhỏ ${index + 1}`"
+                    />
+                    <div v-else class="image-preview-card__placeholder">Chưa có ảnh nhỏ</div>
+                  </div>
+
+                  <div class="overview-gallery-admin__body">
+                    <div class="field-grid field-grid--three">
+                      <label class="field">
+                        <span>Tiêu đề</span>
+                        <input v-model="item.title" type="text" placeholder="Ảnh nhà máy" />
+                      </label>
+                      <label class="field">
+                        <span>ID kỹ thuật</span>
+                        <input v-model="item.id" type="text" placeholder="factory-gallery-1" />
+                      </label>
+                      <label class="field">
+                        <span>Sort order</span>
+                        <input v-model.number="item.sort_order" type="number" min="0" step="1" />
+                      </label>
+                    </div>
+
+                    <div class="image-mode-switch overview-gallery-admin__switch">
+                      <button
+                        type="button"
+                        class="image-mode-btn"
+                        :class="{ 'image-mode-btn--active': imageUploadMode(galleryImageUploadKey(item, index)) === 'file' }"
+                        @click="setImageUploadMode(galleryImageUploadKey(item, index), 'file', item.image_url)"
+                      >
+                        Tải file
+                      </button>
+                      <button
+                        type="button"
+                        class="image-mode-btn"
+                        :class="{ 'image-mode-btn--active': imageUploadMode(galleryImageUploadKey(item, index)) === 'url' }"
+                        @click="setImageUploadMode(galleryImageUploadKey(item, index), 'url', item.image_url)"
+                      >
+                        Import URL
+                      </button>
+                    </div>
+
+                    <div v-if="imageUploadMode(galleryImageUploadKey(item, index)) === 'file'" class="image-control-stack">
+                      <input type="file" accept="image/*" @change="onSelectImageFile(galleryImageUploadKey(item, index), $event)" />
+                    </div>
+                    <div v-else class="image-control-stack">
+                      <input
+                        :value="imageUploadStateMeta(galleryImageUploadKey(item, index)).sourceUrl"
+                        type="url"
+                        placeholder="https://..."
+                        @input="onChangeImageUrl(galleryImageUploadKey(item, index), $event.target.value)"
+                      />
+                    </div>
+
+                    <input
+                      :value="item.image_url"
+                      type="text"
+                      readonly
+                      placeholder="URL đã gán sẽ hiển thị ở đây"
+                    />
+
+                    <label class="field">
+                      <span>Mô tả</span>
+                      <textarea v-model="item.description" rows="2" placeholder="Mô tả ngắn cho ảnh này..." />
+                    </label>
+
+                    <div class="overview-gallery-admin__footer">
+                      <label class="field field--toggle overview-gallery-admin__toggle">
+                        <span>Hiển thị ảnh này</span>
+                        <input v-model="item.is_active" type="checkbox" />
+                      </label>
+
+                      <div class="overview-gallery-admin__actions">
+                        <p class="image-upload-feedback image-upload-feedback--strong">
+                          Ảnh nhỏ sẽ tự động tải lên khi bấm <strong>Lưu section này</strong>.
+                        </p>
+                        <button type="button" class="btn btn-danger-inline" @click="removeGalleryItem(index)">
+                          Xóa ảnh
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </template>
 
@@ -2041,195 +2414,6 @@ watch(
             </div>
           </template>
 
-          <template v-else-if="section.key === 'gallery'">
-            <div class="editor-head">
-              <div>
-                <p class="editor-eyebrow">Factory Gallery</p>
-                <h4>Gallery ảnh nhà máy</h4>
-              </div>
-              <button type="button" class="btn btn-inline" @click="addGalleryItem">
-                + Thêm ảnh
-              </button>
-            </div>
-
-
-            <div class="stack-list">
-              <div
-                v-for="(item, index) in form.factory_gallery"
-                :key="item.id || `gallery-${index}`"
-                class="editor-item"
-                :class="{ 'editor-item--editing': isEditingListItem('gallery', item, index) }"
-              >
-                <div class="editor-item__head">
-                  <div class="editor-item__title-wrap">
-                    <strong>{{ item.title || `Ảnh ${index + 1}` }}</strong>
-                    <div class="editor-item__badges">
-                      <span class="item-badge item-badge--index">Item #{{ index + 1 }}</span>
-                      <span v-if="isEditingListItem('gallery', item, index)" class="item-badge item-badge--editing">Đang chỉnh sửa</span>
-                    </div>
-                  </div>
-                  <div class="editor-item__actions">
-                    <button
-                      v-if="!isEditingListItem('gallery', item, index)"
-                      type="button"
-                      class="btn btn-secondary-inline"
-                      @click="editListItem('gallery', item, index)"
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      v-if="isEditingListItem('gallery', item, index)"
-                      type="button"
-                      class="btn btn-inline"
-                      @click="saveListItem('gallery', item, index)"
-                    >
-                      Lưu item
-                    </button>
-                    <button
-                      v-if="isEditingListItem('gallery', item, index)"
-                      type="button"
-                      class="btn btn-soft-inline"
-                      @click="cancelListItemEdit('gallery', item, index)"
-                    >
-                      Hủy
-                    </button>
-                    <button type="button" class="btn btn-danger-inline" @click="removeGalleryItem(index)">
-                      Xóa
-                    </button>
-                  </div>
-                </div>
-
-                <div class="field-grid field-grid--three">
-                  <label class="field">
-                    <span>Tiêu đề</span>
-                    <input
-                      v-model="item.title"
-                      :disabled="!isEditingListItem('gallery', item, index)"
-                      type="text"
-                      placeholder="Khu vực sản xuất"
-                    />
-                  </label>
-                  <label class="field">
-                    <span>ID kỹ thuật</span>
-                    <input
-                      v-model="item.id"
-                      :disabled="!isEditingListItem('gallery', item, index)"
-                      type="text"
-                      placeholder="factory-gallery-1"
-                    />
-                  </label>
-                  <label class="field">
-                    <span>Sort order</span>
-                    <input
-                      v-model.number="item.sort_order"
-                      :disabled="!isEditingListItem('gallery', item, index)"
-                      type="number"
-                      min="0"
-                      step="1"
-                    />
-                  </label>
-                </div>
-
-                <div class="image-manager image-manager--compact">
-                  <div class="image-manager__head">
-                    <span>Ảnh gallery</span>
-                    <div class="image-mode-switch">
-                      <button
-                        type="button"
-                        class="image-mode-btn"
-                        :class="{ 'image-mode-btn--active': imageUploadMode(galleryImageUploadKey(item, index)) === 'file' }"
-                        :disabled="!isEditingListItem('gallery', item, index)"
-                        @click="setImageUploadMode(galleryImageUploadKey(item, index), 'file', item.image_url)"
-                      >
-                        Tải file
-                      </button>
-                      <button
-                        type="button"
-                        class="image-mode-btn"
-                        :class="{ 'image-mode-btn--active': imageUploadMode(galleryImageUploadKey(item, index)) === 'url' }"
-                        :disabled="!isEditingListItem('gallery', item, index)"
-                        @click="setImageUploadMode(galleryImageUploadKey(item, index), 'url', item.image_url)"
-                      >
-                        Import URL
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="image-preview-card" :class="{ 'image-preview-card--empty': !imagePreviewSource(galleryImageUploadKey(item, index), item.image_url) }">
-                    <img
-                      v-if="imagePreviewSource(galleryImageUploadKey(item, index), item.image_url)"
-                      :src="imagePreviewSource(galleryImageUploadKey(item, index), item.image_url)"
-                      :alt="item.title || `Ảnh ${index + 1}`"
-                    />
-                    <div v-else class="image-preview-card__placeholder">Chưa có ảnh gallery</div>
-                  </div>
-
-                  <div v-if="imageUploadMode(galleryImageUploadKey(item, index)) === 'file'" class="image-control-stack">
-                    <input
-                      :disabled="!isEditingListItem('gallery', item, index)"
-                      type="file"
-                      accept="image/*"
-                      @change="onSelectImageFile(galleryImageUploadKey(item, index), $event)"
-                    />
-                  </div>
-                  <div v-else class="image-control-stack">
-                    <input
-                      :value="imageUploadStateMeta(galleryImageUploadKey(item, index)).sourceUrl"
-                      :disabled="!isEditingListItem('gallery', item, index)"
-                      type="url"
-                      placeholder="https://..."
-                      @input="onChangeImageUrl(galleryImageUploadKey(item, index), $event.target.value)"
-                    />
-                  </div>
-
-                  <input
-                    :value="item.image_url"
-                    type="text"
-                    readonly
-                    placeholder="URL đã gán sẽ hiển thị ở đây"
-                  />
-
-                  <button
-                    type="button"
-                    class="btn btn-inline"
-                    :disabled="!isEditingListItem('gallery', item, index) || imageUploadStateMeta(galleryImageUploadKey(item, index)).uploading"
-                    @click="uploadGalleryImage(item, index)"
-                  >
-                    {{ imageActionLabel(galleryImageUploadKey(item, index)) }}
-                  </button>
-
-                  <p
-                    v-if="imageUploadStateMeta(galleryImageUploadKey(item, index)).storageBackend"
-                    class="image-upload-feedback"
-                  >
-                    Đích lưu: {{ imageUploadStateMeta(galleryImageUploadKey(item, index)).storageBackend }}
-                    <span v-if="imageUploadStateMeta(galleryImageUploadKey(item, index)).fallbackReason">
-                      • Fallback: {{ imageUploadStateMeta(galleryImageUploadKey(item, index)).fallbackReason }}
-                    </span>
-                  </p>
-                </div>
-
-                <label class="field">
-                  <span>Mô tả</span>
-                  <textarea
-                    v-model="item.description"
-                    :disabled="!isEditingListItem('gallery', item, index)"
-                    rows="2"
-                    placeholder="Mô tả ngắn cho ảnh này..."
-                  />
-                </label>
-
-                <label class="field field--toggle">
-                  <span>Hiển thị ảnh này</span>
-                  <input
-                    v-model="item.is_active"
-                    :disabled="!isEditingListItem('gallery', item, index)"
-                    type="checkbox"
-                  />
-                </label>
-              </div>
-            </div>
-          </template>
 
           <div class="editor-footer">
             <div class="editor-footer__status">
@@ -2344,23 +2528,85 @@ watch(
                 </label>
               </div>
 
-              <div class="field-grid">
-                <div class="image-manager">
-                   <span>Ảnh PC (Desktop)</span>
-                   <div class="image-preview-card">
-                     <img v-if="itemModal.item.background_image_url" :src="resolvePreviewUrl(itemModal.item.background_image_url)" alt="PC Preview" />
-                     <div v-else class="image-preview-card__placeholder">Chưa có ảnh PC</div>
-                   </div>
-                   <input v-model="itemModal.item.background_image_url" type="text" placeholder="URL ảnh PC..." />
+              <div class="image-manager image-manager--banner-modal">
+                <div class="image-manager__head">
+                  <span>Ảnh PC (Desktop)</span>
+                  <div class="image-mode-switch">
+                    <button
+                      type="button"
+                      class="image-mode-btn"
+                      :class="{ 'image-mode-btn--active': imageUploadMode(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc')) === 'file' }"
+                      @click="setImageUploadMode(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc'), 'file', itemModal.item.background_image_url)"
+                    >
+                      Tải file
+                    </button>
+                    <button
+                      type="button"
+                      class="image-mode-btn"
+                      :class="{ 'image-mode-btn--active': imageUploadMode(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc')) === 'url' }"
+                      @click="setImageUploadMode(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc'), 'url', itemModal.item.background_image_url)"
+                    >
+                      Import URL
+                    </button>
+                  </div>
                 </div>
-                <div class="image-manager">
-                   <span>Ảnh Mobile</span>
-                   <div class="image-preview-card">
-                     <img v-if="itemModal.item.mobile_background_image_url" :src="resolvePreviewUrl(itemModal.item.mobile_background_image_url)" alt="Mobile Preview" />
-                     <div v-else class="image-preview-card__placeholder">Chưa có ảnh Mobile</div>
-                   </div>
-                   <input v-model="itemModal.item.mobile_background_image_url" type="text" placeholder="URL ảnh Mobile..." />
+
+                <div
+                  class="image-preview-card image-preview-card--banner-modal"
+                  :class="{ 'image-preview-card--empty': !imagePreviewSource(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc'), itemModal.item.background_image_url) }"
+                >
+                  <img
+                    v-if="imagePreviewSource(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc'), itemModal.item.background_image_url)"
+                    :src="imagePreviewSource(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc'), itemModal.item.background_image_url)"
+                    alt="PC Preview"
+                  />
+                  <div v-else class="image-preview-card__placeholder">Chưa có ảnh PC</div>
                 </div>
+
+                <div
+                  v-if="imageUploadMode(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc')) === 'file'"
+                  class="image-control-stack"
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    @change="onSelectImageFile(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc'), $event)"
+                  />
+                </div>
+                <div v-else class="image-control-stack">
+                  <input
+                    :value="imageUploadStateMeta(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc')).sourceUrl"
+                    type="url"
+                    placeholder="https://..."
+                    @input="onChangeImageUrl(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc'), $event.target.value)"
+                  />
+                </div>
+
+                <input
+                  :value="itemModal.item.background_image_url"
+                  type="text"
+                  readonly
+                  placeholder="URL ảnh PC đã gán sẽ hiển thị ở đây"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-inline"
+                  :disabled="imageUploadStateMeta(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc')).uploading"
+                  @click="uploadBannerImage('pc')"
+                >
+                  {{ imageActionLabel(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc')) }}
+                </button>
+
+                <p
+                  v-if="imageUploadStateMeta(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc')).storageBackend"
+                  class="image-upload-feedback"
+                >
+                  Đích lưu: {{ imageUploadStateMeta(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc')).storageBackend }}
+                  <span v-if="imageUploadStateMeta(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc')).fallbackReason">
+                    • Fallback: {{ imageUploadStateMeta(bannerImageUploadKey(itemModal.item, itemModal.index, 'pc')).fallbackReason }}
+                  </span>
+                </p>
               </div>
 
               <label class="field field--toggle">
@@ -2382,14 +2628,10 @@ watch(
 
     <CoreConfirmDialog
       :visible="confirmDialog.visible"
-      :tone="confirmDialog.tone"
-      :eyebrow="confirmDialog.eyebrow"
-      :title="confirmDialog.title"
-      :message="confirmDialog.message"
-      :confirm-text="confirmDialog.confirmText"
-      @confirm="acceptConfirmDialog"
+      :dialog="confirmDialog"
+      :confirm-button-class="confirmDialog.tone === 'danger' ? 'btn btn-danger' : 'btn btn-primary'"
+      @accept="acceptConfirmDialog"
       @cancel="cancelConfirmDialog"
-      @close="cancelConfirmDialog"
     />
   </section>
 </template>
@@ -2821,7 +3063,81 @@ watch(
 }
 
 .image-manager--compact {
+  gap: 14px;
+}
+
+.image-manager--overview-gallery {
+  gap: 18px;
+}
+
+.image-manager__head--split {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.image-preview-card--overview-hero {
+  height: 260px;
+}
+
+.overview-gallery-admin {
+  display: grid;
+  gap: 16px;
+}
+
+.overview-gallery-admin__item {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
   padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(191, 219, 254, 0.78);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.overview-gallery-admin__preview {
+  height: 180px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(219, 234, 254, 0.9), rgba(239, 246, 255, 0.96));
+}
+
+.overview-gallery-admin__preview img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.overview-gallery-admin__body {
+  display: grid;
+  gap: 12px;
+}
+
+.overview-gallery-admin__switch {
+  justify-content: flex-start;
+}
+
+.overview-gallery-admin__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.overview-gallery-admin__toggle {
+  min-width: 220px;
+}
+
+.overview-gallery-admin__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.image-upload-feedback--strong {
+  font-weight: 700;
+  color: #1d4f91;
 }
 
 .image-manager__head {
@@ -3094,8 +3410,25 @@ watch(
     grid-template-columns: 1fr;
   }
 
+  .overview-gallery-admin__item,
+  .overview-gallery-admin__footer {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .overview-gallery-admin__toggle,
+  .overview-gallery-admin__actions,
+  .overview-gallery-admin__toolbar {
+    width: 100%;
+  }
+
   .image-preview-card {
     height: 170px;
+  }
+
+  .image-preview-card--overview-hero {
+    height: 220px;
   }
 }
 
@@ -3112,7 +3445,7 @@ watch(
 }
 
 .item-modal {
-  width: min(100%, 640px);
+  width: min(100%, 880px);
   max-height: calc(100vh - 48px);
   background: #fff;
   border-radius: 24px;
@@ -3166,6 +3499,14 @@ watch(
   background: #f1f5f9;
   overflow: hidden;
   margin-bottom: 16px;
+}
+
+.image-manager--banner-modal {
+  padding: 22px;
+}
+
+.image-preview-card--banner-modal {
+  min-height: 280px;
 }
 
 .image-preview-card img {

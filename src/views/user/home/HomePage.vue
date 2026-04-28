@@ -1,46 +1,42 @@
-<script setup>
-import { computed, ref, onMounted, onUnmounted, watch, defineAsyncComponent } from 'vue'
-import HeroBanner from './sections/HeroBanner.vue'
+﻿<script setup>
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
 
-const HomeAbout = defineAsyncComponent(() => import('./sections/HomeAbout.vue'))
-const StatsSection = defineAsyncComponent(() => import('./sections/StatsSection.vue'))
-const NewsSection = defineAsyncComponent(() => import('./sections/NewsSection.vue'))
+import HeroBanner from './sections/HeroBanner.vue'
 import HomeNav from './sections/HomeNav.vue'
+
 import AppFooter from '@/views/user/layout/AppFooter.vue'
-import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { uiState } from '@/shared/utils/uiState'
+import { useBootstrapStore } from '@/views/user/stores/bootstrap'
+
+const HomeAboutQuick = defineAsyncComponent(() => import('./sections/HomeAboutQuick.vue'))
+const HomeCapabilityPreview = defineAsyncComponent(() => import('./sections/HomeCapabilityPreview.vue'))
+const HomeProductsPreview = defineAsyncComponent(() => import('./sections/HomeProductsPreview.vue'))
+const HomeProjectsPreview = defineAsyncComponent(() => import('./sections/HomeProjectsPreview.vue'))
+const NewsSection = defineAsyncComponent(() => import('./sections/NewsSection.vue'))
 
 const activeSection = ref(0)
 const activeBanner = ref(0)
-const bootstrapStore = useBootstrapStore()
-
-// Watch activeSection to control UI visibility
-watch(activeSection, (newVal) => {
-  uiState.isHeaderHidden = newVal > 0
-  uiState.isNavHidden = false
-  uiState.isFooterHidden = true
-}, { immediate: true })
-
-onUnmounted(() => {
-  uiState.isFooterHidden = false
-  uiState.isHeaderHidden = false
-  uiState.isNavHidden = false
-})
 const scrollContainer = ref(null)
 const heroRef = ref(null)
+const bootstrapStore = useBootstrapStore()
+
+const sections = [
+  { label: 'Trang chủ', id: 'ctn1' },
+  { label: 'Giới thiệu', id: 'ctn2' },
+  { label: 'Năng lực', id: 'ctn3' },
+  { label: 'Sản phẩm', id: 'ctn4' },
+  { label: 'Dự án', id: 'ctn5' },
+  { label: 'Tin tức', id: 'ctn6' },
+  { label: 'Liên hệ', id: 'ctn7' },
+]
+
 const bannerCount = computed(() => {
   const count = bootstrapStore.heroBanners?.length || 0
   return count > 0 ? count : 6
 })
 
-const sections = [
-  { label: 'Trang Chủ', id: 'ctn1' },
-  { label: 'Giới Thiệu', id: 'ctn2' },
-  { label: 'Tin Tức', id: 'ctn5' },
-  { label: 'Đối Tác', id: 'ctn6' }
-]
-
-const isScrolling = ref(false)
+const isSyncingByClick = ref(false)
+let scrollRafId = null
 
 watch(bannerCount, (count) => {
   if (activeBanner.value >= count) {
@@ -53,45 +49,53 @@ const handleBannerChange = (index) => {
 }
 
 const handleBannerNavigate = (index) => {
-  if (heroRef.value) {
-    heroRef.value.goToSlide(index)
-  }
+  heroRef.value?.goToSlide(index)
 }
 
-const handleWheel = (e) => {
-  if (isScrolling.value || window.innerWidth <= 992) return
-  
-  if (Math.abs(e.deltaY) < 30) return // Threshold to avoid micro-scrolls
+const resolveSectionTop = (index) => {
+  const section = document.getElementById(sections[index].id)
+  if (!section) return null
+  return section.offsetTop
+}
 
-  if (e.deltaY > 0) {
-    if (activeSection.value < sections.length - 1) {
-      scrollToSection(activeSection.value + 1)
-    }
-  } else {
-    if (activeSection.value > 0) {
-      scrollToSection(activeSection.value - 1)
-    }
+const updateActiveSectionFromScroll = () => {
+  const container = scrollContainer.value
+  if (!container) return
+
+  const center = container.scrollTop + container.clientHeight * 0.35
+  let nextActive = 0
+
+  for (let index = 0; index < sections.length; index += 1) {
+    const top = resolveSectionTop(index)
+    if (top === null) continue
+    if (center >= top) nextActive = index
   }
+
+  activeSection.value = nextActive
+}
+
+const handleContainerScroll = () => {
+  if (isSyncingByClick.value) return
+  if (scrollRafId) cancelAnimationFrame(scrollRafId)
+  scrollRafId = requestAnimationFrame(updateActiveSectionFromScroll)
 }
 
 const scrollToSection = (index) => {
-  isScrolling.value = true
+  const container = scrollContainer.value
+  const top = resolveSectionTop(index)
+
+  if (!container || top === null) return
+
+  isSyncingByClick.value = true
   activeSection.value = index
-  
-  const height = window.innerHeight
-  scrollContainer.value.scrollTo({
-    top: index * height,
-    behavior: 'smooth'
-  })
 
-  // Hash update
-  const newHash = sections[index].id
-  window.history.replaceState(history.state, '', `#${newHash}`)
+  container.scrollTo({ top, behavior: 'smooth' })
+  window.history.replaceState(history.state, '', `#${sections[index].id}`)
 
-  // Cooldown to match 700ms transition
   setTimeout(() => {
-    isScrolling.value = false
-  }, 800)
+    isSyncingByClick.value = false
+    updateActiveSectionFromScroll()
+  }, 500)
 }
 
 const navigateToSection = (index) => {
@@ -100,30 +104,42 @@ const navigateToSection = (index) => {
 
 const handleHashChange = () => {
   const hash = window.location.hash.replace('#', '')
-  const index = sections.findIndex(s => s.id === hash)
-  if (index !== -1 && index !== activeSection.value) {
-    scrollToSection(index)
-  }
+  const index = sections.findIndex((section) => section.id === hash)
+  if (index !== -1) scrollToSection(index)
 }
 
 onMounted(() => {
+  uiState.isHeaderHidden = false
+  uiState.isNavHidden = false
+  uiState.isFooterHidden = true
+
   if (scrollContainer.value) {
-    window.addEventListener('wheel', handleWheel, { passive: false })
-    // Initial hash
-    setTimeout(handleHashChange, 500)
+    scrollContainer.value.addEventListener('scroll', handleContainerScroll, { passive: true })
+    setTimeout(() => {
+      handleHashChange()
+      updateActiveSectionFromScroll()
+    }, 160)
   }
+
   window.addEventListener('hashchange', handleHashChange)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('wheel', handleWheel)
+  if (scrollContainer.value) {
+    scrollContainer.value.removeEventListener('scroll', handleContainerScroll)
+  }
+
+  if (scrollRafId) cancelAnimationFrame(scrollRafId)
+
   window.removeEventListener('hashchange', handleHashChange)
+  uiState.isFooterHidden = false
+  uiState.isHeaderHidden = false
+  uiState.isNavHidden = false
 })
 </script>
 
 <template>
   <div class="full-page-wrapper">
-    <!-- Side Nav Dots -->
     <HomeNav
       :sections="sections"
       :activeSection="activeSection"
@@ -133,30 +149,41 @@ onUnmounted(() => {
       @navigate-banner="handleBannerNavigate"
     />
 
-    <!-- Main Scroll Container -->
     <div ref="scrollContainer" class="scroll-container">
-      <section id="ctn1" class="section-full">
-        <HeroBanner 
-          ref="heroRef" 
-          :active="activeSection === 0" 
-          @scroll-next="navigateToSection(1)" 
+      <section id="ctn1" class="section-full section-hero">
+        <HeroBanner
+          ref="heroRef"
+          :active="activeSection === 0"
+          @scroll-next="navigateToSection(1)"
           @slide-change="handleBannerChange"
         />
       </section>
 
       <section id="ctn2" class="section-full">
-        <HomeAbout :active="activeSection === 1" />
+        <HomeAboutQuick />
+      </section>
+
+      <section id="ctn3" class="section-full">
+        <HomeCapabilityPreview />
+      </section>
+
+      <section id="ctn4" class="section-full">
+        <HomeProductsPreview />
       </section>
 
       <section id="ctn5" class="section-full">
+        <HomeProjectsPreview />
+      </section>
+
+      <section id="ctn6" class="section-full">
         <div class="section-inner">
-          <NewsSection :active="activeSection === 2" />
+          <NewsSection :active="activeSection === 5" />
         </div>
       </section>
 
-      <section id="ctn6" class="last-section">
+      <section id="ctn7" class="last-section">
         <div class="section-inner partner-section">
-          <AppFooter :force-visible="activeSection === 3" />
+          <AppFooter :force-visible="true" />
         </div>
       </section>
     </div>
@@ -164,15 +191,35 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-@use "@/assets/scss/variables" as *;
-
 .full-page-wrapper {
+  --home-content-max: 870px;
+  --home-section-pad: clamp(41px, 4.9vw, 70px);
+  --home-grid-gap: 11px;
+
+  --home-accent: #b20e17;
+  --home-text-strong: #151f31;
+  --home-text-muted: #4d596d;
+  --home-surface-base: #ffffff;
+  --home-surface-soft: #f7f8fa;
+  --home-border-soft: rgba(17, 24, 39, 0.08);
+
+  --home-radius-sm: 16px;
+  --home-radius-md: 20px;
+  --home-radius-lg: 24px;
+
+  --home-font-display: 'Merriweather', Georgia, 'Times New Roman', serif;
+  --home-font-body: 'Manrope', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+
   position: relative;
   width: 100%;
   height: 100svh;
   overflow: hidden;
-  
+
   @media (max-width: 992px) {
+    --home-content-max: 1260px;
+    --home-section-pad: clamp(64px, 8vw, 108px);
+    --home-grid-gap: 18px;
+
     height: auto;
     overflow: visible;
   }
@@ -181,55 +228,43 @@ onUnmounted(() => {
 .scroll-container {
   width: 100%;
   height: 100%;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none; // Hide scrollbar for Firefox
-  
+  overflow-y: auto;
+  scrollbar-width: none;
+
   &::-webkit-scrollbar {
-    display: none; // Hide scrollbar for Chrome/Safari
+    display: none;
   }
 
   @media (max-width: 992px) {
     height: auto;
     overflow-y: visible;
-    scroll-snap-type: none;
   }
 }
 
 .section-full {
   width: 100%;
-  height: 100%;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
-  
+
   @media (max-width: 992px) {
-    height: auto;
     min-height: auto;
   }
 }
 
 .section-inner {
-  padding: 80px 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
   flex: 1;
 }
 
-.bg-light { background-color: $bg-light; }
-
-.projects-full {
-  padding: 0 !important;
-}
-
 .last-section {
   background-color: #f9f9f9;
-  scroll-snap-align: end;
   height: auto;
   min-height: auto;
-  
+
   .partner-section {
     padding: 0 !important;
     flex: 0 0 auto;
@@ -239,8 +274,38 @@ onUnmounted(() => {
     min-height: 100vh;
   }
 }
+
+:deep(.home-reveal) {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.48s ease, transform 0.48s ease;
+}
+
+:deep(.home-reveal.is-visible) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+:deep(.home-reveal [data-reveal-item]) {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.44s ease, transform 0.44s ease;
+}
+
+:deep(.home-reveal.is-visible [data-reveal-item]) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+:deep(.home-reveal.is-visible [data-reveal-item]:nth-child(2)) {
+  transition-delay: 0.08s;
+}
+
+:deep(.home-reveal.is-visible [data-reveal-item]:nth-child(3)) {
+  transition-delay: 0.14s;
+}
+
+:deep(.home-reveal.is-visible [data-reveal-item]:nth-child(4)) {
+  transition-delay: 0.2s;
+}
 </style>
-
-
-
-
