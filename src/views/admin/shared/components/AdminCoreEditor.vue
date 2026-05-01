@@ -611,7 +611,7 @@ const previewHasContent = computed(
     Boolean(previewLink.value),
 );
 
-const supportsTranslation = computed(() => ["products", "product_categories"].includes(props.entityKey));
+const supportsTranslation = computed(() => ["products", "product_categories", "projects", "news_posts", "content_block_items"].includes(props.entityKey));
 </script>
 
 <template>

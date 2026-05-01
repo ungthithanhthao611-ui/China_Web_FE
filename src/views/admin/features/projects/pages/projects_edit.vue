@@ -11,18 +11,18 @@ const {
   slugify,
   coverPreviewUrl, selectedProjectCover, coverUploadFile,
   coverFileInputRef, uploadingProjectAssets,
-  savingProject, deletingProject,
+  savingProject, translatingProject, deletingProject,
   selectedProject, selectedProjectId, selectedProjectProducts,
   selectedProjectGallery, pendingGalleryPreviewItems,
   productMap, mediaMap,
   productForm, productFormErrors, savingProductMapping,
   deletingProductMappingId, recentlySavedProductMappingId,
-  availableProductOptions,
+  availableProductOptions, languageOptions,
   galleryMultiInputRef,
   deletingGalleryId,
   productSearchQuery, productSearchResults, showProductDropdown, productComboRef, productDropdownPlacement,
   pendingSelectedProjectProducts,
-  populateProjectForm, saveProject, goToList,
+  populateProjectForm, saveProject, autoTranslateSelectedProject, goToList,
   onCoverFileSelected, removeCoverImage, removeProject,
   setProductMappingRowRef, productLabel, getProductThumb, mediaLabel,
   openEditProductForm, closeProductForm, saveProductMapping, removeProductMapping,
@@ -52,6 +52,9 @@ onBeforeUnmount(() => {
         <p class="section-subtext">Điền các trường bắt buộc: tên dự án, hình ảnh, địa điểm, mô tả.</p>
       </div>
       <div class="section-actions">
+        <button v-if="selectedProject" type="button" class="btn btn-secondary" :disabled="translatingProject" @click="autoTranslateSelectedProject">
+          {{ translatingProject ? 'Đang dịch...' : 'Tự dịch EN/ZH' }}
+        </button>
         <button v-if="selectedProject" type="button" class="btn btn-danger" :disabled="deletingProject" @click="removeProject">
           {{ deletingProject ? 'Đang xóa...' : 'Xóa dự án' }}
         </button>
@@ -69,8 +72,24 @@ onBeforeUnmount(() => {
           <input v-model="projectForm.title" type="text" placeholder="Ví dụ: Biệt thự hiện đại sử dụng đá Travertine" />
         </label>
         <label class="field-block">
+          <span>Tên dự án (EN)</span>
+          <input v-model="projectForm.title_en" type="text" placeholder="English project title..." />
+        </label>
+        <label class="field-block">
+          <span>Tên dự án (ZH)</span>
+          <input v-model="projectForm.title_zh" type="text" placeholder="中文项目标题..." />
+        </label>
+        <label class="field-block">
           <span>Địa điểm</span>
           <input v-model="projectForm.location" type="text" placeholder="Ví dụ: TP.HCM, Việt Nam" />
+        </label>
+        <label class="field-block">
+          <span>Địa điểm (EN)</span>
+          <input v-model="projectForm.location_en" type="text" placeholder="English location..." />
+        </label>
+        <label class="field-block">
+          <span>Địa điểm (ZH)</span>
+          <input v-model="projectForm.location_zh" type="text" placeholder="中文地点..." />
         </label>
         <label class="field-block">
           <span>Slug (tự sinh)</span>
@@ -80,15 +99,55 @@ onBeforeUnmount(() => {
           <span>Mô tả ngắn</span>
           <textarea v-model="projectForm.summary" rows="3" placeholder="Nhập mô tả ngắn cho dự án." />
         </label>
+        <label class="field-block">
+          <span>Mô tả ngắn (EN)</span>
+          <textarea v-model="projectForm.summary_en" rows="3" placeholder="Short English summary..." />
+        </label>
+        <label class="field-block">
+          <span>Mô tả ngắn (ZH)</span>
+          <textarea v-model="projectForm.summary_zh" rows="3" placeholder="中文摘要..." />
+        </label>
         <label class="field-block field-block--full">
           <span>Mô tả chi tiết</span>
           <textarea v-model="projectForm.body" rows="5" placeholder="Nhập mô tả chi tiết cho dự án." />
+        </label>
+        <label class="field-block">
+          <span>Mô tả chi tiết (EN)</span>
+          <textarea v-model="projectForm.body_en" rows="5" placeholder="Detailed English project content..." />
+        </label>
+        <label class="field-block">
+          <span>Mô tả chi tiết (ZH)</span>
+          <textarea v-model="projectForm.body_zh" rows="5" placeholder="中文详细介绍..." />
+        </label>
+        <label class="field-block">
+          <span>SEO Title (EN)</span>
+          <input v-model="projectForm.meta_title_en" type="text" placeholder="English SEO title..." />
+        </label>
+        <label class="field-block">
+          <span>SEO Title (ZH)</span>
+          <input v-model="projectForm.meta_title_zh" type="text" placeholder="中文 SEO 标题..." />
+        </label>
+        <label class="field-block">
+          <span>SEO Description (EN)</span>
+          <textarea v-model="projectForm.meta_description_en" rows="3" placeholder="English SEO description..." />
+        </label>
+        <label class="field-block">
+          <span>SEO Description (ZH)</span>
+          <textarea v-model="projectForm.meta_description_zh" rows="3" placeholder="中文 SEO 描述..." />
         </label>
         <label class="field-block">
           <span>Trạng thái</span>
           <select v-model="projectForm.status">
             <option value="published">Hiển thị</option>
             <option value="draft">Nháp</option>
+          </select>
+        </label>
+        <label class="field-block">
+          <span>Ngôn ngữ</span>
+          <select v-model="projectForm.language_id">
+            <option v-for="language in languageOptions" :key="language.id" :value="String(language.id)">
+              {{ language.name || language.code }} ({{ language.code }})
+            </option>
           </select>
         </label>
       </div>
@@ -118,6 +177,9 @@ onBeforeUnmount(() => {
     <div class="form-actions">
       <button type="button" class="btn btn-secondary" @click="goToList">Quay lại danh sách</button>
       <div class="form-actions-right">
+        <button v-if="selectedProject" type="button" class="btn btn-secondary" :disabled="translatingProject" @click="autoTranslateSelectedProject">
+          {{ translatingProject ? 'Đang dịch...' : 'Tự dịch EN/ZH' }}
+        </button>
         <button type="button" class="btn btn-secondary" @click="populateProjectForm(selectedProject)">Hoàn tác</button>
         <button type="button" class="btn btn-primary" :disabled="savingProject || uploadingProjectAssets" @click="saveProject">
           {{ savingProject || uploadingProjectAssets ? 'Đang lưu & tải ảnh...' : 'Lưu thông tin dự án' }}

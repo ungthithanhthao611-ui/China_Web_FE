@@ -1,5 +1,6 @@
 import { computed, nextTick, reactive, ref } from 'vue'
 import {
+  autoTranslateAdminEntityPayload,
   createAdminEntityRecord,
   deleteAdminEntityRecord,
   listAdminEntityRecords,
@@ -18,6 +19,7 @@ const GALLERY_GROUP_OPTIONS = [
 
 const loading = ref(false)
 const savingProject = ref(false)
+const translatingProject = ref(false)
 const deletingProject = ref(false)
 const savingProductMapping = ref(false)
 const deletingProductMappingId = ref(null)
@@ -60,7 +62,13 @@ const uploadingMultiGallery = ref(false)
 const coverPreviewUrl = ref('')
 
 const projectForm = reactive({
-  title: '', slug: '', summary: '', body: '', location: '',
+  title: '', title_en: '', title_zh: '',
+  slug: '',
+  summary: '', summary_en: '', summary_zh: '',
+  body: '', body_en: '', body_zh: '',
+  location: '', location_en: '', location_zh: '',
+  meta_title: '', meta_title_en: '', meta_title_zh: '',
+  meta_description: '', meta_description_en: '', meta_description_zh: '',
   image_id: '', language_id: '', status: 'published',
   uploadTitle: '', uploadAltText: '',
 })
@@ -310,6 +318,10 @@ function languageLabel(language) {
   const code = String(language.code || '').trim()
   return code ? `${name || code} · ${code}` : name || 'Ngôn ngữ mặc định'
 }
+function getProjectLanguageLabel(project) {
+  const language = languages.value.find((item) => String(item.id) === String(project?.language_id || ''))
+  return languageLabel(language)
+}
 function productLabel(product) {
   if (!product) return 'Sản phẩm không tồn tại'
   const name = String(product.name || product.title || '').trim()
@@ -377,10 +389,24 @@ function getDefaultLanguageId() {
 
 function resetProjectForm() {
   projectForm.title = ''
+  projectForm.title_en = ''
+  projectForm.title_zh = ''
   projectForm.slug = ''
   projectForm.summary = ''
+  projectForm.summary_en = ''
+  projectForm.summary_zh = ''
   projectForm.body = ''
+  projectForm.body_en = ''
+  projectForm.body_zh = ''
   projectForm.location = ''
+  projectForm.location_en = ''
+  projectForm.location_zh = ''
+  projectForm.meta_title = ''
+  projectForm.meta_title_en = ''
+  projectForm.meta_title_zh = ''
+  projectForm.meta_description = ''
+  projectForm.meta_description_en = ''
+  projectForm.meta_description_zh = ''
   projectForm.image_id = ''
   projectForm.language_id = getDefaultLanguageId()
   projectForm.status = 'published'
@@ -396,10 +422,24 @@ function resetProjectForm() {
 function populateProjectForm(record) {
   if (!record) return
   projectForm.title = record.title || ''
+  projectForm.title_en = record.title_en || ''
+  projectForm.title_zh = record.title_zh || ''
   projectForm.slug = record.slug || ''
   projectForm.summary = record.summary || ''
+  projectForm.summary_en = record.summary_en || ''
+  projectForm.summary_zh = record.summary_zh || ''
   projectForm.body = record.body || ''
+  projectForm.body_en = record.body_en || ''
+  projectForm.body_zh = record.body_zh || ''
   projectForm.location = record.location || ''
+  projectForm.location_en = record.location_en || ''
+  projectForm.location_zh = record.location_zh || ''
+  projectForm.meta_title = record.meta_title || ''
+  projectForm.meta_title_en = record.meta_title_en || ''
+  projectForm.meta_title_zh = record.meta_title_zh || ''
+  projectForm.meta_description = record.meta_description || ''
+  projectForm.meta_description_en = record.meta_description_en || ''
+  projectForm.meta_description_zh = record.meta_description_zh || ''
   projectForm.image_id = record.image_id ? String(record.image_id) : ''
   projectForm.language_id = record.language_id ? String(record.language_id) : getDefaultLanguageId()
   projectForm.status = record.status || 'published'
@@ -449,14 +489,28 @@ function validateProjectForm() {
 function buildProjectPayload() {
   return {
     title: String(projectForm.title || '').trim(),
+    title_en: String(projectForm.title_en || '').trim() || null,
+    title_zh: String(projectForm.title_zh || '').trim() || null,
     slug: slugify(projectForm.slug || projectForm.title),
     summary: String(projectForm.summary || '').trim() || null,
+    summary_en: String(projectForm.summary_en || '').trim() || null,
+    summary_zh: String(projectForm.summary_zh || '').trim() || null,
     body: String(projectForm.body || '').trim() || null,
+    body_en: String(projectForm.body_en || '').trim() || null,
+    body_zh: String(projectForm.body_zh || '').trim() || null,
     location: String(projectForm.location || '').trim() || null,
+    location_en: String(projectForm.location_en || '').trim() || null,
+    location_zh: String(projectForm.location_zh || '').trim() || null,
     image_id: projectForm.image_id ? Number(projectForm.image_id) : null,
     hero_image_id: null,
     language_id: Number(projectForm.language_id || getDefaultLanguageId() || 1),
     status: String(projectForm.status || 'published'),
+    meta_title: String(projectForm.meta_title || '').trim() || null,
+    meta_title_en: String(projectForm.meta_title_en || '').trim() || null,
+    meta_title_zh: String(projectForm.meta_title_zh || '').trim() || null,
+    meta_description: String(projectForm.meta_description || '').trim() || null,
+    meta_description_en: String(projectForm.meta_description_en || '').trim() || null,
+    meta_description_zh: String(projectForm.meta_description_zh || '').trim() || null,
   }
 }
 
@@ -831,6 +885,36 @@ async function saveProject() {
   }
 }
 
+async function autoTranslateSelectedProject() {
+  const token = normalizedToken()
+  if (!token || !validateProjectForm()) return
+
+  translatingProject.value = true
+  clearNotify()
+  try {
+    const response = await autoTranslateAdminEntityPayload('projects', buildProjectPayload(), token)
+    Object.assign(projectForm, {
+      title_en: response.title_en || '',
+      title_zh: response.title_zh || '',
+      summary_en: response.summary_en || '',
+      summary_zh: response.summary_zh || '',
+      body_en: response.body_en || '',
+      body_zh: response.body_zh || '',
+      location_en: response.location_en || '',
+      location_zh: response.location_zh || '',
+      meta_title_en: response.meta_title_en || '',
+      meta_title_zh: response.meta_title_zh || '',
+      meta_description_en: response.meta_description_en || '',
+      meta_description_zh: response.meta_description_zh || '',
+    })
+    notifySuccess('Đã tự động dịch các ô EN/ZH. Vui lòng kiểm tra lại trước khi lưu.')
+  } catch (error) {
+    notifyError(error.message || 'Không thể tự dịch dự án.')
+  } finally {
+    translatingProject.value = false
+  }
+}
+
 
 
 
@@ -1199,7 +1283,7 @@ export function useProjectManager() {
     setContext, normalizedToken,
     // State
     loading, savingProject, deletingProject, savingProductMapping, deletingProductMappingId,
-    recentlySavedProductMappingId, savingGallery, deletingGalleryId, uploadingCover, uploadingGallery,
+    translatingProject, recentlySavedProductMappingId, savingGallery, deletingGalleryId, uploadingCover, uploadingGallery,
     uploadingProjectAssets, confirmDialog,
     projectSearch, selectedProjectId, projects, products, projectProducts, mediaAssets,
     galleryBindings, languages, productMappingRowRefs,
@@ -1216,7 +1300,7 @@ export function useProjectManager() {
     // Functions
     notifySuccess, notifyError, clearNotify, normalizeText, slugify, resolveMediaUrl,
     askForConfirmation, acceptConfirmDialog, cancelConfirmDialog,
-    languageLabel, productLabel, mediaLabel, getProductThumb, getProjectCoverThumb,
+    languageLabel, getProjectLanguageLabel, productLabel, mediaLabel, getProductThumb, getProjectCoverThumb,
     setProductMappingRowRef, scrollToProductMappingRow,
     resetProjectForm, populateProjectForm, startCreateProject, selectProject,
     goToList, goToEdit, goToCreate,
@@ -1228,7 +1312,7 @@ export function useProjectManager() {
     onCoverFileSelected, removeCoverImage, onGalleryFileSelected,
     appendPendingGalleryFiles, removePendingGalleryFile,
     refreshAll, uploadCoverImage, uploadGalleryImage,
-    saveProject, removeProject, deleteProject,
+    saveProject, autoTranslateSelectedProject, removeProject, deleteProject,
     saveProductMapping, removeProductMapping,
     saveGalleryBinding, removeGalleryBinding,
     onMultiGalleryFilesSelected, moveGalleryItem,

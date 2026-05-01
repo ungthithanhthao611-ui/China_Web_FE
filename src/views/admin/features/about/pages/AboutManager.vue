@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 
 import {
+  autoTranslateAdminEntityPayload,
   createAdminEntityRecord,
   deleteAdminEntityRecord,
   importAdminMediaAssetFromUrl,
@@ -40,6 +41,7 @@ const loading = ref(false)
 const savingKeys = ref(new Set())
 const deletingKeys = ref(new Set())
 const uploadingKeys = ref(new Set())
+const translatingKeys = ref(new Set())
 const items = ref([])
 const blocks = ref([])
 const mediaAssets = ref([])
@@ -61,6 +63,8 @@ const avatarFitOptions = [
   { value: 'cover', label: 'Crop đầy khung' },
   { value: 'contain', label: 'Hiển thị trọn ảnh' },
 ]
+
+const translatableAboutFields = ['title', 'subtitle', 'content']
 
 const confirmDialog = reactive({
   visible: false,
@@ -709,12 +713,58 @@ function normalizePayload(draft) {
     block_id: Number(draft.block_id),
     item_key: normalizeText(draft.item_key) || null,
     title: normalizeText(draft.title) || null,
+    title_en: normalizeText(draft.title_en) || null,
+    title_zh: normalizeText(draft.title_zh) || null,
     subtitle: isTimelineBlock ? timelineRange.start || null : normalizeText(draft.subtitle) || null,
+    subtitle_en: normalizeText(draft.subtitle_en) || null,
+    subtitle_zh: normalizeText(draft.subtitle_zh) || null,
     content: normalizeText(draft.content) || null,
+    content_en: normalizeText(draft.content_en) || null,
+    content_zh: normalizeText(draft.content_zh) || null,
     link: isTimelineBlock ? timelineRange.end || null : normalizeText(draft.link) || null,
     image_id: draft.image_id ? Number(draft.image_id) : null,
     metadata_json: Object.keys(metadata).length ? metadata : null,
     sort_order: Number(draft.sort_order || 0),
+  }
+}
+
+function aboutTranslationKey(key) {
+  return `translate-${key}`
+}
+
+function hasAboutTranslatableContent(draft) {
+  return translatableAboutFields.some((field) => normalizeText(draft?.[field]))
+}
+
+async function translateAboutDraft(draft, key) {
+  if (!draft) return
+  if (!hasAboutTranslatableContent(draft)) {
+    notifyError('Mục này chưa có tiêu đề/phụ đề/nội dung tiếng Việt để dịch.')
+    return
+  }
+
+  const translateKey = aboutTranslationKey(key)
+  translatingKeys.value = new Set([...translatingKeys.value, translateKey])
+  try {
+    const response = await autoTranslateAdminEntityPayload('content_block_items', {
+      title: normalizeText(draft.title) || '',
+      subtitle: normalizeText(draft.subtitle) || '',
+      content: normalizeText(draft.content) || '',
+    }, props.token)
+
+    draft.title_en = response.title_en || ''
+    draft.title_zh = response.title_zh || ''
+    draft.subtitle_en = response.subtitle_en || ''
+    draft.subtitle_zh = response.subtitle_zh || ''
+    draft.content_en = response.content_en || ''
+    draft.content_zh = response.content_zh || ''
+    notifySuccess('Đã tự động dịch mục About. Vui lòng kiểm tra lại trước khi lưu.')
+  } catch (error) {
+    notifyError(error?.message || 'Không thể tự động dịch mục About.')
+  } finally {
+    const next = new Set(translatingKeys.value)
+    next.delete(translateKey)
+    translatingKeys.value = next
   }
 }
 
@@ -744,7 +794,7 @@ function validateDraftAgainstFields(draft, fields, block) {
     const hasStart = !isEmpty(draft.subtitle)
     const hasEnd = !isEmpty(draft.link)
 
-    if (!hasStart && !hasEnd) {
+    if (false && !hasStart && !hasEnd) {
       return 'Vui lòng chọn ít nhất một mốc thời gian.'
     }
 
@@ -1413,7 +1463,10 @@ function toggleSection(sectionKey) {
 }
 
 function expandAllSections() {
-  resetExpandedSections()
+  expandedSections.value = sectionDefinitions.reduce((accumulator, section) => {
+    accumulator[section.key] = true
+    return accumulator
+  }, {})
 }
 
 function collapseAllSections() {
@@ -1421,6 +1474,37 @@ function collapseAllSections() {
     accumulator[section.key] = false
     return accumulator
   }, {})
+}
+
+function sectionPageLabel(section) {
+  const pageId = sectionPreviewPageMap[section?.key]
+  return pageId ? `Page ${String(pageId).replace('page', '')}` : 'Trang giới thiệu'
+}
+
+function sectionCreateBlock(section) {
+  return (section?.blocks || []).find((block) => block?.schema?.dynamicItems) || null
+}
+
+function canCreateInSection(section) {
+  return Boolean(sectionCreateBlock(section))
+}
+
+function createLabelForBlock(block) {
+  return block?.schema?.dynamicItems?.label || block?.schema?.label || 'nội dung'
+}
+
+async function openSectionCreateForm(section) {
+  const block = sectionCreateBlock(section)
+  if (!block) {
+    notifyError('Phần này chỉ có nội dung cố định, chưa hỗ trợ thêm mục mới.')
+    return
+  }
+
+  expandedSections.value = {
+    ...expandedSections.value,
+    [section.key]: true,
+  }
+  await openNewItemEditor(block)
 }
 
 function recordDisplayName(record, block) {
@@ -1481,6 +1565,18 @@ watch(
 <template>
   <section class="about-admin-shell">
     <div class="ultimate-clean-workspace">
+      <section class="about-simple-guide">
+        <div>
+          <p class="about-simple-guide__eyebrow">Trang Giới thiệu</p>
+          <h2>Quản lý theo từng page nhỏ, giống thêm/sửa sản phẩm</h2>
+          <p>
+            Chọn một page nhỏ bên dưới, bấm <strong>Chỉnh sửa</strong> để sửa nội dung có sẵn
+            hoặc bấm <strong>Thêm nội dung</strong> để tạo dòng mới. Dữ liệu tiếng Việt là nguồn chuẩn,
+            các ô EN/ZH là bản dịch đi kèm.
+          </p>
+        </div>
+      </section>
+
       <!-- 1. Header & Stats -->
       <header class="about-admin-hero">
         <div class="about-admin-hero__copy">
@@ -1585,16 +1681,25 @@ watch(
               </div>
 
               <div class="section-card__info">
-                <p class="section-card__eyebrow">{{ section.eyebrow || 'Module' }}</p>
+                <p class="section-card__eyebrow">{{ sectionPageLabel(section) }}</p>
                 <h2>{{ section.label }}</h2>
                 <div class="section-card__stats">
-                  <span class="section-chip">{{ section.counts.blocks }} blocks</span>
-                  <span class="section-chip">{{ section.counts.items }} items</span>
+                  <span class="section-chip">{{ section.counts.blocks }} nhóm nội dung</span>
+                  <span class="section-chip">{{ section.counts.items }} mục</span>
+                  <span v-if="section.counts.missingContent" class="section-chip section-chip--warning">{{ section.counts.missingContent }} thiếu nội dung</span>
                 </div>
               </div>
             </div>
 
             <div class="section-card__actions">
+              <button
+                v-if="canCreateInSection(section)"
+                type="button"
+                class="btn btn-primary btn-sm"
+                @click="openSectionCreateForm(section)"
+              >
+                Thêm nội dung
+              </button>
               <button
                 v-if="section.previewHref"
                 type="button"
@@ -1648,7 +1753,7 @@ watch(
           >
             <div class="block-workspace__head">
               <div>
-                <p class="block-workspace__eyebrow">{{ block.blockLabel }}</p>
+                <p class="block-workspace__eyebrow">Nhóm nội dung trong {{ sectionPageLabel(section) }}</p>
                 <h3>{{ block.schema?.label || block.blockLabel }}</h3>
                 <p class="block-workspace__meta">
                   {{ block.counts.total }} item · {{ block.counts.missingContent }} thiếu nội dung ·
@@ -1800,6 +1905,46 @@ watch(
                       <small v-if="field.helpText" class="field-help">{{ field.helpText }}</small>
                     </label>
                   </template>
+
+                  <div class="schema-field schema-field--full translation-panel">
+                    <div class="translation-panel__header">
+                      <span>Bản dịch EN/ZH</span>
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-translate"
+                        :disabled="translatingKeys.has(aboutTranslationKey(draftKeyForFixed(block.id, entry.itemKey)))"
+                        @click="translateAboutDraft(ensureFixedDraft(block, entry, entry.record), draftKeyForFixed(block.id, entry.itemKey))"
+                      >
+                        {{ translatingKeys.has(aboutTranslationKey(draftKeyForFixed(block.id, entry.itemKey))) ? 'Đang dịch...' : 'Dịch tự động' }}
+                      </button>
+                    </div>
+                    <div class="translation-panel__grid">
+                      <label>
+                        <span>Title EN</span>
+                        <input v-model="ensureFixedDraft(block, entry, entry.record).title_en" type="text" />
+                      </label>
+                      <label>
+                        <span>Title ZH</span>
+                        <input v-model="ensureFixedDraft(block, entry, entry.record).title_zh" type="text" />
+                      </label>
+                      <label>
+                        <span>Subtitle EN</span>
+                        <input v-model="ensureFixedDraft(block, entry, entry.record).subtitle_en" type="text" />
+                      </label>
+                      <label>
+                        <span>Subtitle ZH</span>
+                        <input v-model="ensureFixedDraft(block, entry, entry.record).subtitle_zh" type="text" />
+                      </label>
+                      <label>
+                        <span>Content EN</span>
+                        <textarea v-model="ensureFixedDraft(block, entry, entry.record).content_en" rows="3" />
+                      </label>
+                      <label>
+                        <span>Content ZH</span>
+                        <textarea v-model="ensureFixedDraft(block, entry, entry.record).content_zh" rows="3" />
+                      </label>
+                    </div>
+                  </div>
 
                   <div v-if="fixedEntrySupportsImage(entry)" class="schema-field schema-field--full upload-inline">
                     <span>Upload ảnh mới</span>
@@ -2092,6 +2237,46 @@ watch(
                     </label>
                   </template>
 
+                  <div class="schema-field schema-field--full translation-panel">
+                    <div class="translation-panel__header">
+                      <span>Bản dịch EN/ZH</span>
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-translate"
+                        :disabled="translatingKeys.has(aboutTranslationKey(draftKeyForBlock(block.id)))"
+                        @click="translateAboutDraft(getNewDraft(block.id), draftKeyForBlock(block.id))"
+                      >
+                        {{ translatingKeys.has(aboutTranslationKey(draftKeyForBlock(block.id))) ? 'Đang dịch...' : 'Dịch tự động' }}
+                      </button>
+                    </div>
+                    <div class="translation-panel__grid">
+                      <label>
+                        <span>Title EN</span>
+                        <input v-model="getNewDraft(block.id).title_en" type="text" />
+                      </label>
+                      <label>
+                        <span>Title ZH</span>
+                        <input v-model="getNewDraft(block.id).title_zh" type="text" />
+                      </label>
+                      <label>
+                        <span>Subtitle EN</span>
+                        <input v-model="getNewDraft(block.id).subtitle_en" type="text" />
+                      </label>
+                      <label>
+                        <span>Subtitle ZH</span>
+                        <input v-model="getNewDraft(block.id).subtitle_zh" type="text" />
+                      </label>
+                      <label>
+                        <span>Content EN</span>
+                        <textarea v-model="getNewDraft(block.id).content_en" rows="3" />
+                      </label>
+                      <label>
+                        <span>Content ZH</span>
+                        <textarea v-model="getNewDraft(block.id).content_zh" rows="3" />
+                      </label>
+                    </div>
+                  </div>
+
                   <div v-if="dynamicBlockSupportsImage(block)" class="schema-field schema-field--full upload-inline new-item-panel__upload">
                     <span>Upload ảnh mới</span>
                     <div class="upload-mode-switch">
@@ -2339,6 +2524,46 @@ watch(
                     </label>
                   </template>
 
+                  <div class="schema-field schema-field--full translation-panel">
+                    <div class="translation-panel__header">
+                      <span>Bản dịch EN/ZH</span>
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-translate"
+                        :disabled="translatingKeys.has(aboutTranslationKey(draftKeyForRecord(record.id)))"
+                        @click="translateAboutDraft(ensureRecordDraft(record, dynamicFieldsForBlock(block), block), draftKeyForRecord(record.id))"
+                      >
+                        {{ translatingKeys.has(aboutTranslationKey(draftKeyForRecord(record.id))) ? 'Đang dịch...' : 'Dịch tự động' }}
+                      </button>
+                    </div>
+                    <div class="translation-panel__grid">
+                      <label>
+                        <span>Title EN</span>
+                        <input v-model="ensureRecordDraft(record, dynamicFieldsForBlock(block), block).title_en" type="text" />
+                      </label>
+                      <label>
+                        <span>Title ZH</span>
+                        <input v-model="ensureRecordDraft(record, dynamicFieldsForBlock(block), block).title_zh" type="text" />
+                      </label>
+                      <label>
+                        <span>Subtitle EN</span>
+                        <input v-model="ensureRecordDraft(record, dynamicFieldsForBlock(block), block).subtitle_en" type="text" />
+                      </label>
+                      <label>
+                        <span>Subtitle ZH</span>
+                        <input v-model="ensureRecordDraft(record, dynamicFieldsForBlock(block), block).subtitle_zh" type="text" />
+                      </label>
+                      <label>
+                        <span>Content EN</span>
+                        <textarea v-model="ensureRecordDraft(record, dynamicFieldsForBlock(block), block).content_en" rows="3" />
+                      </label>
+                      <label>
+                        <span>Content ZH</span>
+                        <textarea v-model="ensureRecordDraft(record, dynamicFieldsForBlock(block), block).content_zh" rows="3" />
+                      </label>
+                    </div>
+                  </div>
+
                   <div v-if="dynamicBlockSupportsImage(block)" class="schema-field schema-field--full upload-inline">
                     <span>Upload ảnh mới</span>
                     <div class="upload-mode-switch">
@@ -2476,6 +2701,38 @@ watch(
   border: 1px solid #e2e8f0;
   border-radius: 16px;
   background: #ffffff;
+}
+
+.about-simple-guide {
+  margin-bottom: 18px;
+  padding: 18px 22px;
+  border: 1px solid #bfdbfe;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #eff6ff, #ffffff);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.08);
+}
+
+.about-simple-guide__eyebrow {
+  margin: 0 0 6px;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.about-simple-guide h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.about-simple-guide p:last-child {
+  margin: 8px 0 0;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.65;
 }
 
 .eyebrow,
@@ -2647,6 +2904,11 @@ watch(
   font-weight: 400;
 }
 
+.section-chip--warning {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
 .upload-target-preview__label {
   margin: 0;
   font-size: 10px;
@@ -2749,6 +3011,42 @@ watch(
 .schema-field textarea {
   min-height: 116px;
   resize: vertical;
+}
+
+.translation-panel {
+  padding: 14px;
+  border: 1px solid rgba(114, 174, 252, 0.28);
+  border-radius: 18px;
+  background: #f8fbff;
+}
+
+.translation-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.translation-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.translation-panel__grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.translation-panel__grid textarea {
+  min-height: 92px;
+}
+
+.btn-translate {
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+  background: #eff6ff;
 }
 
 .toolbar-actions,

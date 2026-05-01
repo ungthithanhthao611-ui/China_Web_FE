@@ -116,14 +116,59 @@
                 <h2 class="sidebar-panel__title">Article Details</h2>
               </div>
 
+              <button
+                type="button"
+                class="sidebar-translate-btn"
+                :disabled="translationLoading"
+                @click="handleAutoTranslate"
+              >
+                <Loader2 v-if="translationLoading" :size="15" class="spin" />
+                <span>{{ translationLoading ? 'Đang dịch...' : 'Dịch tự động' }}</span>
+              </button>
+
               <label class="sidebar-field">
-                <span>Title</span>
+                <span>Title (VI)</span>
                 <input :value="store.post.title" type="text" @input="store.setPost({ title: $event.target.value })" />
+              </label>
+
+              <label class="sidebar-field">
+                <span>Title (EN)</span>
+                <input :value="store.post.titleEn" type="text" @input="store.setPost({ titleEn: $event.target.value })" />
+              </label>
+
+              <label class="sidebar-field">
+                <span>Title (ZH)</span>
+                <input :value="store.post.titleZh" type="text" @input="store.setPost({ titleZh: $event.target.value })" />
               </label>
 
               <label class="sidebar-field">
                 <span>Slug</span>
                 <input :value="store.post.slug" type="text" @input="store.setPost({ slug: $event.target.value })" />
+              </label>
+
+              <label class="sidebar-field">
+                <span>Summary (VI)</span>
+                <textarea :value="store.post.summary" rows="3" @input="store.setPost({ summary: $event.target.value })"></textarea>
+              </label>
+
+              <label class="sidebar-field">
+                <span>Summary (EN)</span>
+                <textarea :value="store.post.summaryEn" rows="3" @input="store.setPost({ summaryEn: $event.target.value })"></textarea>
+              </label>
+
+              <label class="sidebar-field">
+                <span>Summary (ZH)</span>
+                <textarea :value="store.post.summaryZh" rows="3" @input="store.setPost({ summaryZh: $event.target.value })"></textarea>
+              </label>
+
+              <label class="sidebar-field">
+                <span>Content (EN)</span>
+                <textarea :value="store.post.contentEn" rows="7" @input="store.setPost({ contentEn: $event.target.value })"></textarea>
+              </label>
+
+              <label class="sidebar-field">
+                <span>Content (ZH)</span>
+                <textarea :value="store.post.contentZh" rows="7" @input="store.setPost({ contentZh: $event.target.value })"></textarea>
               </label>
 
               <label class="sidebar-field">
@@ -146,6 +191,36 @@
                   type="datetime-local"
                   @input="store.setPost({ publishedAt: $event.target.value })"
                 />
+              </label>
+
+              <label class="sidebar-field">
+                <span>SEO Title (VI)</span>
+                <input :value="store.post.metaTitle" type="text" @input="store.setPost({ metaTitle: $event.target.value })" />
+              </label>
+
+              <label class="sidebar-field">
+                <span>SEO Title (EN)</span>
+                <input :value="store.post.metaTitleEn" type="text" @input="store.setPost({ metaTitleEn: $event.target.value })" />
+              </label>
+
+              <label class="sidebar-field">
+                <span>SEO Title (ZH)</span>
+                <input :value="store.post.metaTitleZh" type="text" @input="store.setPost({ metaTitleZh: $event.target.value })" />
+              </label>
+
+              <label class="sidebar-field">
+                <span>SEO Description (VI)</span>
+                <textarea :value="store.post.metaDescription" rows="3" @input="store.setPost({ metaDescription: $event.target.value })"></textarea>
+              </label>
+
+              <label class="sidebar-field">
+                <span>SEO Description (EN)</span>
+                <textarea :value="store.post.metaDescriptionEn" rows="3" @input="store.setPost({ metaDescriptionEn: $event.target.value })"></textarea>
+              </label>
+
+              <label class="sidebar-field">
+                <span>SEO Description (ZH)</span>
+                <textarea :value="store.post.metaDescriptionZh" rows="3" @input="store.setPost({ metaDescriptionZh: $event.target.value })"></textarea>
               </label>
             </div>
 
@@ -306,6 +381,7 @@ import { Copy, Image as ImageIcon, LayoutGrid, Loader2, Save, Type, Upload, X } 
 
 import { ADMIN_TOKEN_STORAGE_KEY } from '@/views/admin/shared/constants/auth'
 import {
+  autoTranslateAdminEntityPayload,
   createAdminEntityRecord,
   getAdminEntityRecord,
   listAdminEntityRecords,
@@ -331,6 +407,7 @@ const sourceRecordId = computed(() => route.params.id || route.query.id || '')
 const sourceRecordSlug = computed(() => route.query.slug || '')
 const isCrawling = ref(false)
 const saveStatus = ref('idle')
+const translationLoading = ref(false)
 const postImageInputRef = ref(null)
 const blockImageInputRef = ref(null)
 const uploadedImages = ref([])
@@ -1045,8 +1122,20 @@ async function loadPost() {
 
     store.setPost({
       title: data.title || '',
+      titleEn: data.title_en || '',
+      titleZh: data.title_zh || '',
       slug: data.slug || '',
       summary: data.summary || '',
+      summaryEn: data.summary_en || '',
+      summaryZh: data.summary_zh || '',
+      contentEn: data.content_en || '',
+      contentZh: data.content_zh || '',
+      metaTitle: data.meta_title || '',
+      metaTitleEn: data.meta_title_en || '',
+      metaTitleZh: data.meta_title_zh || '',
+      metaDescription: data.meta_description || '',
+      metaDescriptionEn: data.meta_description_en || '',
+      metaDescriptionZh: data.meta_description_zh || '',
       thumbnailUrl: data.thumbnail_url || '',
       status: data.status || 'draft',
       publishedAt: toDatetimeLocal(data.published_at),
@@ -1065,6 +1154,40 @@ async function loadPost() {
     }
   } catch (error) {
     console.error('Load error:', error)
+  }
+}
+
+async function handleAutoTranslate() {
+  translationLoading.value = true
+  try {
+    const renderedContent = renderBlocksToHtml(store.blocks)
+    const response = await autoTranslateAdminEntityPayload('news_posts', {
+      title: store.post.title || '',
+      summary: store.post.summary || '',
+      content: renderedContent || '',
+      meta_title: store.post.metaTitle || store.post.title || '',
+      meta_description: store.post.metaDescription || store.post.summary || '',
+    }, token)
+
+    store.setPost({
+      titleEn: response.title_en || '',
+      titleZh: response.title_zh || '',
+      summaryEn: response.summary_en || '',
+      summaryZh: response.summary_zh || '',
+      contentEn: response.content_en || '',
+      contentZh: response.content_zh || '',
+      metaTitle: response.meta_title || store.post.metaTitle || '',
+      metaTitleEn: response.meta_title_en || '',
+      metaTitleZh: response.meta_title_zh || '',
+      metaDescription: response.meta_description || store.post.metaDescription || '',
+      metaDescriptionEn: response.meta_description_en || '',
+      metaDescriptionZh: response.meta_description_zh || '',
+    })
+  } catch (error) {
+    console.error('Auto translate error:', error)
+    alert('Dịch tự động thất bại. Vui lòng kiểm tra backend/API dịch rồi thử lại.')
+  } finally {
+    translationLoading.value = false
   }
 }
 
@@ -1123,8 +1246,20 @@ async function handleCrawl(url) {
 
       store.setPost({
         title: json.data.title || 'Untitled',
+        titleEn: '',
+        titleZh: '',
         slug: `article-${Date.now().toString(36)}`,
         summary: json.data.excerpt || '',
+        summaryEn: '',
+        summaryZh: '',
+        contentEn: '',
+        contentZh: '',
+        metaTitle: '',
+        metaTitleEn: '',
+        metaTitleZh: '',
+        metaDescription: '',
+        metaDescriptionEn: '',
+        metaDescriptionZh: '',
         thumbnailUrl: json.data.thumbnail_url || '',
         status: 'draft',
         publishedAt: '',
@@ -1144,8 +1279,20 @@ async function handleCrawl(url) {
 
     store.setPost({
       title: 'Failed to Crawl',
+      titleEn: '',
+      titleZh: '',
       slug: `error-${Date.now()}`,
       summary: message,
+      summaryEn: '',
+      summaryZh: '',
+      contentEn: '',
+      contentZh: '',
+      metaTitle: '',
+      metaTitleEn: '',
+      metaTitleZh: '',
+      metaDescription: '',
+      metaDescriptionEn: '',
+      metaDescriptionZh: '',
       thumbnailUrl: '',
       status: 'draft',
       publishedAt: '',
@@ -1170,27 +1317,39 @@ async function handleSave() {
   const renderedContent = renderBlocksToHtml(store.blocks)
   const payload = {
     title: store.post.title,
+    title_en: store.post.titleEn,
+    title_zh: store.post.titleZh,
     slug: store.post.slug,
     summary: store.post.summary,
+    summary_en: store.post.summaryEn,
+    summary_zh: store.post.summaryZh,
     thumbnail_url: store.post.thumbnailUrl,
     status: store.post.status,
     published_at: publishedAt,
     content_json: JSON.stringify({ page: store.pageConfig, blocks: store.blocks }),
     content: renderedContent || '<p></p>',
+    content_en: store.post.contentEn,
+    content_zh: store.post.contentZh,
+    meta_title: store.post.metaTitle,
+    meta_title_en: store.post.metaTitleEn,
+    meta_title_zh: store.post.metaTitleZh,
+    meta_description: store.post.metaDescription,
+    meta_description_en: store.post.metaDescriptionEn,
+    meta_description_zh: store.post.metaDescriptionZh,
   }
   try {
     if (isEdit.value) {
       await updateAdminEntityRecord('news_posts', route.params.id, payload, token)
     } else {
-      const created = await createAdminEntityRecord('news_posts', payload, token)
-      if (created?.id) {
-        router.replace({ name: 'AdminNewsEdit', params: { id: created.id } })
-      }
+      await createAdminEntityRecord('news_posts', payload, token)
+
+
+
     }
     saveStatus.value = 'saved'
     setTimeout(() => {
-      if (saveStatus.value === 'saved') saveStatus.value = 'idle'
-    }, 3000)
+      goBack()
+    }, 1000)
   } catch (error) {
     saveStatus.value = 'error'
     console.error('Save error:', error)
@@ -1245,8 +1404,20 @@ onMounted(async () => {
     } else {
       store.setPost({
         title: 'Untitled',
+        titleEn: '',
+        titleZh: '',
         slug: `untitled-${Date.now()}`,
         summary: '',
+        summaryEn: '',
+        summaryZh: '',
+        contentEn: '',
+        contentZh: '',
+        metaTitle: '',
+        metaTitleEn: '',
+        metaTitleZh: '',
+        metaDescription: '',
+        metaDescriptionEn: '',
+        metaDescriptionZh: '',
         thumbnailUrl: '',
         status: 'draft',
         publishedAt: '',
@@ -1536,10 +1707,11 @@ onBeforeUnmount(() => {
 }
 
 .sidebar-field input,
-.sidebar-field select {
+.sidebar-field select,
+.sidebar-field textarea {
   width: 100%;
-  height: 40px;
-  padding: 0 12px;
+  min-height: 40px;
+  padding: 10px 12px;
   border: 1px solid #dbe2ea;
   border-radius: 12px;
   outline: none;
@@ -1549,8 +1721,22 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
+.sidebar-field input,
+.sidebar-field select {
+  height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.sidebar-field textarea {
+  resize: vertical;
+  line-height: 1.55;
+  font-family: inherit;
+}
+
 .sidebar-field input:focus,
-.sidebar-field select:focus {
+.sidebar-field select:focus,
+.sidebar-field textarea:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
@@ -1587,7 +1773,8 @@ onBeforeUnmount(() => {
 }
 
 .sidebar-upload-btn,
-.sidebar-action-btn {
+.sidebar-action-btn,
+.sidebar-translate-btn {
   height: 40px;
   padding: 0 12px;
   border-radius: 12px;
@@ -1601,6 +1788,17 @@ onBeforeUnmount(() => {
   font-weight: 600;
   color: #0f172a;
   cursor: pointer;
+}
+
+.sidebar-translate-btn {
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.sidebar-translate-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .sidebar-media-grid {

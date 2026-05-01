@@ -8,7 +8,8 @@
  * - Cập nhật SEO tags
  */
 
-import { onMounted, readonly, ref } from 'vue'
+import { onMounted, readonly, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getPageDetail, getBanners } from '@/views/user/services/publicApi'
 import { normalizeAboutPage } from '../adapters/aboutPageNormalizer'
 
@@ -29,6 +30,7 @@ function applySeo(view) {
  * @returns {{ loading, error, aboutView, refresh }}
  */
 export function useAboutPage() {
+  const { locale } = useI18n()
   const loading = ref(true)
   const error = ref(null)
   const aboutView = ref(null)
@@ -60,6 +62,7 @@ export function useAboutPage() {
   }
 
   onMounted(fetchAbout)
+  watch(locale, fetchAbout)
 
   return {
     loading: readonly(loading),

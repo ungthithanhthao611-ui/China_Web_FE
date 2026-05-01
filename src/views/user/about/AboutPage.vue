@@ -26,22 +26,10 @@ const sectionMeta = computed(() => aboutView.value?.sectionMeta ?? []);
 const aboutTabs = computed(() => aboutView.value?.aboutTabs ?? []);
 const translatedTabs = computed(() => {
   return aboutTabs.value.map((tab) => {
-    let title = tab.title
-    if (locale.value !== 'vi') {
-      if (tab.id === 'page1') title = t('user.about.tabIntro')
-      if (tab.id === 'page3') title = t('user.about.tabVision')
-      if (tab.id === 'page4') title = t('user.about.tabOrgChart')
-      if (tab.id === 'page5') title = t('user.about.tabCulture')
-      if (tab.id === 'page6') title = t('user.about.tabTimeline')
-      if (tab.id === 'page7') title = t('user.about.tabLeadership')
-    }
-    return { ...tab, title }
+    return { ...tab, title: tab.title }
   })
 })
 const companyIntroduction = computed(() => {
-  if (locale.value !== 'vi') {
-    return [t('user.home.aboutDescription1'), t('user.home.aboutDescription2')]
-  }
   return aboutView.value?.companyIntroduction?.paragraphs ?? []
 });
 const chairmanSpeech = computed(() => aboutView.value?.chairmanSpeech ?? null);
@@ -54,41 +42,33 @@ const introImage = computed(() => aboutView.value?.companyIntroduction?.coverIma
 const introVideoUrl = computed(() => aboutView.value?.companyIntroduction?.videoUrl ?? "");
 const orgChartImage = computed(() => aboutView.value?.organizationChart?.chartImage ?? "");
 const heroHeadline = computed(() => {
-  if (locale.value === 'vi') return aboutView.value?.hero?.headline || t('user.about.heroHeadline')
-  return t('user.about.heroHeadline')
+  return aboutView.value?.hero?.headline || t('user.about.heroHeadline')
 });
 const heroDescription = computed(() => {
-  if (locale.value === 'vi') return aboutView.value?.hero?.description || t('user.about.heroDescription')
-  return t('user.about.heroDescription')
+  return aboutView.value?.hero?.description || t('user.about.heroDescription')
 });
 const speechSignTitle = computed(() => aboutView.value?.chairmanSpeech?.signTitle ?? "");
 const speechSignName = computed(() => aboutView.value?.chairmanSpeech?.signName ?? "");
 const speechVision = computed(() => {
-  if (locale.value !== 'vi') return t('user.about.visionFallback')
   return chairmanSpeech.value?.vision ?? ""
 });
 const speechMission = computed(() => {
-  if (locale.value !== 'vi') return t('user.about.missionFallback')
   return chairmanSpeech.value?.mission ?? ""
 });
 const introTitle = computed(() => {
-  if (locale.value === 'vi') return aboutView.value?.companyIntroduction?.title || t('user.about.introTitle')
-  return t('user.about.introTitle')
+  return aboutView.value?.companyIntroduction?.title || t('user.about.introTitle')
 });
 const speechTitle = computed(() => {
-  if (locale.value === 'vi') return aboutView.value?.chairmanSpeech?.title || t('user.about.visionTitle')
-  return t('user.about.visionTitle')
+  return aboutView.value?.chairmanSpeech?.title || t('user.about.visionTitle')
 });
 const orgChartTitle = computed(() => {
-  if (locale.value === 'vi') return aboutView.value?.organizationChart?.title || t('user.about.orgChartTitle')
-  return t('user.about.orgChartTitle')
+  return aboutView.value?.organizationChart?.title || t('user.about.orgChartTitle')
 });
 const videoButtonLabel = computed(
   () => aboutView.value?.companyIntroduction?.videoButtonLabel || t('user.about.videoLabel'),
 );
 const cultureTitle = computed(() => {
-  if (locale.value === 'vi') return aboutView.value?.cultureSection?.title || aboutView.value?.cultureBlocks?.[0]?.title || t('user.about.cultureTitle')
-  return t('user.about.cultureTitle')
+  return aboutView.value?.cultureSection?.title || aboutView.value?.cultureBlocks?.[0]?.title || t('user.about.cultureTitle')
 });
 const cultureImage = computed(
   () =>
@@ -96,12 +76,10 @@ const cultureImage = computed(
     "https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/3f9cf9fc-c3f2-4cd5-a6e7-6c1f19a596b0.jpg",
 );
 const timelineTitle = computed(() => {
-  if (locale.value === 'vi') return aboutView.value?.timelineSectionTitle || t('user.about.timelineTitle')
-  return t('user.about.timelineTitle')
+  return aboutView.value?.timelineSectionTitle || t('user.about.timelineTitle')
 });
 const leadershipTitle = computed(() => {
-  if (locale.value === 'vi') return aboutView.value?.leadershipSectionTitle || t('user.about.leadershipTitle')
-  return t('user.about.leadershipTitle')
+  return aboutView.value?.leadershipSectionTitle || t('user.about.leadershipTitle')
 });
 
 const activeSection = ref("page1");
@@ -181,11 +159,6 @@ const cultureDisplayBlocks = computed(() => {
     normalizedBlocks.find((item) => item.normalizedTitle.includes("slogan")) ||
     normalizedBlocks.find((item) => item.title !== coreValuesBlock.title) ||
     null;
-
-  if (locale.value !== 'vi') {
-    if (coreValuesBlock) coreValuesBlock.title = t('user.about.cultureTitle')
-    if (sloganBlock) sloganBlock.title = t('user.about.cultureSlogan')
-  }
 
   return sloganBlock
     ? [coreValuesBlock, sloganBlock]

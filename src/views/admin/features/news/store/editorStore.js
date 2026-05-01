@@ -6,7 +6,26 @@ function deepClone(obj) {
 
 export const useEditorStore = defineStore('newsEditor', {
   state: () => ({
-    post: { title: '', slug: '', summary: '', thumbnailUrl: '', status: 'draft', publishedAt: '' },
+    post: {
+      title: '',
+      titleEn: '',
+      titleZh: '',
+      slug: '',
+      summary: '',
+      summaryEn: '',
+      summaryZh: '',
+      contentEn: '',
+      contentZh: '',
+      metaTitle: '',
+      metaTitleEn: '',
+      metaTitleZh: '',
+      metaDescription: '',
+      metaDescriptionEn: '',
+      metaDescriptionZh: '',
+      thumbnailUrl: '',
+      status: 'draft',
+      publishedAt: '',
+    },
     blocks: [],
     selectedBlockId: null,
     selectedSubItemId: null,
@@ -122,7 +141,26 @@ export const useEditorStore = defineStore('newsEditor', {
     },
 
     resetEditor() {
-      this.post = { title: '', slug: '', summary: '', thumbnailUrl: '', status: 'draft', publishedAt: '' }
+      this.post = {
+        title: '',
+        titleEn: '',
+        titleZh: '',
+        slug: '',
+        summary: '',
+        summaryEn: '',
+        summaryZh: '',
+        contentEn: '',
+        contentZh: '',
+        metaTitle: '',
+        metaTitleEn: '',
+        metaTitleZh: '',
+        metaDescription: '',
+        metaDescriptionEn: '',
+        metaDescriptionZh: '',
+        thumbnailUrl: '',
+        status: 'draft',
+        publishedAt: '',
+      }
       this.blocks = []
       this.selectedBlockId = null
       this.selectedSubItemId = null

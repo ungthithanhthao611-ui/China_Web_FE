@@ -520,6 +520,12 @@ export const makeDraftFromFields = (fields, record = {}) => {
     focus_y: record.focus_y ?? null,
     avatar_fit: record.avatar_fit ?? '',
     avatar_focus: record.avatar_focus ?? '',
+    title_en: String(record.title_en ?? ''),
+    title_zh: String(record.title_zh ?? ''),
+    subtitle_en: String(record.subtitle_en ?? ''),
+    subtitle_zh: String(record.subtitle_zh ?? ''),
+    content_en: String(record.content_en ?? ''),
+    content_zh: String(record.content_zh ?? ''),
   }
   for (const field of fields) {
     if (field.key === 'image_id') {
