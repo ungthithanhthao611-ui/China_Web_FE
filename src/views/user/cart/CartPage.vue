@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   ArrowLeft,
@@ -22,6 +22,7 @@ import { resolveProductDisplayPrice, resolveStockQuantity } from '@/views/user/u
 const SELECTED_CART_IMAGES_KEY = 'selected_cart_images'
 
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const cartStore = useCartStore()
@@ -30,6 +31,7 @@ const galleryIndex = ref(0)
 const pendingGalleryIndex = ref(0)
 const selectedImages = ref(loadSelectedImages())
 const quantityError = ref('')
+const paymentNotice = ref('')
 
 const summaryPrice = computed(() => formatPrice(cartStore.totalPrice))
 
@@ -178,7 +180,22 @@ const handleCheckout = () => {
   router.push('/checkout')
 }
 
+function consumePaymentNoticeFromQuery() {
+  const rawMessage = route.query?.message
+  paymentNotice.value = Array.isArray(rawMessage) ? rawMessage[0] || '' : rawMessage || ''
+
+  if (!paymentNotice.value) {
+    return
+  }
+
+  router.replace({
+    path: route.path,
+    query: {},
+  })
+}
+
 onMounted(async () => {
+  consumePaymentNoticeFromQuery()
   await authStore.initialize()
   if (!authStore.isAuthenticated) {
     router.push({ path: '/login', query: { redirect: '/cart' } })
@@ -221,6 +238,10 @@ onMounted(async () => {
 
       <div v-else class="cart-grid">
         <section class="cart-panel">
+          <div v-if="paymentNotice" class="cart-inline-alert cart-inline-alert--info">
+            <strong>Thanh toán VNPAY chưa hoàn tất.</strong>
+            <span>{{ paymentNotice }}</span>
+          </div>
           <div v-if="quantityError" class="cart-inline-alert">
             <strong>Cập nhật số lượng chưa thành công.</strong>
             <span>{{ quantityError }}</span>

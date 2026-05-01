@@ -99,6 +99,11 @@ const clientRoutes = [
     component: () => import('@/views/user/checkout/CheckoutPage.vue'),
   },
   {
+    path: 'payment/vnpay-return',
+    name: 'VnpayReturn',
+    component: () => import('@/views/user/payment/VnpayReturnPage.vue'),
+  },
+  {
     path: 'profile',
     name: 'Profile',
     component: () => import('@/views/user/profile/ProfilePage.vue'),

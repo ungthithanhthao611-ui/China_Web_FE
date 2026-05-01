@@ -24,7 +24,7 @@ import {
 
 import { useAuthStore } from '@/views/user/stores/auth'
 import { useCartStore } from '@/views/user/stores/cart'
-import { createMyOrder } from '@/views/user/services/ordersApi'
+import { createMyOrder, createVnpayPayment } from '@/views/user/services/ordersApi'
 import { resolveImageWithFallback, applyImageFallback } from '@/views/user/utils/imageFallback'
 import { resolveProductDisplayPrice, resolveStockQuantity } from '@/views/user/utils/productPricing'
 
@@ -58,6 +58,7 @@ const touched = reactive({
 })
 
 const noteText = 'Nhân viên tư vấn sẽ liên hệ để xác nhận giá, phí vận chuyển và phương thức thanh toán phù hợp.'
+const vnpayRedirectNote = 'Với VNPAY, hệ thống sẽ tạo đơn thanh toán online và chuyển bạn sang cổng VNPAY để hoàn tất giao dịch. Nếu bạn hủy thanh toán, đơn online sẽ bị hủy và giỏ hàng vẫn được giữ nguyên.'
 
 const paymentMethodOptions = [
   {
@@ -71,10 +72,10 @@ const paymentMethodOptions = [
   {
     value: 'vnpay',
     label: 'Thanh toán qua VNPAY',
-    description: 'Thanh toán online qua QR/ATM/thẻ. Tính năng sẽ được kích hoạt ở bước tiếp theo.',
+    description: 'Thanh toán online qua QR, ATM nội địa và thẻ ngân hàng trên cổng VNPAY Sandbox.',
     icon: CreditCard,
-    available: false,
-    badge: 'Sắp hỗ trợ',
+    available: true,
+    badge: 'Online',
   },
 ]
 
@@ -391,6 +392,14 @@ async function submitOrder() {
       client_request_id: checkoutRequestId.value,
     })
 
+    if (form.paymentMethod === 'vnpay') {
+      const payment = await createVnpayPayment({ order_id: createdOrder.id })
+      resetCheckoutRequestId()
+      await cartStore.fetchCart()
+      window.location.assign(payment.payment_url)
+      return
+    }
+
     successOrder.value = createdOrder
     resetCheckoutRequestId()
     await cartStore.fetchCart()
@@ -667,8 +676,7 @@ onMounted(() => {
               <div class="checkout-info-box checkout-info-box--payment">
                 <Info :size="18" />
                 <p>
-                  COD đang hoạt động hoàn chỉnh. VNPAY sẽ được triển khai ở bước tiếp theo sau khi hoàn tất API tạo giao dịch,
-                  URL callback và luồng đối soát trạng thái thanh toán.
+                  Với COD, hệ thống tạo đơn và xác nhận theo quy trình hiện có. {{ vnpayRedirectNote }}
                 </p>
               </div>
 
