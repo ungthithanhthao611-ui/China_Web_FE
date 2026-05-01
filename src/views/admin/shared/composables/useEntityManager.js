@@ -22,6 +22,7 @@ import {
   listAdminEntityRecords,
   updateAdminEntityRecord,
   uploadAdminMediaAsset,
+  autoTranslateAdminEntityPayload,
   autoTranslateAdminEntityRecord,
 } from '@/views/admin/shared/api/adminApi.js'
 import {
@@ -1088,18 +1089,16 @@ export function useEntityManager(props, emit) {
   }
 
   async function autoTranslate() {
-    if (!editingRecordId.value) return
     const token = normalizedToken()
     saving.value = true
     try {
-      const response = await autoTranslateAdminEntityRecord(
+      const response = await autoTranslateAdminEntityPayload(
         resolvedEntityKey.value,
-        editingRecordId.value,
+        cleanPayload(),
         token,
       )
-      // Merge translated data into form
       Object.assign(form, response)
-      notifySuccess('Đã tự động dịch các trường văn bản (Fallback: Dictionary).')
+      notifySuccess('Đã tự động dịch các trường văn bản. Vui lòng kiểm tra lại trước khi lưu.')
     } catch (error) {
       notifyError(error.message || 'Lỗi khi tự động dịch.')
     } finally {

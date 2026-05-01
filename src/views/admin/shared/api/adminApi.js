@@ -91,6 +91,15 @@ export function autoTranslateAdminEntityRecord(entityName, recordId, token) {
   })
 }
 
+export function autoTranslateAdminEntityPayload(entityName, payload, token) {
+  const normalizedEntityName = normalizeAdminEntityName(entityName)
+  return fetchJson(`/admin/${normalizedEntityName}/translate-preview`, {
+    method: 'POST',
+    headers: withAdminHeaders(token),
+    body: payload,
+  })
+}
+
 export function uploadAdminMediaAsset(token, file, metadata = {}) {
   const formData = new FormData()
   formData.append('file', file)

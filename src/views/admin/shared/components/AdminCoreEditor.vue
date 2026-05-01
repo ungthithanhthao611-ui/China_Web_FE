@@ -289,6 +289,7 @@ const emit = defineEmits([
   "banner-focus-stop",
   "inline-upload",
   "remove-gallery-url",
+  "auto-translate",
 ]);
 
 function handleInlineFile(field, event) {
@@ -610,7 +611,7 @@ const previewHasContent = computed(
     Boolean(previewLink.value),
 );
 
-const supportsTranslation = computed(() => ["products", "product_categories"].includes(props.entityKey) && props.formMode === "edit");
+const supportsTranslation = computed(() => ["products", "product_categories"].includes(props.entityKey));
 </script>
 
 <template>

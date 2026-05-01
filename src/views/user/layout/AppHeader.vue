@@ -422,6 +422,10 @@ watch(
   },
 )
 
+watch(locale, () => {
+  loadProductCategories()
+})
+
 watch(isMobileMenuOpen, (isOpen) => {
   setBodyLock(isOpen)
   if (isOpen) {

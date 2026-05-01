@@ -435,6 +435,7 @@ watch(
 )
 
 watch(() => props.slug, fetchProduct)
+watch(locale, fetchProduct)
 
 onMounted(() => {
   uiState.isHeaderHidden = false
