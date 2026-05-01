@@ -393,11 +393,17 @@ async function submitOrder() {
     })
 
     if (form.paymentMethod === 'vnpay') {
-      const payment = await createVnpayPayment({ order_id: createdOrder.id })
-      resetCheckoutRequestId()
-      await cartStore.fetchCart()
-      window.location.assign(payment.payment_url)
-      return
+      try {
+        const payment = await createVnpayPayment({ order_id: createdOrder.id })
+        resetCheckoutRequestId()
+        await cartStore.fetchCart()
+        window.location.assign(payment.payment_url)
+        return
+      } catch (paymentError) {
+        errorMessage.value = paymentError?.message || 'Không thể khởi tạo thanh toán VNPAY. Vui lòng thử lại.'
+        await cartStore.fetchCart()
+        return
+      }
     }
 
     successOrder.value = createdOrder
