@@ -1,5 +1,8 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   config: {
@@ -18,10 +21,10 @@ const props = defineProps({
 
 const emit = defineEmits(['refresh', 'create'])
 
-const safeEyebrow = computed(() => props.config?.eyebrow || 'Mô-đun quản trị')
-const safeLabel = computed(() => props.config?.label || 'Bản ghi')
+const safeEyebrow = computed(() => props.config?.eyebrow ? t(props.config.eyebrow) : t('admin.common.admin_profile'))
+const safeLabel = computed(() => props.config?.label ? t(props.config.label) : t('admin.common.all'))
 const safeDescription = computed(
-  () => props.config?.description || 'Quản lý dữ liệu từ giao diện quản trị.',
+  () => props.config?.description ? t(props.config.description) : '',
 )
 </script>
 
@@ -30,7 +33,7 @@ const safeDescription = computed(
     <div class="manager-toolbar__content">
       <div class="manager-toolbar__badge-wrap">
         <p class="eyebrow">{{ safeEyebrow }}</p>
-        <span class="manager-toolbar__badge">Mô-đun CMS</span>
+        <span class="manager-toolbar__badge">CMS</span>
       </div>
 
       <div class="manager-toolbar__heading">
@@ -46,7 +49,7 @@ const safeDescription = computed(
         :disabled="loading"
         @click="emit('refresh')"
       >
-        {{ loading ? '...' : 'Làm mới' }}
+        {{ loading ? '...' : $t('admin.common.refresh') }}
       </button>
       <button
         v-if="canCreate"
@@ -54,7 +57,7 @@ const safeDescription = computed(
         class="btn btn-primary btn-sm"
         @click="emit('create')"
       >
-        Thêm mới
+        {{ $t('admin.common.create') }}
       </button>
     </div>
   </div>

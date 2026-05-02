@@ -115,7 +115,7 @@ async function fetchPage() {
       : [];
     total.value = Number(res?.total || 0);
   } catch (err) {
-    error.value = err?.message || "Failed to load news";
+    error.value = err?.message || t('user.news.errorLoadFailed')
     items.value = [];
     total.value = 0;
   } finally {
@@ -150,7 +150,10 @@ let observer;
 const updateVisibleSections = (entries) => {
   entries.forEach((entry) => {
     if (entry.isIntersecting) {
-      visibleSections.value.add(entry.target.id || 'featured');
+      const sectionId = entry.target.id || 'featured';
+      if (!visibleSections.value.has(sectionId)) {
+        visibleSections.value = new Set([...visibleSections.value, sectionId]);
+      }
     }
   });
 };
@@ -158,7 +161,8 @@ const updateVisibleSections = (entries) => {
 const setupObserver = () => {
   observer?.disconnect();
   observer = new IntersectionObserver(updateVisibleSections, {
-    threshold: 0.1,
+    threshold: 0,
+    rootMargin: '0px 0px -50px 0px'
   });
 
   const featuredEl = document.querySelector('.featured-section');
@@ -254,7 +258,7 @@ onBeforeUnmount(() => {
     >
       <div class="news-shell list-shell">
         <div v-if="loading" class="news-status-card">
-          <p>{{ t('user.home.loading') }}</p>
+          <p>{{ t('user.news.loading') }}</p>
         </div>
 
         <div v-else-if="error" class="news-status-card news-status-card--error">
@@ -288,7 +292,7 @@ onBeforeUnmount(() => {
             v-if="!pagedItems.length"
             class="news-status-card news-status-card--empty"
           >
-            <p>{{ t('user.home.newsEmpty') }}</p>
+            <p>{{ t('user.news.empty') }}</p>
           </div>
         </div>
 
@@ -351,7 +355,7 @@ onBeforeUnmount(() => {
 }
 
 .news-shell {
-  width: 1440px;
+  width: min(1440px, calc(100% - 40px));
   margin: 0 auto;
 }
 
@@ -1106,25 +1110,19 @@ onBeforeUnmount(() => {
   }
 
   .hero-media {
-    height: 400px;
-  }
-
-  .hero-banner--pc {
-    display: none;
-  }
-
-  .hero-banner--mobile {
-    display: block;
+    height: 320px;
   }
 
   .hero-info {
-    margin-top: -400px;
-    min-height: 400px;
+    position: relative;
+    margin-top: 0;
+    min-height: auto;
     padding-bottom: 40px;
+    background: #10243c;
   }
 
   .hero-copy {
-    padding-top: 120px;
+    padding-top: 40px;
   }
 
   .hero-title-row {

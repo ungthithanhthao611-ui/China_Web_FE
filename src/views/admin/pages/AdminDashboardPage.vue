@@ -29,7 +29,11 @@ import {
   UserCircle,
   Users,
   Video,
+  Globe,
+  Languages,
 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+import { LOCALE_STORAGE_KEY } from '@/i18n'
 
 import { ADMIN_TOKEN_STORAGE_KEY, ADMIN_USER_STORAGE_KEY } from '@/views/admin/shared/constants/auth'
 import { ADMIN_SECTION_GROUPS, ADMIN_SECTION_INDEX } from '@/views/admin/shared/config/entityConfigs'
@@ -57,6 +61,7 @@ import NewsManager from '@/views/admin/features/news/pages/NewsManager.vue'
 
 const router = useRouter()
 const route = useRoute()
+const { t, locale } = useI18n()
 
 const availableSectionKeys = ['dashboard', 'navigation', ...Object.keys(ADMIN_SECTION_INDEX).filter((key) => key !== 'dashboard' && key !== 'navigation')]
 const LEGACY_SECTION_REDIRECTS = {
@@ -64,92 +69,19 @@ const LEGACY_SECTION_REDIRECTS = {
   entity_media: 'projects',
 }
 
-const adminSidebarGroups = [
-  {
-    title: 'TỔNG QUAN',
-    items: [
-      { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { key: 'dashboard', label: 'Bảng điều khiển', icon: Home },
-    ],
-  },
-  {
-    title: 'QUẢN LÝ NỘI DUNG',
-    items: [
-      { key: 'products', label: 'Sản phẩm', icon: Package },
-      { key: 'product_categories', label: 'Danh mục', icon: Tags },
-      { key: 'videos', label: 'Video', icon: Video },
-      { key: 'news_posts', label: 'Bài viết', icon: FileText },
-      { key: 'navigation', label: 'Menu', icon: ClipboardList },
-      { key: 'banners', label: 'Banner & Slider', icon: SlidersHorizontal },
-      { key: 'content_block_items', label: 'Giới thiệu công ty', icon: BookOpen },
-      { key: 'capability_settings', label: 'Cấu hình năng lực', icon: Gauge },
-      { key: 'honor_categories', label: 'Danh mục năng lực', icon: Tags },
-      { key: 'honors', label: 'Năng lực / Chứng nhận', icon: Star },
-      { key: 'media_assets', label: 'Thư viện ảnh', icon: Image },
-      { key: 'projects', label: 'Dự án', icon: BriefcaseBusiness },
-      { key: 'contacts', label: 'Thông tin liên hệ', icon: Headphones },
-      { key: 'inquiry_submissions', label: 'Phản hồi từ form', icon: MessageSquare },
-    ],
-  },
-  {
-    title: 'ĐƠN HÀNG & KHÁCH HÀNG',
-    items: [
-      { key: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
-      { key: 'users', label: 'Khách hàng', icon: Users },
-      { key: 'reviews', label: 'Đánh giá', icon: Star, disabled: true },
-    ],
-  },
-  {
-    title: 'CẤU HÌNH HỆ THỐNG',
-    items: [
-      { key: 'site_settings', label: 'Cài đặt website', icon: Settings },
-      { key: 'users', label: 'Quản lý tài khoản', icon: UserCircle },
-      { key: 'activity_logs', label: 'Nhật ký hoạt động', icon: FileText, disabled: true },
-    ],
-  },
-]
+const adminSidebarGroups = ADMIN_SECTION_GROUPS
 
 const sectionLabelOverrides = Object.fromEntries(
   adminSidebarGroups.flatMap((group) => group.items.map((item) => [item.key, item.label])),
 )
 
-const dashboardKpis = [
-  {
-    title: 'Tổng đơn hàng',
-    value: '125',
-    growth: '12.5%',
-    icon: ShoppingBag,
-    tone: 'blue',
-  },
-  {
-    title: 'Tổng doanh thu',
-    value: '58.450.000đ',
-    growth: '18.7%',
-    icon: CircleDollarSign,
-    tone: 'green',
-  },
-  {
-    title: 'Sản phẩm',
-    value: '320',
-    growth: '8.3%',
-    icon: Box,
-    tone: 'violet',
-  },
-  {
-    title: 'Khách hàng',
-    value: '476',
-    growth: '10.2%',
-    icon: Users,
-    tone: 'orange',
-  },
-  {
-    title: 'Đánh giá',
-    value: '89',
-    growth: '15.9%',
-    icon: MessageSquare,
-    tone: 'cyan',
-  },
-]
+const dashboardKpis = reactive([
+  { key: 'total_orders', value: '125', growth: '12.5%', tone: 'blue', icon: ShoppingBag },
+  { key: 'total_revenue', value: '58.450.000', growth: '18.7%', tone: 'success', icon: CircleDollarSign },
+  { key: 'products', value: '320', growth: '8.3%', tone: 'purple', icon: Package },
+  { key: 'customers', value: '476', growth: '10.2%', tone: 'orange', icon: Users },
+  { key: 'reviews', value: '89', growth: '15.9%', tone: 'info', icon: MessageSquare },
+])
 
 const revenuePoints = [
   { label: '24/04', value: 5.8 },
@@ -162,32 +94,32 @@ const revenuePoints = [
 ]
 
 const latestOrders = [
-  { code: '#DH2504300001', customer: 'Nguyễn Văn A', time: '10:30 AM', status: 'Chờ xác nhận', amount: '1.996.000đ', tone: 'pending' },
-  { code: '#DH2504300002', customer: 'Trần Thị B', time: '09:15 AM', status: 'Đã xác nhận', amount: '950.000đ', tone: 'confirmed' },
-  { code: '#DH2504300003', customer: 'Lê Văn C', time: '08:45 AM', status: 'Đang giao', amount: '2.450.000đ', tone: 'shipping' },
-  { code: '#DH2504300004', customer: 'Phạm Thị D', time: '08:20 AM', status: 'Hoàn thành', amount: '780.000đ', tone: 'completed' },
-  { code: '#DH2504300005', customer: 'Hoàng Văn E', time: '07:50 AM', status: 'Đã hủy', amount: '0đ', tone: 'cancelled' },
+  { code: 'DH2504300001', customer: 'Nguyễn Văn A', time: '10:30 AM', statusKey: 'pending', amount: '1.996.000đ' },
+  { code: 'DH2504300002', customer: 'Trần Thị B', time: '09:15 AM', statusKey: 'confirmed', amount: '950.000đ' },
+  { code: 'DH2504300003', customer: 'Lê Văn C', time: '08:45 AM', statusKey: 'shipping', amount: '2.450.000đ' },
+  { code: 'DH2504300004', customer: 'Phạm Thị D', time: '08:20 AM', statusKey: 'completed', amount: '780.000đ' },
+  { code: 'DH2504300005', customer: 'Hoàng Văn E', time: '07:50 AM', statusKey: 'cancelled', amount: '0đ' },
 ]
 
 const topProducts = [
-  { name: 'Đá hoa cương 3D', sold: 120, texture: 'granite' },
-  { name: 'Travertine', sold: 85, texture: 'travertine' },
-  { name: 'Đá granite tự nhiên', sold: 68, texture: 'stone' },
+  { name: 'Đá hoa cương 3D', sold: 120, type: 'granite' },
+  { name: 'Travertine', sold: 85, type: 'travertine' },
+  { name: 'Đá granite tự nhiên', sold: 68, type: 'stone' },
 ]
 
-const orderStatusStats = [
-  { label: 'Chờ xác nhận', value: 32, percent: '25.6%', color: '#f8b72b' },
-  { label: 'Đã xác nhận', value: 28, percent: '22.4%', color: '#3b82f6' },
-  { label: 'Đang giao', value: 18, percent: '14.4%', color: '#8b5cf6' },
-  { label: 'Hoàn thành', value: 42, percent: '33.6%', color: '#10b981' },
-  { label: 'Đã hủy', value: 5, percent: '4.0%', color: '#ef4444' },
+const orderStats = [
+  { key: 'pending', value: 25.6, color: '#f8b72b' },
+  { key: 'confirmed', value: 22.4, color: '#3b82f6' },
+  { key: 'shipping', value: 14.4, color: '#8b5cf6' },
+  { key: 'completed', value: 33.6, color: '#10b981' },
+  { key: 'cancelled', value: 4.0, color: '#ef4444' },
 ]
 
 const quickStats = [
-  { label: 'Sản phẩm hết hàng', value: 12, tone: 'danger', icon: Box },
-  { label: 'Khách hàng mới', value: 24, tone: 'success', icon: Users },
-  { label: 'Bài viết', value: 15, tone: 'info', icon: FileText },
-  { label: 'Video', value: 8, tone: 'blue', icon: Video },
+  { key: 'out_of_stock', value: 12, tone: 'danger', icon: Box },
+  { key: 'new_customers', value: 24, tone: 'success', icon: Users },
+  { key: 'posts', value: 15, tone: 'info', icon: FileText },
+  { key: 'videos', value: 8, tone: 'blue', icon: Video },
 ]
 
 function resolveSection(value) {
@@ -228,39 +160,63 @@ let toastTimerId = null
 let isDashboardAlive = true
 let dashboardSummaryRequestId = 0
 
+const isLangOpen = ref(false)
+const supportedLanguages = [
+  { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
+]
+
+function switchLanguage(code) {
+  locale.value = code
+  localStorage.setItem(LOCALE_STORAGE_KEY, code)
+  isLangOpen.value = false
+}
+
+function closeLangDropdown(event) {
+  if (!isLangOpen.value) return
+  if (!event.target.closest('.lang-switcher')) {
+    isLangOpen.value = false
+  }
+}
+
 const currentSectionMeta = computed(() => {
   if (activeSection.value === 'dashboard') {
     return {
-      label: 'Dashboard',
-      eyebrow: 'Tổng quan',
-      description: 'Theo dõi nhanh hoạt động quản trị Thiên Đông Việt Nam.',
+      label: t('admin.sidebar.dashboard'),
+      eyebrow: t('admin.sidebar.overview'),
+      description: t('admin.dashboard.welcome_subtitle'),
     }
   }
 
   if (activeSection.value === 'navigation') {
     return {
-      label: 'Menu',
-      eyebrow: 'Quản lý nội dung',
-      description: 'Quản lý cây menu, nhãn, liên kết và thứ tự hiển thị.',
+      label: t('admin.sidebar.navigation'),
+      eyebrow: t('admin.sidebar.content'),
+      description: t('admin.navigation.subtitle'),
     }
   }
 
   const config = ADMIN_SECTION_INDEX[activeSection.value]
   return {
-    label: sectionLabelOverrides[activeSection.value] || config?.label || 'Dashboard',
-    eyebrow: config?.eyebrow || 'Admin module',
+    label: sectionLabelOverrides[activeSection.value] || (config?.label ? t(config.label) : 'Dashboard'),
+    eyebrow: config?.eyebrow ? t(config.eyebrow) : t('admin.common.admin_profile'),
     description: config?.description || '',
   }
 })
 
 const currentTitle = computed(() => currentSectionMeta.value.label)
-const currentBreadcrumb = computed(() => (activeSection.value === 'dashboard' ? 'Dashboard / Tổng quan' : `Dashboard / ${currentSectionMeta.value.label}`))
+const currentBreadcrumb = computed(() => {
+  if (activeSection.value === 'dashboard') return 'admin.sidebar.dashboard'
+  const config = ADMIN_SECTION_INDEX[activeSection.value]
+  return config?.label || activeSection.value
+})
 const userLabel = computed(() => currentUser.value?.full_name || currentUser.value?.username || 'Admin Admin')
 const userRole = computed(() => {
   const role = String(currentUser.value?.role || '').toLowerCase()
-  return role === 'admin' || !role ? 'Quản trị viên' : role
+  return role === 'admin' || !role ? t('admin.common.admin_profile') : role
 })
-const isUnsupportedSection = computed(() => false) // All sections are now supported
+const isUnsupportedSection = computed(() => false) 
 const unsupportedSectionMeta = computed(() => null)
 
 const revenuePolylinePoints = computed(() => {
@@ -473,6 +429,7 @@ onMounted(async () => {
   uiState.isHeaderHidden = false
   uiState.isHeaderHovered = false
   window.addEventListener('resize', handleViewportChange)
+  window.addEventListener('click', closeLangDropdown)
 
   if (!token.value.trim()) {
     await router.replace({ name: 'AdminLogin' })
@@ -486,6 +443,7 @@ onBeforeUnmount(() => {
   isDashboardAlive = false
   dashboardSummaryRequestId += 1
   window.removeEventListener('resize', handleViewportChange)
+  window.removeEventListener('click', closeLangDropdown)
   clearToast()
   uiState.isNavHidden = false
   uiState.isFooterHidden = false
@@ -500,8 +458,8 @@ onBeforeUnmount(() => {
     <aside class="sidebar" :class="{ open: isSidebarOpen }">
       <div class="brand-row">
         <div>
-          <p class="brand-kicker">China</p>
-          <h2>Admin</h2>
+          <p class="brand-kicker">{{ $t('admin.common.brand_kicker') }}</p>
+          <h2>{{ $t('admin.common.brand_name') }}</h2>
         </div>
         <button class="sidebar-close" type="button" aria-label="Close sidebar" @click="closeSidebar">
           ×
@@ -510,7 +468,7 @@ onBeforeUnmount(() => {
 
       <nav class="nav-groups" aria-label="Admin sections">
         <section v-for="group in ADMIN_SECTION_GROUPS" :key="group.title" class="nav-group">
-          <p class="nav-group-title">{{ group.title }}</p>
+          <p class="nav-group-title">{{ $t(group.title) }}</p>
           <div v-for="item in group.items" :key="item.key" class="nav-item-shell">
             <button
               type="button"
@@ -518,7 +476,7 @@ onBeforeUnmount(() => {
               :class="{ active: activeSection === item.key, 'active-parent': hasActiveChild(item) }"
               @click="handleSectionChange(item.key)"
             >
-              {{ item.label }}
+              {{ $t(item.label) }}
             </button>
 
             <div v-if="isGroupItemExpanded(item)" class="nav-subitems">
@@ -530,7 +488,7 @@ onBeforeUnmount(() => {
                 :class="{ active: activeSection === child.key }"
                 @click="handleSectionChange(child.key)"
               >
-                - {{ child.label }}
+                - {{ $t(child.label) }}
               </button>
             </div>
           </div>
@@ -544,14 +502,39 @@ onBeforeUnmount(() => {
           <button class="sidebar-toggle" type="button" aria-label="Open sidebar" @click="isSidebarOpen = true">
             <Menu :size="22" />
           </button>
-          <p class="breadcrumb-mini">{{ currentBreadcrumb }}</p>
+          <p class="breadcrumb-mini">{{ $t(currentBreadcrumb) }}</p>
         </div>
 
         <div class="session-panel">
-          <button class="topbar-icon-btn" type="button" aria-label="Tìm kiếm">
+          <div class="lang-switcher">
+            <button
+              class="topbar-icon-btn"
+              type="button"
+              :aria-label="$t('admin.dashboard.language')"
+              @click="isLangOpen = !isLangOpen"
+            >
+              <Globe :size="21" />
+            </button>
+            <transition name="dropdown">
+              <div v-if="isLangOpen" class="lang-dropdown shadow-xl">
+                <button
+                  v-for="lang in supportedLanguages"
+                  :key="lang.code"
+                  type="button"
+                  class="lang-item"
+                  :class="{ active: locale === lang.code }"
+                  @click="switchLanguage(lang.code)"
+                >
+                  <span class="lang-flag">{{ lang.flag }}</span>
+                  <span class="lang-label">{{ lang.label }}</span>
+                </button>
+              </div>
+            </transition>
+          </div>
+          <button class="topbar-icon-btn" type="button" :aria-label="$t('admin.common.search')">
             <Search :size="22" />
           </button>
-          <button class="topbar-icon-btn topbar-icon-btn--notify" type="button" aria-label="Thông báo">
+          <button class="topbar-icon-btn topbar-icon-btn--notify" type="button" :aria-label="$t('admin.common.notifications')">
             <Bell :size="21" />
             <span>3</span>
           </button>
@@ -577,8 +560,8 @@ onBeforeUnmount(() => {
       <section v-if="activeSection === 'dashboard'" class="dashboard-panel">
         <div class="welcome-card">
           <div>
-            <h1>Xin chào, Admin!</h1>
-            <p>Chào mừng bạn trở lại trang quản trị Thiên Đông Việt Nam.</p>
+            <h1>{{ $t('admin.dashboard.welcome_title') }}</h1>
+            <p>{{ $t('admin.dashboard.welcome_subtitle') }}</p>
           </div>
           <button class="date-range" type="button">
             <CalendarDays :size="18" />
@@ -588,29 +571,31 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="kpi-grid">
-          <article v-for="card in dashboardKpis" :key="card.title" class="kpi-card" :class="`kpi-card--${card.tone}`">
+          <article v-for="card in dashboardKpis" :key="card.key" class="kpi-card" :class="`kpi-card--${card.tone}`">
             <span class="kpi-card__icon">
               <component :is="card.icon" :size="30" stroke-width="1.8" />
             </span>
             <div>
-              <p>{{ card.title }}</p>
+              <p>{{ $t(`admin.dashboard.${card.key}`) }}</p>
               <strong>{{ card.value }}</strong>
-              <span>↑ {{ card.growth }} so với kỳ trước</span>
+              <span>↑ {{ card.growth }} {{ $t('admin.dashboard.growth_suffix') }}</span>
             </div>
           </article>
         </div>
 
         <div class="dashboard-main-grid">
-          <article class="dashboard-card revenue-card">
-            <div class="dashboard-card__head">
-              <h2>Doanh thu theo ngày</h2>
-              <button class="small-select" type="button">
-                7 ngày qua
-                <ChevronDown :size="16" />
-              </button>
+          <section class="dashboard-card chart-card">
+            <div class="card-header">
+              <h2>{{ $t('admin.dashboard.revenue_chart_title') }}</h2>
+              <div class="card-actions">
+                <button class="filter-btn" type="button">
+                  <span>{{ $t('admin.dashboard.last_7_days') }}</span>
+                  <ChevronDown :size="16" />
+                </button>
+              </div>
             </div>
             <div class="chart-wrap">
-              <svg viewBox="0 0 660 300" role="img" aria-label="Biểu đồ doanh thu theo ngày">
+              <svg viewBox="0 0 660 300" role="img" :aria-label="$t('admin.dashboard.revenue_chart_aria')">
                 <defs>
                   <linearGradient id="revenue-fill" x1="0" x2="0" y1="0" y2="1">
                     <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.26" />
@@ -644,76 +629,83 @@ onBeforeUnmount(() => {
                 />
                 <g class="chart-legend">
                   <rect x="300" y="18" width="18" height="10" rx="2" fill="#3b82f6" />
-                  <text x="326" y="27">Doanh thu (đ)</text>
+                  <text x="326" y="27">{{ $t('admin.dashboard.revenue_unit') }}</text>
                 </g>
               </svg>
             </div>
-          </article>
+          </section>
 
-          <article class="dashboard-card latest-orders-card">
-            <div class="dashboard-card__head">
-              <h2>Đơn hàng mới nhất</h2>
-              <button class="link-button" type="button" @click="handleSectionChange('orders')">Xem tất cả</button>
+          <section class="dashboard-card table-card">
+            <div class="card-header">
+              <h2>{{ $t('admin.dashboard.latest_orders') }}</h2>
+              <button class="view-all-btn" type="button" @click="handleSectionChange('orders')">
+                {{ $t('admin.dashboard.view_all') }}
+              </button>
             </div>
             <div class="latest-order-list">
-              <div v-for="item in latestOrders" :key="item.code" class="latest-order-row">
+              <article v-for="order in latestOrders" :key="order.code" class="latest-order-row">
                 <span class="latest-order-row__icon">
-                  <ShoppingBag :size="17" />
+                  <ClipboardList :size="18" />
                 </span>
-                <strong>{{ item.code }}</strong>
-                <span>{{ item.customer }}</span>
-                <span>{{ item.time }}</span>
-                <em :class="`status-badge status-badge--${item.tone}`">{{ item.status }}</em>
-                <b>{{ item.amount }}</b>
-              </div>
+                <strong>#{{ order.code }}</strong>
+                <span>{{ order.customer }}</span>
+                <span>{{ order.time }}</span>
+                <span class="status-badge" :class="`status-badge--${order.statusKey}`">
+                  {{ $t(`admin.dashboard.status.${order.statusKey}`) }}
+                </span>
+                <b>{{ order.amount }}</b>
+              </article>
             </div>
-          </article>
+          </section>
         </div>
 
         <div class="dashboard-bottom-grid">
-          <article class="dashboard-card top-products-card">
-            <div class="dashboard-card__head">
-              <h2>Sản phẩm bán chạy</h2>
-              <button class="link-button" type="button" @click="handleSectionChange('products')">Xem tất cả</button>
+          <section class="dashboard-card product-card">
+            <div class="card-header">
+              <h2>{{ $t('admin.dashboard.top_selling_products') }}</h2>
             </div>
             <div class="top-product-list">
-              <div v-for="(item, index) in topProducts" :key="item.name" class="top-product-row">
-                <span class="top-product-row__rank">{{ index + 1 }}</span>
-                <span class="product-thumb" :class="`product-thumb--${item.texture}`"></span>
+              <article v-for="(product, idx) in topProducts" :key="product.name" class="top-product-row">
+                <span class="top-product-row__rank">#{{ idx + 1 }}</span>
+                <div class="product-thumb" :class="`product-thumb--${product.type}`"></div>
                 <div>
-                  <strong>{{ item.name }}</strong>
-                  <p>Đã bán: {{ item.sold }}</p>
+                  <strong>{{ product.name }}</strong>
+                  <p>{{ $t('admin.dashboard.sold_count', { count: product.sold }) }}</p>
                 </div>
-              </div>
+              </article>
             </div>
-          </article>
+          </section>
 
-          <article class="dashboard-card status-card">
-            <h2>Đơn hàng theo trạng thái</h2>
+          <section class="dashboard-card status-card">
+            <div class="card-header">
+              <h2>{{ $t('admin.dashboard.orders_by_status') }}</h2>
+            </div>
             <div class="status-card__body">
-              <div class="donut-chart" aria-hidden="true"></div>
+              <div class="donut-chart"></div>
               <div class="status-legend">
-                <div v-for="item in orderStatusStats" :key="item.label">
-                  <span :style="{ backgroundColor: item.color }"></span>
-                  <p>{{ item.label }}</p>
-                  <strong>{{ item.value }} ({{ item.percent }})</strong>
+                <div v-for="item in orderStats" :key="item.key">
+                  <span :style="{ background: item.color }"></span>
+                  <p>{{ $t(`admin.dashboard.status.${item.key}`) }}</p>
+                  <strong>{{ item.value }}%</strong>
                 </div>
               </div>
             </div>
-          </article>
+          </section>
 
-          <article class="dashboard-card quick-stats-card">
-            <h2>Thống kê nhanh</h2>
-            <div class="quick-stat-list">
-              <div v-for="item in quickStats" :key="item.label" class="quick-stat-row" :class="`quick-stat-row--${item.tone}`">
-                <span>
-                  <component :is="item.icon" :size="18" />
-                </span>
-                <p>{{ item.label }}</p>
-                <strong>{{ item.value }}</strong>
-              </div>
+          <section class="dashboard-card quick-stat-card">
+            <div class="card-header">
+              <h2>{{ $t('admin.dashboard.quick_stats') }}</h2>
             </div>
-          </article>
+            <div class="quick-stat-list">
+              <article v-for="stat in quickStats" :key="stat.key" class="quick-stat-row" :class="`quick-stat-row--${stat.tone}`">
+                <span>
+                  <component :is="stat.icon" :size="18" />
+                </span>
+                <p>{{ $t(`admin.dashboard.${stat.key}`) }}</p>
+                <strong>{{ stat.value }}</strong>
+              </article>
+            </div>
+          </section>
         </div>
       </section>
       <NavigationMenusManager
@@ -761,7 +753,7 @@ onBeforeUnmount(() => {
       />
 
       <section v-else-if="isUnsupportedSection" class="unsupported-panel card-shell">
-        <p class="hero-eyebrow">Module unavailable</p>
+        <p class="hero-eyebrow">{{ $t('admin.common.module_unavailable') }}</p>
         <h2>{{ unsupportedSectionMeta?.title }}</h2>
         <p class="hero-copy">
           {{ unsupportedSectionMeta?.description }}
@@ -1729,9 +1721,12 @@ button:disabled {
   display: block;
   margin-top: 6px;
   color: #0f172a;
-  font-size: 28px;
-  line-height: 1;
-  font-weight: 900;
+  font-size: clamp(18px, 1.6vw, 24px);
+  line-height: 1.2;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-card div > span {
@@ -2071,6 +2066,75 @@ button:disabled {
 
 .quick-stat-row--blue strong {
   color: #2563eb;
+}
+
+.lang-switcher {
+  position: relative;
+}
+
+.lang-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 12px;
+  width: 180px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 8px;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+}
+
+.lang-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.lang-item:hover {
+  background: #f3f7fb;
+}
+
+.lang-item.active {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.lang-flag {
+  font-size: 18px;
+}
+
+.lang-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.lang-item.active .lang-label {
+  color: #2563eb;
+}
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
 }
 
 @media (max-width: 1280px) {

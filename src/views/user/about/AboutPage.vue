@@ -22,11 +22,36 @@ const timelineHoverBefore = repoImg("e012bd80-11a1-4e5c-b5fa-2eda75b67d66.png");
 const timelineHoverAfter = repoImg("dfc20891-e902-474e-8c93-c374b583041d.png");
 
 // ── Computed data ────────────────────────────────────────────────────────
-const sectionMeta = computed(() => aboutView.value?.sectionMeta ?? []);
+const rawSectionMeta = computed(() => aboutView.value?.sectionMeta ?? []);
+const sectionMeta = computed(() => {
+  return rawSectionMeta.value.map((item) => {
+    const keyMap = {
+      'page1': 'user.about.tabIntro',
+      'page2': 'user.about.tabIntro',
+      'page3': 'user.about.tabVision',
+      'page4': 'user.about.tabOrgChart',
+      'page5': 'user.about.tabCulture',
+      'page6': 'user.about.tabTimeline',
+      'page7': 'user.about.tabLeadership'
+    };
+    const key = keyMap[item.id];
+    return { ...item, title: key ? t(key) : item.title }
+  })
+});
 const aboutTabs = computed(() => aboutView.value?.aboutTabs ?? []);
 const translatedTabs = computed(() => {
   return aboutTabs.value.map((tab) => {
-    return { ...tab, title: tab.title }
+    const keyMap = {
+      'page1': 'user.about.tabIntro',
+      'page2': 'user.about.tabIntro',
+      'page3': 'user.about.tabVision',
+      'page4': 'user.about.tabOrgChart',
+      'page5': 'user.about.tabCulture',
+      'page6': 'user.about.tabTimeline',
+      'page7': 'user.about.tabLeadership'
+    };
+    const key = keyMap[tab.id];
+    return { ...tab, title: key ? t(key) : tab.title }
   })
 })
 const companyIntroduction = computed(() => {
@@ -42,10 +67,10 @@ const introImage = computed(() => aboutView.value?.companyIntroduction?.coverIma
 const introVideoUrl = computed(() => aboutView.value?.companyIntroduction?.videoUrl ?? "");
 const orgChartImage = computed(() => aboutView.value?.organizationChart?.chartImage ?? "");
 const heroHeadline = computed(() => {
-  return aboutView.value?.hero?.headline || t('user.about.heroHeadline')
+  return t('user.about.heroHeadline') || aboutView.value?.hero?.headline
 });
 const heroDescription = computed(() => {
-  return aboutView.value?.hero?.description || t('user.about.heroDescription')
+  return t('user.about.heroDescription') || aboutView.value?.hero?.description
 });
 const speechSignTitle = computed(() => aboutView.value?.chairmanSpeech?.signTitle ?? "");
 const speechSignName = computed(() => aboutView.value?.chairmanSpeech?.signName ?? "");
@@ -56,19 +81,19 @@ const speechMission = computed(() => {
   return chairmanSpeech.value?.mission ?? ""
 });
 const introTitle = computed(() => {
-  return aboutView.value?.companyIntroduction?.title || t('user.about.introTitle')
+  return t('user.about.introTitle') || aboutView.value?.companyIntroduction?.title
 });
 const speechTitle = computed(() => {
-  return aboutView.value?.chairmanSpeech?.title || t('user.about.visionTitle')
+  return t('user.about.visionTitle') || aboutView.value?.chairmanSpeech?.title
 });
 const orgChartTitle = computed(() => {
-  return aboutView.value?.organizationChart?.title || t('user.about.orgChartTitle')
+  return t('user.about.orgChartTitle') || aboutView.value?.organizationChart?.title
 });
 const videoButtonLabel = computed(
-  () => aboutView.value?.companyIntroduction?.videoButtonLabel || t('user.about.videoLabel'),
+  () => t('user.about.videoLabel') || aboutView.value?.companyIntroduction?.videoButtonLabel,
 );
 const cultureTitle = computed(() => {
-  return aboutView.value?.cultureSection?.title || aboutView.value?.cultureBlocks?.[0]?.title || t('user.about.cultureTitle')
+  return t('user.about.cultureTitle') || aboutView.value?.cultureSection?.title || aboutView.value?.cultureBlocks?.[0]?.title
 });
 const cultureImage = computed(
   () =>
@@ -76,10 +101,10 @@ const cultureImage = computed(
     "https://en.sinodecor.com/portal-local/ngc202304190002/cms/image/3f9cf9fc-c3f2-4cd5-a6e7-6c1f19a596b0.jpg",
 );
 const timelineTitle = computed(() => {
-  return aboutView.value?.timelineSectionTitle || t('user.about.timelineTitle')
+  return t('user.about.timelineTitle') || aboutView.value?.timelineSectionTitle
 });
 const leadershipTitle = computed(() => {
-  return aboutView.value?.leadershipSectionTitle || t('user.about.leadershipTitle')
+  return t('user.about.leadershipTitle') || aboutView.value?.leadershipSectionTitle
 });
 
 const activeSection = ref("page1");
@@ -136,6 +161,13 @@ const filteredSectionMeta = computed(() => {
 
 let observer;
 
+const normalizeText = (value) => String(value || '')
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/đ/g, 'd')
+  .trim()
+
 const cultureDisplayBlocks = computed(() => {
   if (!cultureBlocks.value.length) {
     return [
@@ -146,17 +178,17 @@ const cultureDisplayBlocks = computed(() => {
 
   const normalizedBlocks = cultureBlocks.value.map((block) => ({
     ...block,
-    normalizedTitle: String(block.title || "").trim().toLowerCase(),
+    nTitle: normalizeText(block.title),
   }));
 
   const coreValuesBlock =
-    normalizedBlocks.find((item) => item.normalizedTitle === "giá trị cốt lõi") ||
-    normalizedBlocks.find((item) => item.normalizedTitle.includes("cốt lõi")) ||
+    normalizedBlocks.find((item) => item.nTitle === "gia tri cot loi") ||
+    normalizedBlocks.find((item) => item.nTitle.includes("cot loi")) ||
     normalizedBlocks[0];
 
   const sloganBlock =
-    normalizedBlocks.find((item) => item.normalizedTitle === "slogan") ||
-    normalizedBlocks.find((item) => item.normalizedTitle.includes("slogan")) ||
+    normalizedBlocks.find((item) => item.nTitle === "slogan") ||
+    normalizedBlocks.find((item) => item.nTitle.includes("slogan")) ||
     normalizedBlocks.find((item) => item.title !== coreValuesBlock.title) ||
     null;
 
@@ -167,32 +199,75 @@ const cultureDisplayBlocks = computed(() => {
 
 const cultureItemText = (item) => {
   const text = String(item?.text || "").trim();
-  if (text) return text;
-  return String(item?.label || "").trim();
+  const label = String(item?.label || "").trim();
+  const content = text || label;
+  
+  if (locale.value === 'vi' || !content) return content;
+
+  const n = normalizeText(content)
+
+  if (n.includes('san pham dap ung tieu chuan cao')) return t('user.about.qualityDesc')
+  if (n.includes('meets high standards')) return t('user.about.qualityDesc')
+  
+  if (n.includes('cam ket dung tien do') || n.includes('dung chat luong')) return t('user.about.prestigeDesc')
+  if (n.includes('commitment to schedule')) return t('user.about.prestigeDesc')
+  
+  if (n.includes('luon cap nhat xu huong vat lieu moi')) return t('user.about.innovationDesc')
+  if (n.includes('update new material trends')) return t('user.about.innovationDesc')
+  
+  if (n.includes('dat nhu cau cua khach hang len hang dau')) return t('user.about.customerCenterDesc')
+  if (n.includes('put customer needs first')) return t('user.about.customerCenterDesc')
+  
+  if (n.includes('phat trien ben vung cung doi tac')) return t('user.about.longTermCoopDesc')
+  if (n.includes('sustainable development with partners')) return t('user.about.longTermCoopDesc')
+  
+  if (n.includes('uy tin tu nhung dieu nho nhat')) return t('user.about.sloganText')
+  if (n.includes('trusted from the smallest details')) return t('user.about.sloganText')
+  if (n.includes('reputation from the smallest things')) return t('user.about.sloganText')
+  
+  return content;
 };
 
 const cultureItemLabel = (item) => {
   const label = String(item?.label || "").trim();
   if (locale.value === 'vi' || !label) return label;
   
-  const mapping = {
-    'Chất lượng': t('user.about.quality'),
-    'Uy tín': t('user.about.prestige'),
-    'Đổi mới': t('user.about.innovation'),
-    'Khách hàng là trung tâm': t('user.about.customerCenter'),
-    'Hợp tác lâu dài': t('user.about.longTermCoop'),
-    'Slogan': 'Slogan'
-  };
-  
-  for (const [key, val] of Object.entries(mapping)) {
-    if (label.includes(key)) return val;
+  const n = normalizeText(label)
+  const isColon = label.endsWith(':')
+
+  if (n.includes('chat luong') || n.includes('quality')) {
+    return isColon ? `${t('user.about.quality')}:` : t('user.about.quality')
   }
+  if (n.includes('uy tin') || n.includes('prestige')) {
+    return isColon ? `${t('user.about.prestige')}:` : t('user.about.prestige')
+  }
+  if (n.includes('doi moi') || n.includes('innovation')) {
+    return isColon ? `${t('user.about.innovation')}:` : t('user.about.innovation')
+  }
+  if (n.includes('khach hang la trung tam') || n.includes('customer center') || n.includes('customer centric')) {
+    return isColon ? `${t('user.about.customerCenter')}:` : t('user.about.customerCenter')
+  }
+  if (n.includes('hop tac lau dai') || n.includes('long term coop') || n.includes('long-term cooperation')) {
+    return isColon ? `${t('user.about.longTermCoop')}:` : t('user.about.longTermCoop')
+  }
+  if (n.includes('slogan')) {
+    return isColon ? `${t('user.about.sloganTitle')}:` : t('user.about.sloganTitle')
+  }
+
   return label;
+};
+
+const cultureBlockTitle = (title) => {
+  if (locale.value === 'vi' || !title) return title;
+  const n = normalizeText(title)
+  if (n.includes('gia tri cot loi') || n.includes('core values')) return t('user.about.coreValuesTitle')
+  if (n.includes('slogan')) return t('user.about.sloganTitle')
+  return title;
 };
 
 const cultureBlocksForRender = computed(() =>
   cultureDisplayBlocks.value.map((block) => ({
-    title: block?.title || t('user.about.cultureDefault'),
+    title: cultureBlockTitle(block?.title) || t('user.about.cultureDefault'),
     items: (block?.items || []).filter((item) => cultureItemText(item)).map(item => ({
       ...item,
       displayLabel: cultureItemLabel(item)
@@ -211,8 +286,9 @@ const timelineSlides = computed(() =>
 
     const translateTimeline = (n) => {
       if (locale.value === 'vi' || !n) return n;
-      if (n.includes('Thành lập công ty')) return t('user.about.timelineFounded');
-      if (n.includes('Phát triển và phân phối')) return t('user.about.timelineExpansion');
+      const nt = normalizeText(n)
+      if (nt.includes('thanh lap cong ty')) return t('user.about.timelineFounded');
+      if (nt.includes('phat trien va phan phoi')) return t('user.about.timelineExpansion');
       return n;
     }
 

@@ -58,7 +58,7 @@ function getUnitPrice(item) {
 
 const formatPrice = (price) => {
   const normalized = Number(price)
-  if (!Number.isFinite(normalized) || normalized <= 0) return t('user.home.contactPrice') || 'Liên hệ báo giá'
+  if (!Number.isFinite(normalized) || normalized <= 0) return t('user.home.contactPrice')
   return `${new Intl.NumberFormat('vi-VN').format(normalized)}đ`
 }
 
@@ -79,7 +79,7 @@ const getProductImages = (item) => {
   pushImage(product.image_url || product.primary_image_url)
   ;(product.images || []).forEach((image) => pushImage(image.url, image.alt))
 
-  return images.length ? images : [{ url: '/images/logo.png', alt: product.name || 'Sản phẩm' }]
+  return images.length ? images : [{ url: '/images/logo.png', alt: product.name || t('user.cart.tableProduct') }]
 }
 
 const resolveImage = (item) => selectedImages.value[item?.id] || getProductImages(item)[0]?.url || '/images/logo.png'
@@ -136,8 +136,8 @@ const activeGalleryImage = computed(() => activeGalleryImages.value[pendingGalle
 const getStockQuantity = (item) => resolveStockQuantity(item?.product)
 const getStockText = (item) => {
   const stockQuantity = getStockQuantity(item)
-  if (stockQuantity <= 0) return 'Hết hàng'
-  return `Còn ${stockQuantity} sản phẩm`
+  if (stockQuantity <= 0) return t('user.cart.stockOut')
+  return t('user.cart.stockCount', { count: stockQuantity })
 }
 const isIncreaseDisabled = (item) => cartStore.loading || item.quantity >= getStockQuantity(item)
 const isOutOfStock = (item) => getStockQuantity(item) <= 0
@@ -153,8 +153,8 @@ const handleUpdateQuantity = async (item, delta) => {
   const stockQuantity = getStockQuantity(item)
   if (nextQuantity > stockQuantity) {
     quantityError.value = stockQuantity > 0
-      ? `Sản phẩm "${item?.product?.name || 'này'}" chỉ còn ${stockQuantity} sản phẩm trong kho.`
-      : `Sản phẩm "${item?.product?.name || 'này'}" hiện đã hết hàng.`
+      ? t('user.cart.quantityLimitMsg', { name: item?.product?.name || '', count: stockQuantity })
+      : t('user.cart.outOfStockMsg', { name: item?.product?.name || '' })
     await cartStore.fetchCart()
     return
   }
@@ -162,7 +162,7 @@ const handleUpdateQuantity = async (item, delta) => {
   try {
     await cartStore.updateItem(item.id, nextQuantity)
   } catch (error) {
-    quantityError.value = error?.message || 'Không thể cập nhật số lượng sản phẩm.'
+    quantityError.value = error?.message || t('user.cart.updateErrorMsg')
     await cartStore.fetchCart()
   }
 }
@@ -210,57 +210,57 @@ onMounted(async () => {
     <section class="cart-hero">
       <div class="cart-hero__inner">
         <nav class="cart-breadcrumb" aria-label="Breadcrumb">
-          <router-link to="/">Trang chủ</router-link>
+          <router-link to="/">{{ t('user.cart.breadcrumbHome') }}</router-link>
           <span>/</span>
-          <span>Giỏ hàng</span>
+          <span>{{ t('user.cart.breadcrumbCart') }}</span>
         </nav>
-        <h1>Giỏ hàng</h1>
+        <h1>{{ t('user.cart.title') }}</h1>
       </div>
     </section>
 
     <section class="cart-shell">
       <div v-if="cartStore.loading && !cartStore.cart" class="cart-state">
         <Loader2 class="cart-spinner" :size="34" />
-        <p>Đang tải...</p>
+        <p>{{ t('user.cart.loading') }}</p>
       </div>
 
       <div v-else-if="cartStore.items.length === 0" class="cart-empty">
         <div class="cart-empty__icon">
           <ShieldCheck :size="34" />
         </div>
-        <h2>Giỏ hàng của bạn đang trống</h2>
-        <p>Hãy thêm sản phẩm vào giỏ để tiếp tục mua sắm.</p>
+        <h2>{{ t('user.cart.emptyTitle') }}</h2>
+        <p>{{ t('user.cart.emptyHint') }}</p>
         <router-link to="/products" class="cart-outline-btn cart-outline-btn--empty">
           <ArrowLeft :size="18" />
-          <span>TIẾP TỤC MUA SẮM</span>
+          <span>{{ t('user.cart.continueShopping') }}</span>
         </router-link>
       </div>
 
       <div v-else class="cart-grid">
         <section class="cart-panel">
           <div v-if="paymentNotice" class="cart-inline-alert cart-inline-alert--info">
-            <strong>Thanh toán VNPAY chưa hoàn tất.</strong>
+            <strong>{{ t('user.cart.vnpayNotice') }}</strong>
             <span>{{ paymentNotice }}</span>
           </div>
           <div v-if="quantityError" class="cart-inline-alert">
-            <strong>Cập nhật số lượng chưa thành công.</strong>
+            <strong>{{ t('user.cart.updateError') }}</strong>
             <span>{{ quantityError }}</span>
           </div>
           <div class="cart-table">
             <div class="cart-table__head">
-              <span>SẢN PHẨM</span>
-              <span>GIÁ</span>
-              <span>SỐ LƯỢNG</span>
-              <span>TẠM TÍNH</span>
+              <span>{{ t('user.cart.tableProduct') }}</span>
+              <span>{{ t('user.cart.tablePrice') }}</span>
+              <span>{{ t('user.cart.tableQuantity') }}</span>
+              <span>{{ t('user.cart.tableSubtotal') }}</span>
             </div>
 
             <article v-for="item in cartStore.items" :key="item.id" class="cart-row">
-              <div class="cart-row__product" data-label="SẢN PHẨM">
+              <div class="cart-row__product" :data-label="t('user.cart.tableProduct')">
                 <button
                   class="cart-row__remove"
                   type="button"
                   :disabled="cartStore.loading"
-                  aria-label="Xóa sản phẩm"
+                  :aria-label="t('user.cart.removeProduct')"
                   @click="cartStore.removeItem(item.id)"
                 >
                   <X :size="14" />
@@ -284,12 +284,12 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <div class="cart-row__cell cart-row__price" data-label="GIÁ">
+              <div class="cart-row__cell cart-row__price" :data-label="t('user.cart.tablePrice')">
                 <div class="cart-price-block">
                   <span class="cart-price-block__label">{{ t('user.products.priceLabel') }}</span>
                   <div v-if="getDisplayPrice(item.product).hasSale" class="cart-price-block__badges">
-                    <span class="cart-price-block__badge cart-price-block__badge--sale">Giá khuyến mãi</span>
-                    <span class="cart-price-block__badge cart-price-block__badge--original">Giá gốc</span>
+                    <span class="cart-price-block__badge cart-price-block__badge--sale">{{ t('user.products.salePrice') }}</span>
+                    <span class="cart-price-block__badge cart-price-block__badge--original">{{ t('user.products.originalPrice') }}</span>
                   </div>
                   <strong :class="{ 'cart-price-block__current--sale': getDisplayPrice(item.product).hasSale }">
                     {{ formatPrice(getUnitPrice(item)) }}
@@ -300,7 +300,7 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <div class="cart-row__cell cart-row__quantity" data-label="SỐ LƯỢNG">
+              <div class="cart-row__cell cart-row__quantity" :data-label="t('user.cart.tableQuantity')">
                 <div class="quantity-control">
                   <button type="button" :disabled="cartStore.loading" @click="handleUpdateQuantity(item, -1)">
                     <Minus :size="15" />
@@ -312,7 +312,7 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <div class="cart-row__cell cart-row__subtotal" data-label="TẠM TÍNH">
+              <div class="cart-row__cell cart-row__subtotal" :data-label="t('user.cart.tableSubtotal')">
                 <strong>{{ getLineTotal(item) }}</strong>
               </div>
             </article>
@@ -321,30 +321,30 @@ onMounted(async () => {
           <div class="cart-actions">
             <router-link to="/products" class="cart-outline-btn">
               <ArrowLeft :size="18" />
-              <span>TIẾP TỤC XEM SẢN PHẨM</span>
+              <span>{{ t('user.cart.continueViewing') }}</span>
             </router-link>
 
             <button class="cart-muted-btn" type="button" :disabled="cartStore.loading" @click="handleRefreshCart">
-              CẬP NHẬT GIỎ HÀNG
+              {{ t('user.cart.updateCart') }}
             </button>
           </div>
         </section>
 
         <aside class="cart-summary">
-          <h2>TỔNG CỘNG GIỎ HÀNG</h2>
+          <h2>{{ t('user.cart.summaryTitle') }}</h2>
 
           <div class="cart-summary__row">
-            <span>{{ t('user.home.subtotal') }}</span>
+            <span>{{ t('user.cart.summarySubtotal') }}</span>
             <strong>{{ summaryPrice }}</strong>
           </div>
 
           <div class="cart-summary__row cart-summary__row--total">
-            <span>Tổng</span>
+            <span>{{ t('user.cart.summaryTotal') }}</span>
             <strong>{{ summaryPrice }}</strong>
           </div>
 
           <button class="checkout-btn" type="button" @click="handleCheckout">
-            TIẾN HÀNH THANH TOÁN
+            {{ t('user.cart.checkout') }}
           </button>
 
           <div class="cart-benefits">
@@ -353,8 +353,8 @@ onMounted(async () => {
                 <ShieldCheck :size="20" />
               </div>
               <div>
-                <strong>Bảo mật thông tin</strong>
-                <p>Thông tin của bạn được bảo mật tuyệt đối</p>
+                <strong>{{ t('user.cart.benefitSecurityTitle') }}</strong>
+                <p>{{ t('user.cart.benefitSecurityDesc') }}</p>
               </div>
             </div>
 
@@ -363,8 +363,8 @@ onMounted(async () => {
                 <Headset :size="20" />
               </div>
               <div>
-                <strong>Hỗ trợ 24/7</strong>
-                <p>Đội ngũ hỗ trợ luôn sẵn sàng</p>
+                <strong>{{ t('user.cart.benefitSupportTitle') }}</strong>
+                <p>{{ t('user.cart.benefitSupportDesc') }}</p>
               </div>
             </div>
 
@@ -373,8 +373,8 @@ onMounted(async () => {
                 <LockKeyhole :size="20" />
               </div>
               <div>
-                <strong>{{ t('user.home.checkout') }} an toàn</strong>
-                <p>Hệ thống thanh toán bảo mật</p>
+                <strong>{{ t('user.cart.benefitCheckoutTitle') }}</strong>
+                <p>{{ t('user.cart.benefitCheckoutDesc') }}</p>
               </div>
             </div>
           </div>
@@ -385,18 +385,18 @@ onMounted(async () => {
     <Teleport to="body">
       <div v-if="galleryItem" class="image-gallery" @click.self="closeGallery">
         <div class="image-gallery__dialog">
-          <button class="image-gallery__close" type="button" aria-label="Đóng" @click="closeGallery">
+          <button class="image-gallery__close" type="button" :aria-label="t('user.cart.cancel')" @click="closeGallery">
             <X :size="24" />
           </button>
 
-          <h2>Ảnh sản phẩm - {{ galleryItem.product.name }}</h2>
+          <h2>{{ t('user.cart.galleryTitle') }} - {{ galleryItem.product.name }}</h2>
 
           <div class="image-gallery__stage">
             <button
               class="image-gallery__nav image-gallery__nav--prev"
               type="button"
               :disabled="activeGalleryImages.length <= 1"
-              aria-label="Ảnh trước"
+              :aria-label="t('user.cart.galleryPrev')"
               @click="showPrevImage"
             >
               <ChevronLeft :size="34" />
@@ -408,7 +408,7 @@ onMounted(async () => {
               class="image-gallery__nav image-gallery__nav--next"
               type="button"
               :disabled="activeGalleryImages.length <= 1"
-              aria-label="Ảnh tiếp theo"
+              :aria-label="t('user.cart.galleryNext')"
               @click="showNextImage"
             >
               <ChevronRight :size="34" />
@@ -429,10 +429,10 @@ onMounted(async () => {
 
           <div class="image-gallery__actions">
             <button class="image-gallery__cancel" type="button" @click="closeGallery">
-              Hủy
+              {{ t('user.cart.cancel') }}
             </button>
             <button class="image-gallery__ok" type="button" @click="confirmGalleryImage">
-              OK
+              {{ t('user.cart.ok') }}
             </button>
           </div>
         </div>

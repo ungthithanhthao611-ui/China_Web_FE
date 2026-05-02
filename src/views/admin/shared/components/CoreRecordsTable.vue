@@ -156,7 +156,7 @@ const props = defineProps({
   },
   editLabel: {
     type: String,
-    default: "Sửa",
+    default: "",
   },
 });
 
@@ -264,6 +264,7 @@ const displayedRecords = computed(() => {
 });
 
 const isOrdersEntity = computed(() => props.entityKey === 'orders');
+const isUsersEntity = computed(() => props.entityKey === 'users');
 
 const formatMoney = (value, currency = 'VND') => {
   const amount = Number(value || 0);
@@ -291,26 +292,26 @@ const paymentStatusTone = (record) => {
 };
 
 const orderStatusText = (record) =>
-  record?.status_label || props.formatCell(record?.status);
+  props.formatCell(record?.status, 'status');
 
 const paymentStatusText = (record) =>
-  record?.payment_status_label || props.formatCell(record?.payment_status);
+  props.formatCell(record?.payment_status, 'payment_status');
 
 const orderCustomerSummary = (record) => {
   const phone = String(record?.customer_phone || '').trim();
   const email = String(record?.customer_email || '').trim();
-  return [phone, email].filter(Boolean).join(' • ') || 'Chưa có liên hệ';
+  return [phone, email].filter(Boolean).join(' • ') || '';
 };
 
 const orderItemCountText = (record) => {
   const count = Number(record?.item_count || 0);
-  return `${count} sản phẩm`;
+  return `${count}`;
 };
 
 const orderPreviewSummary = (record) => {
   const address = String(record?.shipping_address || '').trim();
   if (address) return address;
-  return String(record?.note || '').trim() || 'Chưa có ghi chú giao hàng';
+  return String(record?.note || '').trim() || '';
 };
 
 const getThumbnailFallback = (record, column) => {
@@ -339,19 +340,19 @@ const getThumbnailFallback = (record, column) => {
   <div class="records-panel">
     <div class="records-panel__header">
       <div>
-        <p class="eyebrow">Tổng quan dữ liệu</p>
-        <h3>Danh sách nội dung</h3>
+        <p class="eyebrow">{{ $t('admin.common.overview') }}</p>
+        <h3>{{ $t('admin.common.all') }}</h3>
         <p class="description">
-          Xem lại, xem trước và quản lý mọi bản ghi từ giao diện chuyên nghiệp.
+          {{ $t('admin.common.search') }} & {{ $t('admin.common.filter') }}
         </p>
       </div>
       <div class="records-panel__summary">
         <div class="records-summary-card">
-          <span>Tổng số</span>
+          <span>{{ $t('admin.common.total') }}</span>
           <strong>{{ totalRecords }}</strong>
         </div>
         <div class="records-summary-card">
-          <span>Trang</span>
+          <span>{{ $t('admin.common.page') }}</span>
           <strong>{{ currentPage }}/{{ totalPages }}</strong>
         </div>
       </div>
@@ -364,16 +365,16 @@ const getThumbnailFallback = (record, column) => {
             <th v-for="column in tableColumns" :key="column">
               {{ fieldLabel(column) }}
             </th>
-            <th v-if="!isOrdersEntity">Xem nhanh</th>
-            <th>Thao tác</th>
+            <th v-if="!isOrdersEntity && !isUsersEntity">{{ $t('admin.common.view') }}</th>
+            <th style="text-align: right;">{{ $t('admin.common.actions_col') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="loading" class="table-empty-row">
-            <td :colspan="tableColumns.length + (isOrdersEntity ? 1 : 2)">Đang tải dữ liệu...</td>
+            <td :colspan="tableColumns.length + ((isOrdersEntity || isUsersEntity) ? 1 : 2)">{{ $t('admin.common.loading') }}</td>
           </tr>
           <tr v-else-if="!displayedRecords.length" class="table-empty-row">
-            <td :colspan="tableColumns.length + (isOrdersEntity ? 1 : 2)">Không tìm thấy bản ghi nào.</td>
+            <td :colspan="tableColumns.length + ((isOrdersEntity || isUsersEntity) ? 1 : 2)">{{ $t('admin.common.no_data') }}</td>
           </tr>
           <tr v-for="record in displayedRecords" v-else :key="record.id" class="entity-row">
             <td
@@ -406,12 +407,12 @@ const getThumbnailFallback = (record, column) => {
                   <small>{{ orderCustomerSummary(record) }}</small>
                 </div>
               </template>
-              <template v-else-if="isOrdersEntity && column === 'status_label'">
+              <template v-else-if="isOrdersEntity && column === 'status'">
                 <span :class="['table-status-chip', orderStatusTone(record)]">
                   {{ orderStatusText(record) }}
                 </span>
               </template>
-              <template v-else-if="isOrdersEntity && column === 'payment_status_label'">
+              <template v-else-if="isOrdersEntity && column === 'payment_status'">
                 <span :class="['table-status-chip', 'is-soft', paymentStatusTone(record)]">
                   {{ paymentStatusText(record) }}
                 </span>
@@ -425,7 +426,7 @@ const getThumbnailFallback = (record, column) => {
               <template v-else-if="isOrdersEntity && column === 'placed_at'">
                 <div class="order-time-cell">
                   <strong>{{ formatCell(record[column], column) }}</strong>
-                  <small>{{ record.payment_method_label || formatCell(record.payment_method, 'payment_method') }}</small>
+                  <small>{{ formatCell(record.payment_method, 'payment_method') }}</small>
                 </div>
               </template>
               <template v-else-if="column === 'image_id' || column === 'hero_image_id' || column === 'media_id' || column === 'image_url'">
@@ -446,7 +447,7 @@ const getThumbnailFallback = (record, column) => {
                       loading="lazy"
                     />
                   </template>
-                  <div v-else class="video-table-thumb-cell__empty">Chưa có ảnh</div>
+                  <div v-else class="video-table-thumb-cell__empty">{{ $t('admin.common.no_image') }}</div>
                   <small>{{ column === 'image_url' ? 'URL' : `#${record[column] || '-'}` }}</small>
                 </div>
               </template>
@@ -458,7 +459,7 @@ const getThumbnailFallback = (record, column) => {
                     :alt="record.title || 'Video thumbnail'"
                     loading="lazy"
                   />
-                  <div v-else class="video-table-thumb-cell__empty">Trống</div>
+                  <div v-else class="video-table-thumb-cell__empty">{{ $t('admin.common.empty') }}</div>
                   <small>#{{ record.thumbnail_id || "-" }}</small>
                 </div>
               </template>
@@ -495,7 +496,7 @@ const getThumbnailFallback = (record, column) => {
                     { 'is-root': isRootCategoryRecord(record) },
                   ]"
                 >
-                  {{ isRootCategoryRecord(record) ? 'Danh mục gốc' : formatCell(record[column], column) }}
+                  {{ isRootCategoryRecord(record) ? $t('admin.sidebar.categories') : formatCell(record[column], column) }}
                 </span>
               </template>
               <template v-else-if="column === 'title' || column === 'block_key' || column === 'item_key'">
@@ -505,7 +506,7 @@ const getThumbnailFallback = (record, column) => {
                 {{ formatCell(record[column], column) }}
               </template>
             </td>
-            <td v-if="!isOrdersEntity" data-label="Preview">
+            <td v-if="!isOrdersEntity && !isUsersEntity" data-label="Preview">
               <template v-if="isBannerEntity">
                 <div class="banner-preview-card">
                   <div class="banner-preview-card__media">
@@ -525,7 +526,7 @@ const getThumbnailFallback = (record, column) => {
                       :style="bannerImageStyle(record)"
                       loading="lazy"
                     />
-                    <div v-else class="banner-preview-card__empty">Chưa có ảnh/video banner</div>
+                    <div v-else class="banner-preview-card__empty">{{ $t('admin.common.no_media') }}</div>
                     <div class="banner-preview-card__overlay"></div>
                   </div>
                   <div class="banner-preview-card__content">
@@ -535,7 +536,7 @@ const getThumbnailFallback = (record, column) => {
                     </div>
                     <h4>{{ bannerDisplayTitle(record) }}</h4>
                     <p v-if="record.subtitle">{{ record.subtitle }}</p>
-                    <small>{{ record.button_text || record.link || "Chưa cấu hình nút bấm" }}</small>
+                    <small>{{ record.button_text || record.link || $t('admin.common.no_config') }}</small>
                   </div>
                 </div>
               </template>
@@ -558,7 +559,7 @@ const getThumbnailFallback = (record, column) => {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Xem ảnh
+                    {{ $t('admin.common.view_image') }}
                   </a>
                 </div>
                 <a
@@ -567,7 +568,7 @@ const getThumbnailFallback = (record, column) => {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Mở tệp
+                  {{ $t('admin.common.open_file') }}
                 </a>
                 <span v-else>-</span>
               </template>
@@ -588,7 +589,7 @@ const getThumbnailFallback = (record, column) => {
                     target="_blank"
                     rel="noreferrer noopener"
                   >
-                    Xem link video
+                    {{ $t('admin.common.view_video') }}
                   </a>
                   <a
                     v-if="previewRecordUrl(record)"
@@ -596,7 +597,7 @@ const getThumbnailFallback = (record, column) => {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Xem trang công khai
+                    {{ $t('admin.common.view_public') }}
                   </a>
                 </div>
               </template>
@@ -641,7 +642,7 @@ const getThumbnailFallback = (record, column) => {
                       target="_blank"
                       rel="noreferrer noopener"
                     >
-                      Mở link video ngoài
+                      {{ $t('admin.common.open_external') }}
                     </a>
                     <small class="entity-rich-preview__media-label">
                       {{ richPreviewMedia(record).label }}
@@ -679,34 +680,34 @@ const getThumbnailFallback = (record, column) => {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Mở xem
+                  {{ $t('admin.common.view') }}
                 </a>
                 <span v-else>-</span>
               </template>
             </td>
             <td data-label="Actions">
-              <div class="row-actions">
+              <div class="row-actions" style="justify-content: flex-end;">
                 <button
                   type="button"
-                  class="btn btn-secondary btn-sm"
+                  class="btn btn-ghost btn-sm"
                   @click="emit('view', record)"
                 >
-                  Chi tiết
+                  {{ $t('admin.common.view') }}
                 </button>
                 <button
                   type="button"
-                  class="btn btn-secondary btn-sm"
+                  class="btn btn-ghost btn-sm"
                   @click="emit('edit', record)"
                 >
-                  {{ editLabel }}
+                  {{ editLabel || $t('admin.common.edit') }}
                 </button>
                 <button
                   type="button"
-                  class="btn btn-danger-inline"
+                  class="btn btn-danger btn-sm"
                   :disabled="deletingId === record.id"
                   @click="emit('delete', record)"
                 >
-                  {{ deletingId === record.id ? "..." : "Xóa" }}
+                  {{ deletingId === record.id ? "..." : $t('admin.common.delete') }}
                 </button>
               </div>
             </td>
@@ -717,9 +718,9 @@ const getThumbnailFallback = (record, column) => {
 
     <div class="pagination">
       <div class="pagination__meta">
-        <span>{{ totalRecords }} bản ghi</span>
+        <span>{{ totalRecords }} {{ $t('admin.sidebar.activity_logs') }}</span>
         <span class="pagination__divider"></span>
-        <span>Trang {{ currentPage }} / {{ totalPages }}</span>
+        <span>{{ $t('admin.common.filter') }} {{ currentPage }} / {{ totalPages }}</span>
       </div>
 
       <div class="pagination__actions">
@@ -727,12 +728,12 @@ const getThumbnailFallback = (record, column) => {
           class="form-control"
           style="width: auto; height: 32px; font-size: 12px;"
           :value="pageSize"
-          aria-label="Số bản ghi mỗi trang"
+          :aria-label="$t('admin.common.per_page')"
           @change="emit('update:pageSize', Number($event.target.value))"
         >
-          <option :value="10">10 / trang</option>
-          <option :value="20">20 / trang</option>
-          <option :value="50">50 / trang</option>
+          <option :value="10">10 / {{ $t('admin.common.page') }}</option>
+          <option :value="20">20 / {{ $t('admin.common.page') }}</option>
+          <option :value="50">50 / {{ $t('admin.common.page') }}</option>
         </select>
         <button
           type="button"
@@ -740,7 +741,7 @@ const getThumbnailFallback = (record, column) => {
           :disabled="currentPage <= 1"
           @click="emit('set-page', currentPage - 1)"
         >
-          Trước
+          {{ $t('admin.common.prev') }}
         </button>
         <button
           type="button"
@@ -748,7 +749,7 @@ const getThumbnailFallback = (record, column) => {
           :disabled="currentPage >= totalPages"
           @click="emit('set-page', currentPage + 1)"
         >
-          Sau
+          {{ $t('admin.common.next') }}
         </button>
       </div>
     </div>

@@ -19,12 +19,12 @@ const error = ref(null)
 
 const breadcrumbs = computed(() => {
   if (!article.value) {
-    return [{ name: t('user.home.news'), link: defaultNewsRoute }, { name: 'Article' }]
+    return [{ name: t('user.news.breadcrumbNews'), link: defaultNewsRoute }, { name: t('user.news.breadcrumbArticle') }]
   }
 
   return [
-    { name: t('user.home.news'), link: defaultNewsRoute },
-    { name: article.value.title || 'Article' },
+    { name: t('user.news.breadcrumbNews'), link: defaultNewsRoute },
+    { name: article.value.title || t('user.news.breadcrumbArticle') },
   ]
 })
 
@@ -144,7 +144,7 @@ async function loadArticle(slug) {
       ? relatedResponse.items.map(normalizeNewsItem).filter((item) => item.slug !== slug).slice(0, 3)
       : []
   } catch (err) {
-    error.value = err?.message || t('user.products.errorLoading')
+    error.value = err?.message || t('user.news.errorLoadFailed')
     article.value = null
     relatedNews.value = []
   } finally {
@@ -176,17 +176,17 @@ onMounted(() => {
     <!-- Loading -->
     <section v-if="loading" class="detail-empty">
       <div class="container">
-        <p style="color: #667085; margin-top: 60px">{{ t('user.home.loading') }}</p>
+        <p style="color: #667085; margin-top: 60px">{{ t('user.news.loading') }}</p>
       </div>
     </section>
 
     <!-- Error -->
     <section v-else-if="error" class="detail-empty">
       <div class="container">
-        <h1>Article not found</h1>
+        <h1>{{ t('user.news.errorNotFound') }}</h1>
         <p>{{ error }}</p>
         <router-link :to="defaultNewsRoute" class="empty-link"
-          >Back to News Center</router-link
+          >{{ t('user.news.btnBackToCenter') }}</router-link
         >
       </div>
     </section>
@@ -201,7 +201,7 @@ onMounted(() => {
         <div class="container detail-hero-inner">
           <router-link :to="defaultNewsRoute" class="back-link">
             <ArrowLeft :size="16" />
-            {{ t('user.home.backHome') }}
+            {{ t('user.projects.backHome') }}
           </router-link>
           <span class="detail-category">{{ t('user.home.news') }}</span>
           <h1>{{ article.title }}</h1>
@@ -236,7 +236,7 @@ onMounted(() => {
           </article>
 
           <aside class="related-card">
-            <h2>{{ t('user.home.newsTitle') }}</h2>
+            <h2>{{ t('user.news.relatedTitle') }}</h2>
             <div v-if="relatedNews.length" class="related-list">
               <router-link
                 v-for="item in relatedNews"
@@ -258,7 +258,7 @@ onMounted(() => {
               </router-link>
             </div>
             <p v-else style="color: #9a7d69; font-size: 0.9rem">
-              {{ t('user.home.newsEmpty') }}
+              {{ t('user.news.empty') }}
             </p>
           </aside>
         </div>
@@ -268,10 +268,10 @@ onMounted(() => {
     <!-- Article không tồn tại -->
     <section v-else class="detail-empty">
       <div class="container">
-        <h1>Article not found</h1>
-        <p>The requested article could not be loaded.</p>
+        <h1>{{ t('user.news.errorNotFound') }}</h1>
+        <p>{{ t('user.news.errorLoadFailed') }}</p>
         <router-link :to="defaultNewsRoute" class="empty-link"
-          >Back to News Center</router-link
+          >{{ t('user.news.btnBackToCenter') }}</router-link
         >
       </div>
     </section>

@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ArrowRight } from 'lucide-vue-next'
 import { useAboutPage } from '@/views/user/about/composables/useAboutPage'
 
@@ -11,9 +12,13 @@ defineProps({
 })
 
 const { aboutView, loading } = useAboutPage()
+const { locale, t } = useI18n({ useScope: 'global' })
 
 const introData = computed(() => aboutView.value?.companyIntroduction)
-const introTitle = computed(() => aboutView.value?.introSectionTitle || 'VỀ CHÚNG TÔI')
+const introTitle = computed(() => {
+  if (locale.value === 'vi') return aboutView.value?.introSectionTitle || t('user.home.about')
+  return t('user.home.about')
+})
 const introDescription = computed(() => {
   const paragraphs = introData.value?.paragraphs || []
   return paragraphs.join('\n\n')
@@ -50,12 +55,12 @@ const introImage = computed(() => introData.value?.coverImage || 'https://res.cl
             {{ introDescription }}
           </div>
           <div class="des" v-else-if="!loading">
-            CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ THIÊN ĐỒNG VIỆT NAM chuyên cung cấp các dòng đá mềm – tấm ốp linh hoạt cao cấp, ứng dụng trong trang trí nội thất và ngoại thất hiện đại. Chúng tôi cam kết mang đến những giải pháp vật liệu ốp lát bền đẹp, tối ưu chi phí, giúp khách hàng nâng tầm không gian sống và công trình xây dựng.
+            {{ t('user.about.heroDescription') }}
           </div>
 
           <div class="one_btn">
             <router-link to="/about" class="more more-red">
-              <span>XEM THÊM</span>
+              <span>{{ t('user.home.viewMore') }}</span>
               <div class="me_btn">
                 <img src="https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/bd97f2ca-79a8-43ee-8efa-5b6056d5b1c1.png" alt="" />
                 <div class="ic">

@@ -54,7 +54,7 @@ const handleSubmit = async () => {
       }, 1500)
     } else {
       if (form.password !== form.confirm_password) {
-        throw new Error('Mật khẩu nhập lại không khớp')
+        throw new Error(t('user.home.passwordMismatch'))
       }
 
       await authStore.register({
@@ -95,8 +95,8 @@ onMounted(() => {
       <div class="auth-card">
         <div class="auth-visual">
           <div class="visual-content">
-            <h1>THIÊN ĐỒNG VIỆT NAM</h1>
-            <p>Uy tín từ những điều nhỏ nhất</p>
+            <h1>{{ t('user.home.brandPrimary') }} {{ t('user.home.brandSecondary') }}</h1>
+            <p>{{ t('user.about.sloganText') }}</p>
           </div>
           <div class="visual-overlay"></div>
         </div>
@@ -108,13 +108,13 @@ onMounted(() => {
               <UserPlus v-else :size="32" />
             </div>
             <h2>{{ mode === 'login' ? t('user.home.login') : t('user.home.register') }}</h2>
-            <p>{{ mode === 'login' ? 'Chào mừng bạn quay trở lại' : 'Tạo tài khoản mới để trải nghiệm' }}</p>
+            <p>{{ mode === 'login' ? t('user.home.loginWelcome') : t('user.home.registerWelcome') }}</p>
           </div>
 
           <div v-if="success" class="success-message">
             <CheckCircle2 :size="64" color="#d6b074" />
             <h3>{{ mode === 'login' ? t('user.home.loginSuccess') : t('user.home.registerSuccess') }}</h3>
-            <p>Vui lòng đợi trong giây lát...</p>
+            <p>{{ t('user.home.waitMoment') }}</p>
           </div>
 
           <form v-else @submit.prevent="handleSubmit" class="form-content">
@@ -127,7 +127,7 @@ onMounted(() => {
               <label>{{ t('user.home.email') }}</label>
               <div class="input-wrapper">
                 <Mail :size="18" class="input-icon" />
-                <input v-model="form.email" type="email" placeholder="example@mail.com" required />
+                <input v-model="form.email" type="email" :placeholder="t('user.home.email')" required />
               </div>
             </div>
 
@@ -135,7 +135,7 @@ onMounted(() => {
               <label>{{ t('user.home.username') }}</label>
               <div class="input-wrapper">
                 <User :size="18" class="input-icon" />
-                <input v-model="form.username" type="text" placeholder="username" required />
+                <input v-model="form.username" type="text" :placeholder="t('user.home.username')" required />
               </div>
             </div>
 
@@ -143,7 +143,7 @@ onMounted(() => {
               <label>{{ t('user.home.phone') }}</label>
               <div class="input-wrapper">
                 <Phone :size="18" class="input-icon" />
-                <input v-model="form.phone" type="tel" placeholder="0982xxxxxx" />
+                <input v-model="form.phone" type="tel" :placeholder="t('user.home.phone')" />
               </div>
             </div>
 
@@ -151,15 +151,15 @@ onMounted(() => {
               <label>{{ t('user.home.password') }}</label>
               <div class="input-wrapper">
                 <Lock :size="18" class="input-icon" />
-                <input v-model="form.password" type="password" placeholder="••••••••" required minlength="6" />
+                <input v-model="form.password" type="password" :placeholder="t('user.home.password')" required minlength="6" />
               </div>
             </div>
 
             <div v-if="mode === 'register'" class="form-group">
-              <label>Nhập lại mật khẩu</label>
+              <label>{{ t('user.home.confirmPassword') }}</label>
               <div class="input-wrapper">
                 <Lock :size="18" class="input-icon" />
-                <input v-model="form.confirm_password" type="password" placeholder="••••••••" required minlength="6" />
+                <input v-model="form.confirm_password" type="password" :placeholder="t('user.home.confirmPassword')" required minlength="6" />
               </div>
             </div>
 
@@ -170,12 +170,12 @@ onMounted(() => {
 
             <div class="auth-footer">
               <p v-if="mode === 'login'">
-                Chưa có tài khoản? 
-                <button type="button" @click="toggleMode" class="switch-link">Đăng ký ngay</button>
+                {{ t('user.home.noAccount') }} 
+                <button type="button" @click="toggleMode" class="switch-link">{{ t('user.home.registerNow') }}</button>
               </p>
               <p v-else>
-                Đã có tài khoản? 
-                <button type="button" @click="toggleMode" class="switch-link">Đăng nhập</button>
+                {{ t('user.home.haveAccount') }} 
+                <button type="button" @click="toggleMode" class="switch-link">{{ t('user.home.loginNow') }}</button>
               </p>
             </div>
           </form>

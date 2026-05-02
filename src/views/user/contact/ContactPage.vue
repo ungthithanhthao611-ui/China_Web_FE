@@ -40,9 +40,9 @@ const sections = [
   { id: 'ctn2', label: 'Contact Info' }
 ]
 
-const contactTabs = [
-  { name: 'Liên Hệ Chúng Tôi', path: '/contact#ctn2' },
-]
+const contactTabs = computed(() => [
+  { name: t('user.contact.contactTabs'), path: '/contact#ctn2' },
+])
 
 const fallbackMapEmbed = 'https://www.google.com/maps?q=Vietnam&hl=vi&z=6&output=embed'
 const defaultLogoUrl = logoImage
@@ -89,8 +89,10 @@ const companyName = computed(() => {
 const companyNameLines = computed(() => {
   const name = companyName.value.trim()
 
-  if (name === 'CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ THIÊN ĐỒNG VIỆT NAM') {
-    return ['CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ', 'THIÊN ĐỒNG VIỆT NAM']
+  const viFullName = 'CÔNG TY TNHH THƯƠNG MẠI QUỐC TẾ THIÊN ĐỒNG VIỆT NAM'
+  if (name === viFullName || name.includes('THIÊN ĐỒNG VIỆT NAM')) {
+    const raw = t('user.contact.companyNameLines')
+    return Array.isArray(raw) ? raw : [raw]
   }
 
   if (name.includes(',')) {
@@ -117,7 +119,7 @@ const contactDetails = computed(() => {
   if (selectedContact.address) {
     details.push({
       key: 'address',
-      label: 'Địa chỉ:',
+      label: t('user.contact.labelAddress'),
       value: selectedContact.address,
       icon: contactIcons.address,
     })
@@ -126,7 +128,7 @@ const contactDetails = computed(() => {
   if (selectedContact.postal_code) {
     details.push({
       key: 'postalCode',
-      label: 'Mã bưu điện:',
+      label: t('user.contact.labelPostalCode'),
       value: selectedContact.postal_code,
       icon: contactIcons.postalCode,
     })
@@ -135,7 +137,7 @@ const contactDetails = computed(() => {
   if (selectedContact.phone) {
     details.push({
       key: 'phone',
-      label: 'SĐT:',
+      label: t('user.contact.labelPhone'),
       value: selectedContact.phone,
       href: `tel:${selectedContact.phone}`,
       icon: contactIcons.phone,
@@ -145,7 +147,7 @@ const contactDetails = computed(() => {
   if (selectedContact.email) {
     details.push({
       key: 'email',
-      label: 'E-mail:',
+      label: t('user.contact.labelEmail'),
       value: selectedContact.email,
       href: `mailto:${selectedContact.email}`,
       icon: contactIcons.email,
@@ -188,7 +190,7 @@ const handleContactSubmit = async () => {
   try {
     await submitInquiry({
       ...contactForm.value,
-      subject: contactForm.value.subject.trim() || 'Liên hệ từ trang Contact',
+      subject: contactForm.value.subject.trim() || t('user.contact.defaultSubject'),
       source_page: 'contact',
     })
     contactForm.value = {
@@ -202,7 +204,7 @@ const handleContactSubmit = async () => {
     contactFormStatus.value = 'success'
   } catch (error) {
     contactFormStatus.value = 'error'
-    contactFormError.value = error?.message || 'Gửi thất bại. Vui lòng thử lại.'
+    contactFormError.value = error?.message || t('user.contact.errorSubmit')
   }
 }
 
@@ -215,10 +217,10 @@ const fetchContactData = async () => {
     contacts.value = Array.isArray(response?.items) ? response.items : []
 
     if (!contacts.value.length) {
-      contactError.value = 'Chưa có dữ liệu liên hệ trong hệ thống.'
+      contactError.value = t('user.contact.emptyData')
     }
   } catch (error) {
-    contactError.value = error?.message || 'Không thể tải dữ liệu liên hệ từ máy chủ.'
+    contactError.value = error?.message || t('user.contact.errorLoading')
     contacts.value = []
   } finally {
     isLoadingContacts.value = false
@@ -358,7 +360,7 @@ onUnmounted(() => {
               :key="tab.name"
               :to="tab.path"
               class="contact-tabbar__item"
-              :class="{ active: tab.name === 'Contact Us' }"
+              :class="{ active: true }"
             >
               {{ tab.name }}
             </router-link>
@@ -367,10 +369,10 @@ onUnmounted(() => {
 
         <div class="contact-hero__content" :class="{ 'is-visible': animatedSections.includes('ctn1') }">
           <div class="contact-hero__title">
-            <div class="fnt-hero">LIÊN HỆ</div>
+            <div class="fnt-hero">{{ t('user.contact.heroTitle') }}</div>
           </div>
           <div class="contact-hero__line"></div>
-          <div class="contact-hero__subtitle">Work together to win the future</div>
+          <div class="contact-hero__subtitle">{{ t('user.contact.heroSubtitle') }}</div>
         </div>
       </section>
 
@@ -391,14 +393,14 @@ onUnmounted(() => {
         <div class="contact-info-shell" :class="{ 'is-visible': animatedSections.includes('ctn2') }">
           <div class="contact-breadcrumb">
             <House :size="16" />
-            <span>Trang chủ</span>
+            <span>{{ t('user.contact.breadcrumbHome') }}</span>
             <ChevronRight :size="14" />
-            <span class="active">Liên hệ</span>
+            <span class="active">{{ t('user.contact.breadcrumbContact') }}</span>
           </div>
 
           <header class="contact-heading">
             <div class="contact-heading__title">
-              <h2>LIÊN HỆ</h2>
+              <h2>{{ t('user.contact.heroTitle') }}</h2>
             </div>
             <div class="contact-heading__line"></div>
           </header>
@@ -459,8 +461,8 @@ onUnmounted(() => {
                     <img :src="logoImage" :alt="primaryContact.name || 'Company logo'" />
                   </div>
                   <div class="contact-map__label">
-                    <strong>{{ companyName }}</strong>
-                    <span>{{ primaryContact.address || 'Địa chỉ đang được cập nhật.' }}</span>
+                    <span>{{ companyName }}</span>
+                    <span>{{ primaryContact.address || t('user.contact.addressUpdating') }}</span>
                   </div>
                 </div>
               </div>
@@ -469,44 +471,44 @@ onUnmounted(() => {
 
           <div class="contact-form-panel">
             <div class="contact-form-panel__header">
-              <p class="contact-form-panel__eyebrow">Mẫu liên hệ</p>
-              <h3 class="contact-form-panel__title">Gửi yêu cầu liên hệ</h3>
+              <p class="contact-form-panel__eyebrow">{{ t('user.contact.formEyebrow') }}</p>
+              <h3 class="contact-form-panel__title">{{ t('user.contact.formTitle') }}</h3>
               <p class="contact-form-panel__desc">
-                Điền thông tin bên dưới, chúng tôi sẽ phản hồi qua email hoặc số điện thoại của bạn.
+                {{ t('user.contact.formDesc') }}
               </p>
             </div>
 
             <form v-if="contactFormStatus !== 'success'" class="contact-form" @submit.prevent="handleContactSubmit" novalidate>
               <div class="contact-form__row">
                 <div class="contact-field">
-                  <label for="contact-name">Họ và tên <span class="req">*</span></label>
-                  <input id="contact-name" v-model="contactForm.full_name" type="text" placeholder="Nguyễn Văn A" :disabled="contactFormStatus === 'loading'" autocomplete="name" required />
+                  <label for="contact-name">{{ t('user.contact.labelName') }} <span class="req">*</span></label>
+                  <input id="contact-name" v-model="contactForm.full_name" type="text" :placeholder="t('user.contact.placeholderName')" :disabled="contactFormStatus === 'loading'" autocomplete="name" required />
                 </div>
                 <div class="contact-field">
-                  <label for="contact-email">Email <span class="req">*</span></label>
+                  <label for="contact-email">{{ t('user.contact.labelEmailForm') }} <span class="req">*</span></label>
                   <input id="contact-email" v-model="contactForm.email" type="email" placeholder="email@example.com" :disabled="contactFormStatus === 'loading'" autocomplete="email" required />
                 </div>
               </div>
 
               <div class="contact-form__row">
                 <div class="contact-field">
-                  <label for="contact-phone">Số điện thoại</label>
+                  <label for="contact-phone">{{ t('user.contact.labelPhoneForm') }}</label>
                   <input id="contact-phone" v-model="contactForm.phone" type="tel" placeholder="0901 234 567" :disabled="contactFormStatus === 'loading'" autocomplete="tel" />
                 </div>
                 <div class="contact-field">
-                  <label for="contact-company">Công ty / Tổ chức</label>
-                  <input id="contact-company" v-model="contactForm.company" type="text" placeholder="Tên công ty của bạn" :disabled="contactFormStatus === 'loading'" autocomplete="organization" />
+                  <label for="contact-company">{{ t('user.contact.labelCompany') }}</label>
+                  <input id="contact-company" v-model="contactForm.company" type="text" :placeholder="t('user.contact.placeholderCompany')" :disabled="contactFormStatus === 'loading'" autocomplete="organization" />
                 </div>
               </div>
 
               <div class="contact-field">
-                <label for="contact-subject">Chủ đề</label>
-                <input id="contact-subject" v-model="contactForm.subject" type="text" placeholder="Nhập chủ đề liên hệ" :disabled="contactFormStatus === 'loading'" />
+                <label for="contact-subject">{{ t('user.contact.labelSubject') }}</label>
+                <input id="contact-subject" v-model="contactForm.subject" type="text" :placeholder="t('user.contact.placeholderSubject')" :disabled="contactFormStatus === 'loading'" />
               </div>
 
               <div class="contact-field contact-field--full">
-                <label for="contact-message">Nội dung <span class="req">*</span></label>
-                <textarea id="contact-message" v-model="contactForm.message" rows="5" placeholder="Mô tả nhu cầu, sản phẩm quan tâm, thời gian cần phản hồi..." :disabled="contactFormStatus === 'loading'" required />
+                <label for="contact-message">{{ t('user.contact.labelMessage') }} <span class="req">*</span></label>
+                <textarea id="contact-message" v-model="contactForm.message" rows="5" :placeholder="t('user.contact.placeholderMessage')" :disabled="contactFormStatus === 'loading'" required />
               </div>
 
               <div v-if="contactFormStatus === 'error'" class="contact-form__alert contact-form__alert--error">
@@ -515,11 +517,11 @@ onUnmounted(() => {
               </div>
 
               <div class="contact-form__footer">
-                <p class="contact-form__note">Thông tin của bạn sẽ được chuyển đến bộ phận phụ trách liên hệ.</p>
+                <p class="contact-form__note">{{ t('user.contact.formNote') }}</p>
                 <button type="submit" class="contact-form__submit" :disabled="!isContactFormValid || contactFormStatus === 'loading'">
                   <Loader2 v-if="contactFormStatus === 'loading'" :size="16" class="spin" />
                   <Send v-else :size="16" />
-                  {{ contactFormStatus === 'loading' ? 'Đang gửi...' : 'Gửi liên hệ' }}
+                  {{ contactFormStatus === 'loading' ? t('user.contact.btnSending') : t('user.contact.btnSubmit') }}
                 </button>
               </div>
             </form>
@@ -527,8 +529,8 @@ onUnmounted(() => {
             <div v-else class="contact-form__success">
               <CheckCircle :size="22" />
               <div>
-                <strong>Đã gửi thành công.</strong>
-                <p>Chúng tôi sẽ liên hệ lại trong thời gian sớm nhất.</p>
+                <strong>{{ t('user.contact.successTitle') }}</strong>
+                <p>{{ t('user.contact.successMsg') }}</p>
               </div>
             </div>
           </div>

@@ -1,5 +1,8 @@
 <script setup>
 import { reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 import AddNavigationMenu from '@/views/admin/features/navigation/components/AddNavigationMenu.vue'
 import DeleteNavigationMenu from '@/views/admin/features/navigation/components/DeleteNavigationMenu.vue'
 import EditNavigationMenu from '@/views/admin/features/navigation/components/EditNavigationMenu.vue'
@@ -22,7 +25,7 @@ const confirmDialog = reactive({
   open: false,
   title: '',
   message: '',
-  confirmText: 'Xác nhận',
+  confirmText: t('admin.common.save'),
   tone: 'primary',
   resolver: null,
 })
@@ -46,9 +49,9 @@ function openConfirmDialog({ title, message, confirmText, tone = 'primary' } = {
     confirmDialog.resolver = null
   }
 
-  confirmDialog.title = String(title || 'Xác nhận thao tác')
-  confirmDialog.message = String(message || 'Bạn có chắc chắn muốn tiếp tục?')
-  confirmDialog.confirmText = String(confirmText || 'Xác nhận')
+  confirmDialog.title = String(title || t('admin.common.confirm_delete'))
+  confirmDialog.message = String(message || t('admin.common.confirm_delete'))
+  confirmDialog.confirmText = String(confirmText || t('admin.common.save'))
   confirmDialog.tone = tone === 'danger' ? 'danger' : 'primary'
   confirmDialog.open = true
 
@@ -94,6 +97,7 @@ const {
   removeNode,
   handleDeleteMenu,
   handleSaveTree,
+  handleExportXml,
 } = useNavigationMenusManager(props, emit, {
   confirmAction: openConfirmDialog,
 })
@@ -104,9 +108,9 @@ async function openDeleteConfirm() {
   }
 
   const confirmed = await openConfirmDialog({
-    title: 'Xác nhận xóa menu',
-    message: `Bạn có chắc chắn muốn xóa menu "${selectedMenu.value?.name || 'đang chọn'}" và toàn bộ mục menu bên trong không?`,
-    confirmText: 'Xóa menu',
+    title: t('admin.navigation.confirm_delete_menu_title'),
+    message: t('admin.navigation.confirm_delete_menu_msg', { name: selectedMenu.value?.name || t('admin.common.all') }),
+    confirmText: t('admin.navigation.delete_menu'),
     tone: 'danger',
   })
   if (!confirmed) {
@@ -126,14 +130,14 @@ defineExpose({
       <!-- 1. Unified Header -->
       <header class="intro-card">
         <div class="intro-copy">
-          <p class="intro-eyebrow">Quản trị hệ thống</p>
-          <h2>Menu điều hướng</h2>
-          <p>Tạo, sửa, xóa và sắp xếp phân cấp các menu điều hướng trên toàn hệ thống.</p>
+          <p class="intro-eyebrow">{{ $t('admin.navigation.eyebrow') }}</p>
+          <h2>{{ $t('admin.navigation.title') }}</h2>
+          <p>{{ $t('admin.navigation.subtitle') }}</p>
         </div>
         <div class="intro-actions">
-          <button type="button" class="btn btn-ghost btn-sm">Xuất XML</button>
+          <button type="button" class="btn btn-ghost btn-sm" @click="handleExportXml">{{ $t('admin.navigation.export_xml') }}</button>
           <button type="button" class="btn btn-ghost btn-sm" :disabled="loadingNavigation" @click="refreshAll">
-            {{ loadingNavigation ? 'Đang làm mới...' : 'Làm mới' }}
+            {{ loadingNavigation ? $t('admin.navigation.refreshing') : $t('admin.common.refresh') }}
           </button>
           <AddNavigationMenu @trigger="openCreateMenuDrawer" />
         </div>
@@ -141,24 +145,24 @@ defineExpose({
 
       <section class="editor-head" style="padding: 24px 32px 16px; border-top: 1px solid #f1f5f9;">
         <div class="toolbar-grid" style="grid-template-columns: 1.2fr 1fr 1fr 1.2fr auto; gap: 12px; width: 100%;">
-          <input v-model="searchKeyword" type="text" class="form-control" placeholder="Tìm tên menu..." />
+          <input v-model="searchKeyword" type="text" class="form-control" :placeholder="$t('admin.navigation.search_placeholder')" />
           <select v-model="statusFilter" class="form-control">
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Đang hiển thị</option>
-            <option value="inactive">Đang ẩn</option>
+            <option value="all">{{ $t('admin.common.all_status') }}</option>
+            <option value="active">{{ $t('admin.navigation.is_active') }}</option>
+            <option value="inactive">{{ $t('admin.common.hide_preview') }}</option>
           </select>
           <select v-model="typeFilter" class="form-control">
-            <option value="all">Tất cả loại</option>
-            <option value="parent">Mục cha</option>
-            <option value="child">Mục con</option>
+            <option value="all">{{ $t('admin.navigation.all_types') }}</option>
+            <option value="parent">{{ $t('admin.navigation.parent_item') }}</option>
+            <option value="child">{{ $t('admin.navigation.child_item') }}</option>
           </select>
           <select v-model="selectedNavMenuId" class="form-control">
-            <option value="">Chọn menu phạm vi</option>
+            <option value="">{{ $t('admin.navigation.select_menu_scope') }}</option>
             <option v-for="menu in navMenus" :key="menu.id" :value="String(menu.id)">
               {{ menu.name }} ({{ menu.location || 'N/A' }})
             </option>
           </select>
-          <button type="button" class="btn btn-secondary btn-sm" @click="applyFilters">Lọc</button>
+          <button type="button" class="btn btn-secondary btn-sm" @click="applyFilters">{{ $t('admin.common.filter') }}</button>
         </div>
       </section>
 
@@ -167,13 +171,13 @@ defineExpose({
           <table class="ultimate-table">
             <thead>
               <tr>
-                <th style="width: 60px;">STT</th>
-                <th>Tên mục menu</th>
-                <th style="width: 140px;">Loại</th>
-                <th style="width: 180px;">Mục cha</th>
-                <th style="width: 80px;">Thứ tự</th>
-                <th style="width: 100px;">Trạng thái</th>
-                <th style="width: 220px;">Thao tác</th>
+                <th style="width: 60px;">{{ $t('admin.navigation.stt') }}</th>
+                <th>{{ $t('admin.navigation.menu_item_name') }}</th>
+                <th style="width: 140px;">{{ $t('admin.navigation.type') }}</th>
+                <th style="width: 180px;">{{ $t('admin.navigation.parent_menu') }}</th>
+                <th style="width: 80px;">{{ $t('admin.navigation.sort_order') }}</th>
+                <th style="width: 100px;">{{ $t('admin.common.status') }}</th>
+                <th style="width: 220px; text-align: right;">{{ $t('admin.common.actions_col') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -187,20 +191,20 @@ defineExpose({
                 </td>
                 <td>
                   <span class="badge" :class="row.rowType === 'parent' ? 'badge-active' : 'badge-inactive'">
-                    {{ row.rowType === 'parent' ? 'MỤC CHA' : 'MỤC CON' }}
+                    {{ row.rowType === 'parent' ? $t('admin.navigation.parent_item') : $t('admin.navigation.child_item') }}
                   </span>
                 </td>
                 <td>{{ row.parentTitle || '-' }}</td>
                 <td>{{ row.node.sort_order ?? 0 }}</td>
                 <td>
                   <span :class="selectedMenu?.is_active ? 'badge-active' : 'badge-inactive'" class="badge">
-                    {{ selectedMenu?.is_active ? 'Hiện' : 'Ẩn' }}
+                    {{ selectedMenu?.is_active ? $t('admin.common.show_preview') : $t('admin.common.hide_preview') }}
                   </span>
                 </td>
-                <td class="table-actions">
-                  <button type="button" class="btn btn-secondary-inline" @click="openEditNodeDrawer(row.node._cid)">Sửa</button>
-                  <button type="button" class="btn btn-soft-inline" @click="openCreateChildNodeDrawer(row.node._cid)">+ Con</button>
-                  <button type="button" class="btn btn-danger-inline" @click="removeNode(row.node._cid)">Xóa</button>
+                <td class="table-actions" style="justify-content: flex-end;">
+                  <button type="button" class="btn btn-ghost btn-sm" @click="openEditNodeDrawer(row.node._cid)">{{ $t('admin.common.edit') }}</button>
+                  <button type="button" class="btn btn-ghost btn-sm" @click="openCreateChildNodeDrawer(row.node._cid)">{{ $t('admin.navigation.add_child') }}</button>
+                  <button type="button" class="btn btn-danger btn-sm" @click="removeNode(row.node._cid)">{{ $t('admin.common.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -208,17 +212,17 @@ defineExpose({
         </div>
 
         <footer class="table-pagination">
-          <p class="pagination-meta">Hiển thị {{ showingFrom }}-{{ showingTo }} / {{ rowsCount }} mục</p>
+          <p class="pagination-meta">{{ $t('admin.navigation.showing_meta', { from: showingFrom, to: showingTo, total: rowsCount }) }}</p>
           <div class="pagination-actions">
-            <button type="button" class="btn btn-secondary btn-sm" :disabled="currentPage <= 1" @click="setPage(currentPage - 1)">Trước</button>
-            <button type="button" class="btn btn-secondary btn-sm" :disabled="currentPage >= totalPages" @click="setPage(currentPage + 1)">Sau</button>
+            <button type="button" class="btn btn-secondary btn-sm" :disabled="currentPage <= 1" @click="setPage(currentPage - 1)">{{ $t('admin.common.prev') }}</button>
+            <button type="button" class="btn btn-secondary btn-sm" :disabled="currentPage >= totalPages" @click="setPage(currentPage + 1)">{{ $t('admin.common.next') }}</button>
           </div>
           <div class="footer-actions">
-            <button type="button" class="btn btn-secondary btn-sm" @click="openCreateRootNodeDrawer">Thêm mục gốc</button>
+            <button type="button" class="btn btn-secondary btn-sm" @click="openCreateRootNodeDrawer">{{ $t('admin.navigation.add_root') }}</button>
             <EditNavigationMenu :disabled="!selectedMenu" @trigger="openEditMenuDrawer" />
             <DeleteNavigationMenu :disabled="!selectedMenu || savingNavigation" @trigger="openDeleteConfirm" />
             <button type="button" class="btn btn-primary btn-sm" :disabled="!selectedMenu || savingNavigation" @click="handleSaveTree">
-              Lưu thay đổi
+              {{ $t('admin.common.save_changes') }}
             </button>
           </div>
         </footer>
@@ -242,7 +246,7 @@ defineExpose({
         <h3 id="confirm-dialog-title">{{ confirmDialog.title }}</h3>
         <p>{{ confirmDialog.message }}</p>
         <div class="confirm-modal__actions">
-          <button type="button" class="btn btn-ghost" @click="closeConfirmDialog(false)">Hủy</button>
+          <button type="button" class="btn btn-ghost" @click="closeConfirmDialog(false)">{{ $t('admin.common.discard') }}</button>
           <button
             type="button"
             class="btn"
@@ -260,24 +264,24 @@ defineExpose({
       <header class="drawer-header">
         <div>
           <h3>{{ drawerTitle }}</h3>
-          <p>{{ drawerMode === 'createMenu' || drawerMode === 'editMenu' ? 'Thông tin menu' : 'Thông tin mục điều hướng' }}</p>
+          <p>{{ drawerMode === 'createMenu' || drawerMode === 'editMenu' ? $t('admin.navigation.menu_info') : $t('admin.navigation.node_info') }}</p>
         </div>
         <button type="button" class="close-btn" @click="closeDrawer">x</button>
       </header>
 
       <section class="drawer-body" v-if="drawerMode === 'createMenu' || drawerMode === 'editMenu'">
         <label>
-          <span>Tên menu</span>
-          <input v-model="menuForm.name" type="text" placeholder="Ví dụ: Menu chính" />
+          <span>{{ $t('admin.navigation.menu_name') }}</span>
+          <input v-model="menuForm.name" type="text" :placeholder="$t('admin.navigation.menu_name')" />
         </label>
         <label>
-          <span>Vị trí</span>
+          <span>{{ $t('admin.navigation.location') }}</span>
           <input v-model="menuForm.location" type="text" placeholder="header / footer" />
         </label>
         <label>
-          <span>Ngôn ngữ</span>
+          <span>{{ $t('admin.navigation.language') }}</span>
           <select v-model="menuForm.language_id">
-            <option value="">Chọn ngôn ngữ</option>
+            <option value="">{{ $t('admin.navigation.select_language') }}</option>
             <option v-for="language in languages" :key="language.id" :value="String(language.id)">
               {{ language.code }} - {{ language.name }}
             </option>
@@ -285,45 +289,45 @@ defineExpose({
         </label>
         <label class="toggle-row">
           <input v-model="menuForm.is_active" type="checkbox" />
-          <span>Đang hiển thị</span>
+          <span>{{ $t('admin.navigation.is_active') }}</span>
         </label>
       </section>
 
       <section class="drawer-body" v-else>
         <label>
-          <span>Tên mục</span>
-          <input v-model="nodeForm.title" type="text" placeholder="Ví dụ: Lịch sử phát triển" />
+          <span>{{ $t('admin.navigation.node_title') }}</span>
+          <input v-model="nodeForm.title" type="text" :placeholder="$t('admin.navigation.node_title')" />
         </label>
         <label>
-          <span>Đường dẫn</span>
+          <span>{{ $t('admin.navigation.url') }}</span>
           <input v-model="nodeForm.url" type="text" placeholder="/about/history" />
         </label>
         <div class="grid-2">
           <label>
-            <span>Anchor</span>
+            <span>{{ $t('admin.navigation.anchor') }}</span>
             <input v-model="nodeForm.anchor" type="text" placeholder="section-id" />
           </label>
           <label>
-            <span>Thứ tự</span>
+            <span>{{ $t('admin.navigation.sort_order') }}</span>
             <input v-model="nodeForm.sort_order" type="number" placeholder="0" />
           </label>
         </div>
         <div class="grid-2">
           <label>
-            <span>Loại</span>
+            <span>{{ $t('admin.navigation.type') }}</span>
             <input v-model="nodeForm.item_type" type="text" placeholder="parent/child" />
           </label>
           <label>
-            <span>Target</span>
+            <span>{{ $t('admin.navigation.target') }}</span>
             <input v-model="nodeForm.target" type="text" placeholder="_self / _blank" />
           </label>
         </div>
       </section>
 
       <footer class="drawer-footer">
-        <button type="button" class="btn btn-ghost" @click="closeDrawer">Hủy</button>
+        <button type="button" class="btn btn-ghost" @click="closeDrawer">{{ $t('admin.common.discard') }}</button>
         <button type="button" class="btn btn-primary" :disabled="savingNavigation || loadingLanguages" @click="submitDrawer">
-          Lưu thay đổi
+          {{ $t('admin.common.save_changes') }}
         </button>
       </footer>
     </aside>
@@ -414,6 +418,7 @@ defineExpose({
 .table-actions {
   display: flex;
   gap: 6px;
+  justify-content: flex-end;
 }
 
 .badge {
@@ -433,12 +438,50 @@ defineExpose({
   padding: 0 12px;
 }
 
+.btn {
+  border-radius: var(--admin-control-radius, 14px);
+  border: 1px solid transparent;
+  min-height: var(--admin-button-height, 40px);
+  padding: 0 12px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: all 0.22s ease;
+}
+
 .btn-filter {
   border-color: #d7d2ff;
   background: linear-gradient(135deg, #d9d6ff 0%, #c7c2ff 100%);
   color: #363a7a;
   font-weight: 700;
   min-width: 134px;
+}
+
+.btn-ghost {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.05) !important;
+  color: #334155 !important;
+}
+
+.btn-sm {
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  font-size: 11px !important;
+  border-radius: 6px !important;
+}
+
+.btn-secondary {
+  color: #284767 !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 247, 252, 0.96)) !important;
+  border-color: rgba(198, 216, 233, 0.95) !important;
 }
 
 button:disabled {
@@ -771,6 +814,135 @@ button:disabled {
     width: 100vw;
     border-left-width: 0;
   }
+}
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: -520px;
+  width: 480px;
+  max-width: 100vw;
+  height: 100vh;
+  z-index: 1001;
+  background: #fff;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer.open {
+  right: 0;
+}
+
+.drawer-header {
+  padding: 24px 32px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-header h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.drawer-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 8px;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #1e293b;
+}
+
+.drawer-body {
+  padding: 32px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.drawer-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-body label span {
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.drawer-body input[type="text"],
+.drawer-body input[type="number"],
+.drawer-body select {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.drawer-body input[type="text"]:focus,
+.drawer-body input[type="number"]:focus,
+.drawer-body select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.toggle-row {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 12px !important;
+}
+
+.toggle-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.drawer-footer {
+  padding: 24px 32px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>
 

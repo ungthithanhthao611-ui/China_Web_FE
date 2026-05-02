@@ -1,5 +1,8 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 import { uploadAdminMediaAsset } from '@/views/admin/shared/api/adminApi.js'
 import {
@@ -36,13 +39,13 @@ const emit = defineEmits(['notify-success', 'notify-error', 'clear-notify'])
 
 const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
 
-const categoryTypeOptions = [
-  { value: 'qualification_certificate', label: 'Chứng chỉ năng lực' },
-  { value: 'awards_group', label: 'Nhóm giải thưởng' },
-  { value: 'corporate_honors', label: 'Danh hiệu doanh nghiệp' },
-  { value: 'project_honors', label: 'Danh hiệu dự án' },
-  { value: 'custom', label: 'Tùy chỉnh' },
-]
+const categoryTypeOptions = computed(() => [
+  { value: 'qualification_certificate', label: t('admin.capability.categories.types.qualification_certificate') },
+  { value: 'awards_group', label: t('admin.capability.categories.types.awards_group') },
+  { value: 'corporate_honors', label: t('admin.capability.categories.types.corporate_honors') },
+  { value: 'project_honors', label: t('admin.capability.categories.types.project_honors') },
+  { value: 'custom', label: t('admin.capability.categories.types.custom') },
+])
 
 const loading = ref(false)
 const saving = ref(false)
@@ -105,10 +108,10 @@ const categoryForm = reactive({
 const confirmDialog = reactive({
   visible: false,
   tone: 'primary',
-  eyebrow: 'Xác nhận thao tác',
-  title: 'Bạn có chắc chắn muốn tiếp tục?',
+  eyebrow: t('admin.capability.settings.common.confirm_save'),
+  title: t('admin.capability.settings.common.confirm_message'),
   message: '',
-  confirmText: 'Xác nhận',
+  confirmText: t('admin.common.confirm'),
 })
 let confirmDialogResolver = null
 
@@ -145,10 +148,10 @@ function closeConfirmDialog(result = false) {
 function askForConfirmation(options = {}) {
   const {
     tone = 'primary',
-    eyebrow = 'Xác nhận thao tác',
-    title = 'Bạn có chắc chắn muốn tiếp tục?',
-    message = 'Thao tác sẽ được thực thi ngay sau khi bạn xác nhận.',
-    confirmText = 'Xác nhận',
+    eyebrow = t('admin.capability.settings.common.confirm_save'),
+    title = t('admin.capability.settings.common.confirm_message'),
+    message = '',
+    confirmText = t('admin.common.confirm'),
   } = options
 
   if (typeof confirmDialogResolver === 'function') {
@@ -208,30 +211,30 @@ const showHonorsSection = computed(() => normalizedViewMode.value !== 'categorie
 const headerMeta = computed(() => {
   if (normalizedViewMode.value === 'categories') {
     return {
-      title: 'Quản lý danh mục năng lực',
-      description: 'Tạo, sửa, xóa danh mục; đổi trạng thái; sắp xếp và quản lý phân cấp danh mục.',
+      title: t('admin.capability.categories.label'),
+      description: t('admin.capability.categories.description'),
     }
   }
   if (normalizedViewMode.value === 'honors') {
     return {
-      title: 'Quản lý mục năng lực',
-      description: 'Tạo, sửa, xóa mục năng lực; tải ảnh; ẩn/xóa mềm; đổi trạng thái và sắp xếp hiển thị.',
+      title: t('admin.capability.items.label'),
+      description: t('admin.capability.items.description'),
     }
   }
   return {
-    title: 'Quản lý danh mục và mục năng lực',
-    description: 'Quản trị đầy đủ module năng lực: danh mục, mục năng lực, tải ảnh, xóa mềm, đổi trạng thái và sắp xếp hiển thị.',
+    title: t('admin.capability.items.label'),
+    description: t('admin.capability.items.description'),
   }
 })
 const totalPages = computed(() => Math.max(1, Math.ceil(totalRecords.value / pageSize.value)))
 
 function categoryName(categoryId) {
-  if (!categoryId) return 'Chưa phân loại'
-  return categoryMap.value.get(categoryId)?.name || `Danh mục #${categoryId}`
+  if (!categoryId) return t('admin.common.no_data')
+  return categoryMap.value.get(categoryId)?.name || `${t('admin.capability.categories.label')} #${categoryId}`
 }
 
 function categoryTypeLabel(typeValue) {
-  return categoryTypeOptions.find((item) => item.value === typeValue)?.label || typeValue || '-'
+  return categoryTypeOptions.value.find((item) => item.value === typeValue)?.label || typeValue || '-'
 }
 
 function statusBadgeClass(isActive) {
@@ -758,7 +761,7 @@ watch(pageSize, async (nextSize, previousSize) => {
       <!-- 1. Unified Header -->
       <header class="intro-card">
         <div class="intro-copy">
-          <p class="intro-eyebrow">Quản trị năng lực</p>
+          <p class="intro-eyebrow">{{ $t('admin.capability.items.eyebrow') }}</p>
           <h2>{{ headerMeta.title }}</h2>
           <p>{{ headerMeta.description }}</p>
         </div>
@@ -770,18 +773,13 @@ watch(pageSize, async (nextSize, previousSize) => {
             :disabled="resyncingImages || loading"
             @click="resyncHonorImages"
           >
-            {{ resyncingImages ? 'Đang đồng bộ...' : 'Đồng bộ ảnh' }}
+            {{ resyncingImages ? $t('admin.about.toolbar.refreshing') : $t('admin.about.toolbar.refresh') }}
           </button>
-          <button v-if="showCategorySection" type="button" class="btn btn-secondary btn-sm" @click="openCreateCategoryForm">Thêm danh mục</button>
-          <button v-if="showHonorsSection" type="button" class="btn btn-primary btn-sm" @click="openCreateHonorForm">Thêm mục năng lực</button>
-          <button
-            v-if="showCategorySection && !showHonorsSection"
-            type="button"
-            class="btn btn-secondary btn-sm"
-            :disabled="loading"
-            @click="refreshAll"
-          >
-            {{ loading ? 'Đang tải...' : 'Làm mới' }}
+          <button v-if="showCategorySection" type="button" class="btn btn-secondary btn-sm" @click="openCreateCategoryForm">
+            + {{ $t('admin.capability.categories.add_new') }}
+          </button>
+          <button v-if="showHonorsSection" type="button" class="btn btn-primary btn-sm" @click="openCreateHonorForm">
+            + {{ $t('admin.capability.items.add_new') }}
           </button>
         </div>
       </header>
@@ -789,69 +787,59 @@ watch(pageSize, async (nextSize, previousSize) => {
       <section v-if="showCategorySection" class="section-list-unified">
         <div class="editor-head" style="padding: 24px 32px 16px;">
           <div>
-            <p class="editor-eyebrow">Phân loại</p>
-            <h4>Danh mục năng lực</h4>
+            <p class="editor-eyebrow">{{ $t('admin.capability.categories.eyebrow') }}</p>
+            <h4>{{ $t('admin.capability.categories.label') }}</h4>
           </div>
         </div>
-      <div v-if="loading" class="empty">Đang tải danh mục...</div>
-      <div v-else-if="!categories.length" class="empty">Chưa có danh mục nào.</div>
-      <div v-else class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Tên danh mục</th>
-              <th>Slug</th>
-              <th>Loại</th>
-              <th>Danh mục cha</th>
-              <th>Thứ tự</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in categories" :key="item.id" class="category-row">
-              <td data-label="Tên danh mục">{{ item.name }}</td>
-              <td data-label="Slug">{{ item.slug }}</td>
-              <td data-label="Loại">{{ categoryTypeLabel(item.type) }}</td>
-              <td data-label="Danh mục cha">{{ categoryName(item.parent_id) }}</td>
-              <td data-label="Thứ tự">{{ item.sort_order || 0 }}</td>
-              <td data-label="Trạng thái">
-                <span :class="statusBadgeClass(item.is_active)">{{ item.is_active ? 'Đang hiển thị' : 'Đang ẩn' }}</span>
-              </td>
-              <td data-label="Thao tác">
-                <div class="actions">
-                  <button type="button" class="btn btn-secondary" @click="openEditCategoryForm(item)">Sửa</button>
-                  <button
-                    type="button"
-                    class="btn btn-secondary"
-                    @click="onToggleCategoryActive(item, !item.is_active)"
-                  >
-                    {{ item.is_active ? 'Ẩn' : 'Hiển thị' }}
-                  </button>
-                  <button type="button" class="btn btn-danger" @click="removeCategory(item)">Xóa</button>
+        <div v-if="loading" class="empty">{{ $t('admin.common.loading') }}</div>
+        <div v-else-if="!categories.length" class="empty">{{ $t('admin.common.no_data') }}</div>
+        <div v-else class="capability-category-grid">
+          <article v-for="item in categories" :key="item.id" class="capability-card">
+            <div class="capability-card__body">
+              <div class="capability-card__main">
+                <span class="capability-card__badge" :class="item.type">{{ categoryTypeLabel(item.type) }}</span>
+                <h3>{{ item.name }}</h3>
+                <p class="capability-card__slug">/{{ item.slug }}</p>
+                <div class="capability-card__meta">
+                   <span v-if="item.parent_id" class="meta-chip">{{ $t('admin.capability.items.fields.award_category') }}: {{ categoryName(item.parent_id) }}</span>
+                   <span class="meta-chip">{{ $t('admin.capability.settings.cards.sort') }}: {{ item.sort_order || 0 }}</span>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+              </div>
+              <div class="capability-card__actions">
+                <button type="button" class="btn btn-secondary btn-sm" @click="openEditCategoryForm(item)">
+                  {{ $t('admin.capability.categories.edit') }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  @click="onToggleCategoryActive(item, !item.is_active)"
+                >
+                  {{ item.is_active ? $t('admin.about.section.collapse') : $t('admin.about.section.edit') }}
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" @click="removeCategory(item)">
+                   {{ $t('admin.capability.categories.delete') }}
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
 
       <section v-if="showHonorsSection" class="editor-head" style="padding: 24px 32px 16px; border-top: 1px solid #f1f5f9;">
         <div class="toolbar-grid" style="grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%;">
-          <input v-model="filters.keyword" type="search" class="form-control" placeholder="Tìm kiếm..." />
+          <input v-model="filters.keyword" type="search" class="form-control" :placeholder="$t('admin.about.toolbar.search_placeholder')" />
           <select v-model="filters.categoryId" class="form-control">
-            <option value="">Tất cả danh mục</option>
+            <option value="">-- {{ $t('admin.capability.categories.label') }} --</option>
             <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
           </select>
           <select v-model="filters.status" class="form-control">
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Đang hiển thị</option>
-            <option value="inactive">Đang ẩn</option>
+            <option value="all">{{ $t('admin.about.toolbar.all_status') }}</option>
+            <option value="active">{{ $t('admin.about.toolbar.complete') }}</option>
+            <option value="inactive">{{ $t('admin.about.toolbar.missing_content') }}</option>
           </select>
           <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn btn-secondary btn-sm" :disabled="loading" @click="applyHonorsFilters">Lọc</button>
-            <button type="button" class="btn btn-secondary btn-sm" :disabled="loading" @click="refreshAll">Tải lại</button>
+            <button type="button" class="btn btn-secondary btn-sm" :disabled="loading" @click="applyHonorsFilters">{{ $t('admin.about.toolbar.refresh') }}</button>
+            <button type="button" class="btn btn-secondary btn-sm" :disabled="loading" @click="refreshAll">{{ $t('admin.about.toolbar.reset') }}</button>
           </div>
         </div>
       </section>
@@ -861,11 +849,11 @@ watch(pageSize, async (nextSize, previousSize) => {
           <table class="ultimate-table">
             <thead>
               <tr>
-                <th style="width: 80px;">Ảnh</th>
-                <th>Thông tin năng lực</th>
-                <th style="width: 180px;">Danh mục</th>
-                <th style="width: 80px;">Trạng thái</th>
-                <th style="width: 180px;">Thao tác</th>
+                <th style="width: 80px;">{{ $t('admin.about.section.blocks_count', { count: 1 }).split(' ')[1] }}</th>
+                <th>{{ $t('admin.capability.items.label') }}</th>
+                <th style="width: 180px;">{{ $t('admin.capability.items.fields.award_category') }}</th>
+                <th style="width: 80px;">{{ $t('admin.capability.categories.table.status') }}</th>
+                <th style="width: 180px;">{{ $t('admin.capability.categories.table.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -892,15 +880,15 @@ watch(pageSize, async (nextSize, previousSize) => {
                 <td>{{ categoryName(item.category_id) }}</td>
                 <td>
                   <span :class="item.is_active ? 'badge badge-active' : 'badge badge-inactive'">
-                    {{ item.is_active ? 'Bật' : 'Ẩn' }}
+                    {{ item.is_active ? $t('admin.common.active') : $t('admin.common.inactive') }}
                   </span>
                 </td>
                 <td class="table-actions">
-                  <button type="button" class="btn btn-secondary btn-sm" @click="openEditHonorForm(item)">Sửa</button>
+                  <button type="button" class="btn btn-secondary btn-sm" @click="openEditHonorForm(item)">{{ $t('admin.common.edit') }}</button>
                   <button type="button" class="btn btn-secondary btn-sm" @click="onToggleHonorActive(item, !item.is_active)">
-                    {{ item.is_active ? 'Ẩn' : 'Bật' }}
+                    {{ item.is_active ? $t('admin.common.inactive') : $t('admin.common.active') }}
                   </button>
-                  <button type="button" class="btn btn-danger btn-sm" @click="removeHonor(item)">Xóa</button>
+                  <button type="button" class="btn btn-danger btn-sm" @click="removeHonor(item)">{{ $t('admin.common.delete') }}</button>
                 </td>
               </tr>
             </tbody>
@@ -908,14 +896,14 @@ watch(pageSize, async (nextSize, previousSize) => {
         </div>
       <div v-if="totalRecords > 0" class="table-pagination">
         <p class="pagination-meta">
-          Tổng {{ totalRecords }} bản ghi • Trang {{ currentPage }} / {{ totalPages }}
+          {{ $t('admin.common.total') }} {{ totalRecords }} {{ $t('admin.sidebar.activity_logs') }} • {{ $t('admin.common.page') }} {{ currentPage }} / {{ totalPages }}
         </p>
         <div class="pagination-actions">
           <button type="button" class="btn btn-secondary" :disabled="loading || currentPage <= 1" @click="setPage(currentPage - 1)">
-            Trước
+            {{ $t('admin.common.prev') }}
           </button>
           <button type="button" class="btn btn-secondary" :disabled="loading || currentPage >= totalPages" @click="setPage(currentPage + 1)">
-            Sau
+            {{ $t('admin.common.next') }}
           </button>
         </div>
       </div>
@@ -928,10 +916,10 @@ watch(pageSize, async (nextSize, previousSize) => {
             <div class="editor-head__content">
               <div class="editor-head__badge-wrap">
                 <p class="eyebrow">{{ honorFormMode === 'create' ? 'Create' : 'Edit' }}</p>
-                <span class="editor-head__badge">Năng Lực</span>
+                <span class="editor-head__badge">{{ $t('admin.capability.items.label') }}</span>
               </div>
-              <h3>{{ honorFormMode === 'create' ? 'Tạo mục năng lực' : 'Chỉnh sửa mục năng lực' }}</h3>
-              <p class="editor-head__copy">Cập nhật thông tin chi tiết, metadata và hình ảnh năng lực.</p>
+              <h3>{{ honorFormMode === 'create' ? $t('admin.capability.items.add_new') : $t('admin.capability.items.edit') }}</h3>
+              <p class="editor-head__copy">{{ $t('admin.capability.items.description') }}</p>
             </div>
             <button type="button" class="icon-btn" @click="closeHonorForm">×</button>
           </div>
@@ -961,16 +949,16 @@ watch(pageSize, async (nextSize, previousSize) => {
             Đã tải lên: {{ uploadStorageBackend }}
           </span>
           <p v-if="uploadFallbackReason" class="upload-fallback">
-            Lý do fallback: {{ uploadFallbackReason }}
+            Fallback reason: {{ uploadFallbackReason }}
           </p>
         </div>
         </div>
 
         <form class="dynamic-form" @submit.prevent="submitHonorForm">
           <label class="editor-field">
-            <span>Danh mục</span>
+            <span>{{ $t('admin.capability.items.fields.award_category') }}</span>
             <select v-model="honorForm.category_id">
-              <option disabled value="">Chọn danh mục</option>
+              <option disabled value="">{{ $t('admin.common.no_data') }}</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">
                 {{ category.name }}
               </option>
@@ -978,69 +966,69 @@ watch(pageSize, async (nextSize, previousSize) => {
           </label>
 
           <label class="editor-field">
-            <span>Tiêu đề</span>
+            <span>{{ $t('admin.capability.categories.table.name') }}</span>
             <input v-model="honorForm.title" type="text" />
           </label>
 
           <label class="editor-field">
             <span>Slug</span>
-            <input v-model="honorForm.slug" type="text" placeholder="Không bắt buộc, sẽ tự tạo nếu để trống" />
+            <input v-model="honorForm.slug" type="text" :placeholder="$t('admin.about.toolbar.slug_placeholder')" />
           </label>
 
           <label class="editor-field">
-            <span>URL hình ảnh</span>
+            <span>{{ $t('admin.about.media.media_title') }} URL</span>
             <input v-model="honorForm.image_url" type="text" />
           </label>
 
           <label class="editor-field">
-            <span>Năm</span>
+            <span>{{ $t('admin.capability.items.fields.award_year') }}</span>
             <input v-model="honorForm.year" type="number" />
           </label>
 
           <label class="editor-field">
-            <span>Đơn vị cấp</span>
+            <span>{{ $t('admin.capability.items.fields.issuer') }}</span>
             <input v-model="honorForm.issued_by" type="text" />
           </label>
 
           <label class="editor-field">
-            <span>Kiểu hiển thị</span>
+            <span>{{ $t('admin.capability.categories.table.type') }}</span>
             <select v-model="honorForm.display_type">
-              <option value="qualification_certificate">Chứng chỉ năng lực</option>
-              <option value="corporate_honors">Danh hiệu doanh nghiệp</option>
-              <option value="project_honors">Danh hiệu dự án</option>
+              <option value="qualification_certificate">{{ $t('admin.capability.categories.types.qualification_certificate') }}</option>
+              <option value="corporate_honors">{{ $t('admin.capability.categories.types.corporate_honors') }}</option>
+              <option value="project_honors">{{ $t('admin.capability.categories.types.project_honors') }}</option>
             </select>
           </label>
 
           <label class="editor-field">
-            <span>Thứ tự</span>
+            <span>{{ $t('admin.capability.settings.cards.sort') }}</span>
             <input v-model="honorForm.sort_order" type="number" />
           </label>
 
           <label class="editor-field">
-            <span>Trạng thái</span>
+            <span>{{ $t('admin.capability.categories.table.status') }}</span>
             <select v-model="honorForm.is_active">
-              <option :value="true">Đang hiển thị</option>
-              <option :value="false">Đang ẩn</option>
+              <option :value="true">{{ $t('admin.about.toolbar.complete') }}</option>
+              <option :value="false">{{ $t('admin.about.toolbar.missing_content') }}</option>
             </select>
           </label>
 
           <label class="editor-field">
-            <span>Nổi bật</span>
+            <span>{{ $t('admin.about.toolbar.featured') || 'Featured' }}</span>
             <select v-model="honorForm.is_featured">
-              <option :value="false">Không</option>
-              <option :value="true">Có</option>
+              <option :value="false">{{ $t('admin.about.common.no') || 'No' }}</option>
+              <option :value="true">{{ $t('admin.about.common.yes') || 'Yes' }}</option>
             </select>
           </label>
 
           <label class="editor-field wide">
-            <span>Mô tả ngắn</span>
+            <span>{{ $t('admin.capability.items.fields.short_description') || 'Short Description' }}</span>
             <textarea v-model="honorForm.short_description" rows="4"></textarea>
           </label>
 
           <div class="form-actions wide">
-            <button type="button" class="btn btn-secondary" @click="closeHonorForm">Hủy</button>
+            <button type="button" class="btn btn-secondary" @click="closeHonorForm">{{ $t('admin.common.cancel') }}</button>
             <button type="submit" class="btn btn-primary" :disabled="saving">
-              {{ saving ? 'Đang lưu...' : honorFormMode === 'create' ? 'Tạo mới' : 'Cập nhật' }}
+              {{ saving ? $t('admin.common.saving') : honorFormMode === 'create' ? $t('admin.common.create') : $t('admin.common.updated_at') }}
             </button>
           </div>
         </form>
@@ -1055,10 +1043,10 @@ watch(pageSize, async (nextSize, previousSize) => {
             <div class="editor-head__content">
               <div class="editor-head__badge-wrap">
                 <p class="eyebrow">{{ categoryFormMode === 'create' ? 'Create' : 'Edit' }}</p>
-                <span class="editor-head__badge">Danh Mục Năng Lực</span>
+                <span class="editor-head__badge">{{ $t('admin.capability.categories.label') }}</span>
               </div>
-              <h3>{{ categoryFormMode === 'create' ? 'Tạo danh mục' : 'Chỉnh sửa danh mục' }}</h3>
-              <p class="editor-head__copy">Sắp xếp và quản lý phân cấp danh mục năng lực.</p>
+              <h3>{{ categoryFormMode === 'create' ? $t('admin.capability.categories.add_new') : $t('admin.capability.categories.edit') }}</h3>
+              <p class="editor-head__copy">{{ $t('admin.capability.categories.description') }}</p>
             </div>
             <button type="button" class="icon-btn" @click="closeCategoryForm">×</button>
           </div>
@@ -1069,17 +1057,17 @@ watch(pageSize, async (nextSize, previousSize) => {
 
         <form class="dynamic-form" @submit.prevent="submitCategoryForm">
           <label class="editor-field">
-            <span>Tên danh mục</span>
+            <span>{{ $t('admin.capability.categories.table.name') }}</span>
             <input v-model="categoryForm.name" type="text" />
           </label>
 
           <label class="editor-field">
             <span>Slug</span>
-            <input v-model="categoryForm.slug" type="text" placeholder="Không bắt buộc, sẽ tự tạo nếu để trống" />
+            <input v-model="categoryForm.slug" type="text" :placeholder="$t('admin.about.toolbar.slug_placeholder')" />
           </label>
 
           <label class="editor-field">
-            <span>Loại</span>
+            <span>{{ $t('admin.capability.categories.table.type') }}</span>
             <select v-model="categoryForm.type">
               <option v-for="option in categoryTypeOptions" :key="option.value" :value="option.value">
                 {{ option.label }}
@@ -1088,9 +1076,9 @@ watch(pageSize, async (nextSize, previousSize) => {
           </label>
 
           <label class="editor-field">
-            <span>Danh mục cha</span>
+            <span>{{ $t('admin.capability.items.fields.award_category') }}</span>
             <select v-model="categoryForm.parent_id">
-              <option value="">Không có danh mục cha</option>
+              <option value="">{{ $t('admin.common.no_data') }}</option>
               <option v-for="item in categoryParentOptions" :key="item.id" :value="item.id">
                 {{ item.name }}
               </option>
@@ -1098,27 +1086,27 @@ watch(pageSize, async (nextSize, previousSize) => {
           </label>
 
           <label class="editor-field">
-            <span>Thứ tự</span>
+            <span>{{ $t('admin.capability.settings.cards.sort') }}</span>
             <input v-model="categoryForm.sort_order" type="number" />
           </label>
 
           <label class="editor-field">
-            <span>Trạng thái</span>
+            <span>{{ $t('admin.capability.categories.table.status') }}</span>
             <select v-model="categoryForm.is_active">
-              <option :value="true">Đang hiển thị</option>
-              <option :value="false">Đang ẩn</option>
+              <option :value="true">{{ $t('admin.about.toolbar.complete') }}</option>
+              <option :value="false">{{ $t('admin.about.toolbar.missing_content') }}</option>
             </select>
           </label>
 
           <label class="editor-field wide">
-            <span>Mô tả</span>
+            <span>{{ $t('admin.capability.categories.description') }}</span>
             <textarea v-model="categoryForm.description" rows="4"></textarea>
           </label>
 
           <div class="form-actions wide">
-            <button type="button" class="btn btn-secondary" @click="closeCategoryForm">Hủy</button>
+            <button type="button" class="btn btn-secondary" @click="closeCategoryForm">{{ $t('admin.common.cancel') }}</button>
             <button type="submit" class="btn btn-primary" :disabled="categorySaving">
-              {{ categorySaving ? 'Đang lưu...' : categoryFormMode === 'create' ? 'Tạo mới' : 'Cập nhật' }}
+              {{ categorySaving ? $t('admin.common.saving') : categoryFormMode === 'create' ? $t('admin.common.create') : $t('admin.common.updated_at') }}
             </button>
           </div>
         </form>
@@ -1342,6 +1330,105 @@ watch(pageSize, async (nextSize, previousSize) => {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+  }
+}
+.capability-category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 24px;
+  padding: 0 32px 32px;
+}
+
+.capability-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.capability-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+.capability-card__body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 16px;
+}
+
+.capability-card__main {
+  flex: 1;
+}
+
+.capability-card__badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.capability-card__main h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.capability-card__slug {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.capability-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.meta-chip {
+  font-size: 12px;
+  background: #f8fafc;
+  color: #475569;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.capability-card__actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.capability-card__actions .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+@media (max-width: 1400px) {
+  .capability-category-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .capability-category-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 </style>

@@ -41,7 +41,10 @@ h3 {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
+}
+
+.row-actions {
+  flex-wrap: nowrap;
 }
 
 .records-panel__summary {
@@ -624,9 +627,29 @@ td a:hover {
 }
 
 .btn-danger {
-  color: #ef4444;
-  background: #fef2f2;
-  border-color: #fee2e2;
+  color: #ffffff !important;
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+}
+
+.btn-ghost {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.05) !important;
+  color: #334155 !important;
+}
+
+.btn-sm {
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  font-size: 11px !important;
+  border-radius: 6px !important;
 }
 
 button:disabled {

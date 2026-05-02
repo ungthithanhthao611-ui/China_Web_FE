@@ -57,73 +57,73 @@ const touched = reactive({
   note: false,
 })
 
-const noteText = 'Nhân viên tư vấn sẽ liên hệ để xác nhận giá, phí vận chuyển và phương thức thanh toán phù hợp.'
-const vnpayRedirectNote = 'Với VNPAY, hệ thống sẽ tạo đơn thanh toán online và chuyển bạn sang cổng VNPAY để hoàn tất giao dịch. Nếu bạn hủy thanh toán, đơn online sẽ bị hủy và giỏ hàng vẫn được giữ nguyên.'
+const noteText = computed(() => t('user.checkout.noteTextFallback'))
+const vnpayRedirectNote = computed(() => t('user.checkout.vnpayRedirectNote'))
 
-const paymentMethodOptions = [
+const paymentMethodOptions = computed(() => [
   {
     value: 'cod',
-    label: 'Thanh toán khi nhận hàng (COD)',
-    description: 'Kiểm tra hàng và thanh toán trực tiếp khi đơn được giao tới nơi nhận.',
+    label: t('user.checkout.methodCod'),
+    description: t('user.checkout.methodCodDesc'),
     icon: Truck,
     available: true,
-    badge: 'Khuyến nghị',
+    badge: t('user.checkout.badgeRecommended'),
   },
   {
     value: 'vnpay',
-    label: 'Thanh toán qua VNPAY',
-    description: 'Thanh toán online qua QR, ATM nội địa và thẻ ngân hàng trên cổng VNPAY Sandbox.',
+    label: t('user.checkout.methodVnpay'),
+    description: t('user.checkout.methodVnpayDesc'),
     icon: CreditCard,
     available: true,
-    badge: 'Online',
+    badge: t('user.checkout.badgeOnline'),
   },
-]
+])
 
-const paymentMethodLabels = {
-  cod: 'Thanh toán khi nhận hàng',
-  vnpay: 'Thanh toán qua VNPAY',
-}
+const paymentMethodLabels = computed(() => ({
+  cod: t('user.checkout.methodCod'),
+  vnpay: t('user.checkout.methodVnpay'),
+}))
 
-const assuranceItems = [
+const assuranceItems = computed(() => [
   {
-    title: 'Bảo mật thông tin',
-    description: 'Thông tin của bạn được bảo mật tuyệt đối',
+    title: t('user.cart.benefitSecurityTitle'),
+    description: t('user.cart.benefitSecurityDesc'),
     icon: ShieldCheck,
   },
   {
-    title: 'Giao hàng toàn quốc',
-    description: 'Đơn hàng được giao nhanh chóng',
+    title: t('user.checkout.assuranceDeliveryTitle'),
+    description: t('user.checkout.assuranceDeliveryDesc'),
     icon: Truck,
   },
   {
-    title: 'Hỗ trợ 24/7',
-    description: 'Đội ngũ hỗ trợ luôn sẵn sàng',
+    title: t('user.cart.benefitSupportTitle'),
+    description: t('user.cart.benefitSupportDesc'),
     icon: Phone,
   },
   {
-    title: 'Thanh toán an toàn',
-    description: 'Hệ thống thanh toán bảo mật',
+    title: t('user.cart.benefitCheckoutTitle'),
+    description: t('user.cart.benefitCheckoutDesc'),
     icon: CreditCard,
   },
-]
+])
 
-const orderStatusLabels = {
-  pending_confirmation: 'Chờ xác nhận',
-  confirmed: 'Đã xác nhận',
-  processing: 'Đang xử lý',
-  shipping: 'Đang giao',
-  delivered: 'Hoàn thành',
-  completed: 'Hoàn thành',
-  cancelled: 'Đã huỷ',
-}
+const orderStatusLabels = computed(() => ({
+  pending_confirmation: t('user.checkout.statusPending'),
+  confirmed: t('user.checkout.statusConfirmed'),
+  processing: t('user.checkout.statusProcessing'),
+  shipping: t('user.checkout.statusShipping'),
+  delivered: t('user.checkout.statusDelivered'),
+  completed: t('user.checkout.statusCompleted'),
+  cancelled: t('user.checkout.statusCancelled'),
+}))
 
-const paymentStatusLabels = {
-  unpaid: 'Chưa thanh toán',
-  pending: 'Đang chờ thanh toán',
-  paid: 'Đã thanh toán',
-  failed: 'Thanh toán thất bại',
-  refunded: 'Đã hoàn tiền',
-}
+const paymentStatusLabels = computed(() => ({
+  unpaid: t('user.checkout.payUnpaid'),
+  pending: t('user.checkout.payPending'),
+  paid: t('user.checkout.payPaid'),
+  failed: t('user.checkout.payFailed'),
+  refunded: t('user.checkout.payRefunded'),
+}))
 
 const hasItems = computed(() => cartStore.items.length > 0)
 const outOfStockItems = computed(() =>
@@ -146,23 +146,23 @@ const validationErrors = computed(() => {
   }
 
   if (!form.fullName.trim()) {
-    errors.fullName = 'Vui lòng nhập họ và tên.'
+    errors.fullName = t('user.checkout.validationName')
   }
 
   if (!form.address.trim()) {
-    errors.address = 'Vui lòng nhập địa chỉ nhận hàng.'
+    errors.address = t('user.checkout.validationAddress')
   }
 
   if (!form.phone.trim()) {
-    errors.phone = 'Vui lòng nhập số điện thoại.'
+    errors.phone = t('user.checkout.validationPhone')
   } else if (!/^[0-9+\s().-]{8,20}$/.test(form.phone.trim())) {
-    errors.phone = 'Số điện thoại không hợp lệ.'
+    errors.phone = t('user.checkout.validationPhoneInvalid')
   }
 
   if (!form.email.trim()) {
-    errors.email = 'Vui lòng nhập email.'
+    errors.email = t('user.checkout.validationEmail')
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-    errors.email = 'Email không hợp lệ.'
+    errors.email = t('user.checkout.validationEmailInvalid')
   }
 
   return errors
@@ -178,12 +178,12 @@ const subtotalAmount = computed(() =>
   }, 0),
 )
 const subtotalText = computed(() =>
-  hasContactPrice.value ? t('user.home.contactPrice') || 'Liên hệ báo giá' : formatPrice(subtotalAmount.value),
+  hasContactPrice.value ? t('user.home.contactPrice') : formatPrice(subtotalAmount.value),
 )
 const canSubmit = computed(
   () => hasItems.value && isFormValid.value && !hasStockIssue.value && !submitting.value && !cartStore.loading,
 )
-const pageTitle = computed(() => (successOrder.value ? 'Thanh toán thành công' : 'Thanh toán'))
+const pageTitle = computed(() => (successOrder.value ? t('user.checkout.successTitle') : t('user.checkout.title')))
 const successOrderItemCount = computed(() => getOrderItemCount(successOrder.value))
 const successOrderTotalText = computed(() => getSuccessOrderTotalText(successOrder.value))
 const successOrderStatusText = computed(() => getOrderStatusText(successOrder.value?.status))
@@ -198,7 +198,7 @@ function parsePrice(price) {
 function formatPrice(price) {
   const normalized = Number(price)
   if (!Number.isFinite(normalized)) {
-    return t('user.home.contactPrice') || 'Liên hệ báo giá'
+    return t('user.home.contactPrice')
   }
 
   return `${new Intl.NumberFormat('vi-VN').format(normalized)}đ`
@@ -209,15 +209,15 @@ function normalizeStatusKey(value) {
 }
 
 function getOrderStatusText(statusValue) {
-  return orderStatusLabels[normalizeStatusKey(statusValue)] || 'Chờ xác nhận'
+  return orderStatusLabels.value[normalizeStatusKey(statusValue)] || t('user.checkout.statusPending')
 }
 
 function getPaymentStatusText(statusValue) {
-  return paymentStatusLabels[normalizeStatusKey(statusValue)] || 'Chưa thanh toán'
+  return paymentStatusLabels.value[normalizeStatusKey(statusValue)] || t('user.checkout.payUnpaid')
 }
 
 function getPaymentMethodText(methodValue) {
-  return paymentMethodLabels[normalizeStatusKey(methodValue)] || 'Thanh toán khi nhận hàng'
+  return paymentMethodLabels.value[normalizeStatusKey(methodValue)] || t('user.checkout.methodCod')
 }
 
 function getOrderItemCount(order) {
@@ -244,7 +244,7 @@ function hasContactPriceItems(order) {
 function getSuccessOrderTotalText(order) {
   const amount = Number(order?.total_amount)
   if ((!Number.isFinite(amount) || amount <= 0) && hasContactPriceItems(order)) {
-    return 'Liên hệ'
+    return t('user.home.contactPrice')
   }
 
   return formatPrice(Number.isFinite(amount) ? amount : 0)
@@ -262,7 +262,7 @@ function getUnitPrice(item) {
 function getLinePrice(item) {
   const unitPrice = getUnitPrice(item)
   if (unitPrice === null) {
-    return t('user.home.contactPrice') || 'Liên hệ báo giá'
+    return t('user.home.contactPrice')
   }
 
   return formatPrice(unitPrice * Number(item?.quantity || 0))
@@ -312,10 +312,10 @@ function getStockQuantity(item) {
 function getStockLabel(item) {
   const stockQuantity = getStockQuantity(item)
   if (stockQuantity <= 0) {
-    return 'Hết hàng'
+    return t('user.cart.stockOut')
   }
 
-  return `Còn ${stockQuantity} sản phẩm`
+  return t('user.cart.stockCount', { count: stockQuantity })
 }
 
 function hasItemStockExceeded(item) {
@@ -349,7 +349,7 @@ async function loadCheckoutData() {
     await cartStore.fetchCart()
     resetCheckoutRequestId()
   } catch (error) {
-    errorMessage.value = error?.message || 'Không thể tải thông tin thanh toán.'
+    errorMessage.value = error?.message || t('user.checkout.errorLoadData')
   } finally {
     loading.value = false
   }
@@ -365,12 +365,12 @@ async function submitOrder() {
   }
 
   if (!hasItems.value) {
-    errorMessage.value = 'Giỏ hàng đang trống. Vui lòng thêm sản phẩm trước khi thanh toán.'
+    errorMessage.value = t('user.checkout.errorEmptyCart')
     return
   }
 
   if (hasStockIssue.value) {
-    errorMessage.value = 'Một số sản phẩm đã vượt tồn kho hoặc hết hàng. Vui lòng cập nhật lại giỏ hàng trước khi thanh toán.'
+    errorMessage.value = t('user.checkout.errorStock')
     await cartStore.fetchCart()
     return
   }
@@ -400,7 +400,7 @@ async function submitOrder() {
         window.location.assign(payment.payment_url)
         return
       } catch (paymentError) {
-        errorMessage.value = paymentError?.message || 'Không thể khởi tạo thanh toán VNPAY. Vui lòng thử lại.'
+        errorMessage.value = paymentError?.message || t('user.checkout.errorPayment')
         await cartStore.fetchCart()
         return
       }
@@ -410,7 +410,7 @@ async function submitOrder() {
     resetCheckoutRequestId()
     await cartStore.fetchCart()
   } catch (error) {
-    errorMessage.value = error?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.'
+    errorMessage.value = error?.message || t('user.checkout.errorOrder')
     await cartStore.fetchCart()
   } finally {
     submitting.value = false
@@ -449,9 +449,9 @@ onMounted(() => {
     <section class="checkout-hero">
       <div class="checkout-container checkout-hero__content">
         <nav class="checkout-breadcrumb" aria-label="Breadcrumb">
-          <router-link to="/">Trang chủ</router-link>
+          <router-link to="/">{{ t('user.checkout.breadcrumbHome') }}</router-link>
           <span>/</span>
-          <span class="is-current">Thanh toán</span>
+          <span class="is-current">{{ t('user.checkout.breadcrumbCheckout') }}</span>
         </nav>
         <h1>{{ pageTitle }}</h1>
       </div>
@@ -460,7 +460,7 @@ onMounted(() => {
     <section class="checkout-shell">
       <div v-if="loading" class="checkout-state">
         <Loader2 class="spin" :size="34" />
-        <p>Đang tải dữ liệu thanh toán...</p>
+        <p>{{ t('user.checkout.loading') }}</p>
       </div>
 
       <div v-else-if="successOrder" class="checkout-success-wrap">
@@ -477,16 +477,16 @@ onMounted(() => {
 
           <div class="checkout-success__badge">
             <BadgeCheck :size="18" />
-            <span>Đơn hàng đã được tạo thành công</span>
+            <span>{{ t('user.checkout.successBadge') }}</span>
           </div>
 
-          <h2>Đặt hàng thành công!</h2>
+          <h2>{{ t('user.checkout.successHeader') }}</h2>
           <p class="checkout-success__description">
-            Cảm ơn bạn đã đặt hàng. Chúng tôi đã nhận được thông tin đơn hàng của bạn.
+            {{ t('user.checkout.successDesc') }}
           </p>
 
           <div class="checkout-success__code-box">
-            <span>Mã đơn hàng</span>
+            <span>{{ t('user.checkout.orderCode') }}</span>
             <strong>{{ successOrder.code }}</strong>
           </div>
 
@@ -500,35 +500,35 @@ onMounted(() => {
               <span class="checkout-success__stat-icon">
                 <ClipboardList :size="24" />
               </span>
-              <span class="checkout-success__stat-label">Trạng thái đơn</span>
+              <span class="checkout-success__stat-label">{{ t('user.checkout.orderStatus') }}</span>
               <strong class="checkout-status-pill">{{ successOrderStatusText }}</strong>
             </article>
             <article>
               <span class="checkout-success__stat-icon">
                 <CreditCard :size="24" />
               </span>
-              <span class="checkout-success__stat-label">Trạng thái thanh toán</span>
+              <span class="checkout-success__stat-label">{{ t('user.checkout.paymentStatus') }}</span>
               <strong class="checkout-status-pill checkout-status-pill--payment">{{ successPaymentStatusText }}</strong>
             </article>
             <article>
               <span class="checkout-success__stat-icon">
                 <Truck :size="24" />
               </span>
-              <span class="checkout-success__stat-label">Phương thức thanh toán</span>
+              <span class="checkout-success__stat-label">{{ t('user.checkout.paymentMethod') }}</span>
               <strong class="checkout-status-pill checkout-status-pill--method">{{ successPaymentMethodText }}</strong>
             </article>
             <article>
               <span class="checkout-success__stat-icon">
                 <CircleDollarSign :size="24" />
               </span>
-              <span class="checkout-success__stat-label">Tổng thanh toán</span>
+              <span class="checkout-success__stat-label">{{ t('user.checkout.totalPayment') }}</span>
               <strong>{{ successOrderTotalText }}</strong>
             </article>
             <article>
               <span class="checkout-success__stat-icon">
                 <Package :size="24" />
               </span>
-              <span class="checkout-success__stat-label">Số sản phẩm</span>
+              <span class="checkout-success__stat-label">{{ t('user.checkout.productCount') }}</span>
               <strong>{{ successOrderItemCount }}</strong>
             </article>
           </div>
@@ -536,15 +536,15 @@ onMounted(() => {
           <div class="checkout-success__actions">
             <button type="button" class="checkout-primary checkout-primary--inline" @click="goToProfileOrders">
               <ClipboardList :size="18" />
-              <span>XEM LỊCH SỬ ĐƠN HÀNG</span>
+              <span>{{ t('user.checkout.viewHistory') }}</span>
             </button>
             <button type="button" class="checkout-secondary" @click="goToOrderDetail">
               <Eye :size="18" />
-              <span>XEM CHI TIẾT ĐƠN HÀNG</span>
+              <span>{{ t('user.checkout.viewDetail') }}</span>
             </button>
             <button type="button" class="checkout-secondary" @click="router.push('/products')">
               <ShoppingBag :size="18" />
-              <span>TIẾP TỤC MUA SẮM</span>
+              <span>{{ t('user.checkout.continueShopping') }}</span>
             </button>
           </div>
         </section>
@@ -564,10 +564,10 @@ onMounted(() => {
 
       <div v-else-if="!hasItems" class="checkout-empty">
         <Package :size="42" />
-        <h2>Giỏ hàng của bạn đang trống</h2>
-        <p>Hãy chọn thêm sản phẩm trước khi tạo đơn hàng.</p>
+        <h2>{{ t('user.checkout.emptyTitle') }}</h2>
+        <p>{{ t('user.checkout.emptyHint') }}</p>
         <button type="button" class="checkout-primary checkout-primary--inline" @click="router.push('/products')">
-          Đi đến danh sách sản phẩm
+          {{ t('user.checkout.backToProducts') }}
         </button>
       </div>
 
@@ -578,7 +578,7 @@ onMounted(() => {
               <span class="checkout-card__icon">
                 <User :size="22" />
               </span>
-              <h2>THÔNG TIN THANH TOÁN</h2>
+              <h2>{{ t('user.checkout.billingTitle') }}</h2>
             </div>
 
             <div v-if="errorMessage" class="checkout-alert">
@@ -589,20 +589,20 @@ onMounted(() => {
             <div v-if="hasStockIssue" class="checkout-alert checkout-alert--stock">
               <CircleAlert :size="18" />
               <div>
-                <strong>Một số sản phẩm trong giỏ cần được cập nhật.</strong>
-                <p v-if="outOfStockItems.length">Có sản phẩm đã hết hàng.</p>
-                <p v-if="exceededStockItems.length">Có sản phẩm đang vượt quá số lượng tồn kho hiện tại.</p>
+                <strong>{{ t('user.checkout.stockIssueTitle') }}</strong>
+                <p v-if="outOfStockItems.length">{{ t('user.checkout.outOfStockLabel') }}</p>
+                <p v-if="exceededStockItems.length">{{ t('user.checkout.exceededStockLabel') }}</p>
               </div>
             </div>
 
             <form id="checkout-form" class="checkout-form" novalidate @submit.prevent="submitOrder">
               <label class="checkout-field">
-                <span>Họ và Tên <em class="required-mark">*</em></span>
+                <span>{{ t('user.checkout.fullName') }} <em class="required-mark">*</em></span>
                 <div class="checkout-control">
                   <input
                     v-model="form.fullName"
                     type="text"
-                    placeholder="Nhập họ và tên của bạn"
+                    :placeholder="t('user.checkout.placeholderName')"
                     @blur="markFieldTouched('fullName')"
                   />
                 </div>
@@ -610,12 +610,12 @@ onMounted(() => {
               </label>
 
               <label class="checkout-field">
-                <span>Địa chỉ <em class="required-mark">*</em></span>
+                <span>{{ t('user.checkout.address') }} <em class="required-mark">*</em></span>
                 <div class="checkout-control">
                   <input
                     v-model="form.address"
                     type="text"
-                    placeholder="Nhập địa chỉ nhận hàng"
+                    :placeholder="t('user.checkout.placeholderAddress')"
                     @blur="markFieldTouched('address')"
                   />
                 </div>
@@ -623,12 +623,12 @@ onMounted(() => {
               </label>
 
               <label class="checkout-field">
-                <span>Số điện thoại <em class="required-mark">*</em></span>
+                <span>{{ t('user.checkout.phone') }} <em class="required-mark">*</em></span>
                 <div class="checkout-control checkout-control--icon-right">
                   <input
                     v-model="form.phone"
                     type="tel"
-                    placeholder="Nhập số điện thoại"
+                    :placeholder="t('user.checkout.placeholderPhone')"
                     @blur="markFieldTouched('phone')"
                   />
                   <Phone :size="18" />
@@ -637,12 +637,12 @@ onMounted(() => {
               </label>
 
               <label class="checkout-field">
-                <span>Email <em class="required-mark">*</em></span>
+                <span>{{ t('user.checkout.email') }} <em class="required-mark">*</em></span>
                 <div class="checkout-control checkout-control--icon-right">
                   <input
                     v-model="form.email"
                     type="email"
-                    placeholder="Nhập email của bạn"
+                    :placeholder="t('user.checkout.placeholderEmail')"
                     @blur="markFieldTouched('email')"
                   />
                   <Mail :size="18" />
@@ -650,9 +650,9 @@ onMounted(() => {
                 <small v-if="getFieldError('email')" class="checkout-field__error">{{ getFieldError('email') }}</small>
               </label>
 
-              <div class="checkout-subtitle">PHƯƠNG THỨC THANH TOÁN</div>
+              <div class="checkout-subtitle">{{ t('user.checkout.paymentTitle') }}</div>
 
-              <div class="checkout-payment-methods" role="radiogroup" aria-label="Phương thức thanh toán">
+              <div class="checkout-payment-methods" role="radiogroup" :aria-label="t('user.checkout.paymentTitle')">
                 <button
                   v-for="method in paymentMethodOptions"
                   :id="`checkout-payment-${method.value}`"
@@ -682,19 +682,19 @@ onMounted(() => {
               <div class="checkout-info-box checkout-info-box--payment">
                 <Info :size="18" />
                 <p>
-                  Với COD, hệ thống tạo đơn và xác nhận theo quy trình hiện có. {{ vnpayRedirectNote }}
+                  {{ t('user.checkout.vnpayNoticeInline') }} {{ vnpayRedirectNote }}
                 </p>
               </div>
 
-              <div class="checkout-subtitle">THÔNG TIN BỔ SUNG</div>
+              <div class="checkout-subtitle">{{ t('user.checkout.additionalTitle') }}</div>
 
               <label class="checkout-field">
-                <span>Ghi chú đơn hàng (tuỳ chọn)</span>
+                <span>{{ t('user.checkout.orderNote') }}</span>
                 <div class="checkout-control checkout-control--textarea">
                   <textarea
                     v-model="form.note"
                     rows="5"
-                    placeholder="Nhập ghi chú cho đơn hàng (ví dụ: thời gian giao hàng, yêu cầu khác...)"
+                    :placeholder="t('user.checkout.placeholderNote')"
                     @blur="markFieldTouched('note')"
                   ></textarea>
                 </div>
@@ -712,19 +712,19 @@ onMounted(() => {
               <span class="checkout-card__icon">
                 <ShoppingBag :size="22" />
               </span>
-              <h2>ĐƠN HÀNG CỦA BẠN</h2>
+              <h2>{{ t('user.checkout.summaryTitle') }}</h2>
             </div>
 
             <div class="checkout-summary-head">
-              <span>SẢN PHẨM</span>
-              <span>TẠM TÍNH</span>
+              <span>{{ t('user.checkout.tableProduct') }}</span>
+              <span>{{ t('user.checkout.tableSubtotal') }}</span>
             </div>
 
             <div class="checkout-summary-list">
               <article v-for="item in cartStore.items" :key="item.id" class="checkout-summary-item">
-                <img :src="getProductImage(item)" :alt="item.product?.name || 'Sản phẩm'" @error="applyImageFallback" />
+                <img :src="getProductImage(item)" :alt="item.product?.name || t('user.checkout.productPlaceholder')" @error="applyImageFallback" />
                 <div class="checkout-summary-item__content">
-                  <h3>{{ item.product?.name || 'Sản phẩm' }}</h3>
+                  <h3>{{ item.product?.name || t('user.checkout.productPlaceholder') }}</h3>
                   <p>x {{ item.quantity }}</p>
                   <small
                     class="checkout-summary-item__stock"
@@ -735,8 +735,8 @@ onMounted(() => {
                   <div class="checkout-summary-item__price">
                     <span class="checkout-summary-item__price-label">{{ t('user.products.priceLabel') }}</span>
                     <div v-if="getDisplayPrice(item.product).hasSale" class="checkout-summary-item__price-badges">
-                      <span class="checkout-summary-item__price-badge checkout-summary-item__price-badge--sale">Giá khuyến mãi</span>
-                      <span class="checkout-summary-item__price-badge checkout-summary-item__price-badge--original">Giá gốc</span>
+                      <span class="checkout-summary-item__price-badge checkout-summary-item__price-badge--sale">{{ t('user.products.salePrice') }}</span>
+                      <span class="checkout-summary-item__price-badge checkout-summary-item__price-badge--original">{{ t('user.products.originalPrice') }}</span>
                     </div>
                     <span
                       :class="{ 'checkout-summary-item__price-current--sale': getDisplayPrice(item.product).hasSale }"
@@ -753,12 +753,12 @@ onMounted(() => {
             </div>
 
             <div class="checkout-total-row">
-              <span>{{ t('user.home.subtotal') }}</span>
+              <span>{{ t('user.checkout.tableSubtotal') }}</span>
               <strong>{{ subtotalText }}</strong>
             </div>
 
             <div class="checkout-total-row checkout-total-row--grand">
-              <span>Tổng</span>
+              <span>{{ t('user.checkout.total') }}</span>
               <strong>{{ subtotalText }}</strong>
             </div>
 
@@ -775,7 +775,7 @@ onMounted(() => {
             >
               <Loader2 v-if="submitting" class="spin" :size="18" />
               <ShoppingBag v-else :size="18" />
-              <span>{{ submitting ? 'Đang gửi đơn...' : 'ĐẶT HÀNG' }}</span>
+              <span>{{ submitting ? t('user.checkout.submitting') : t('user.checkout.btnSubmit') }}</span>
             </button>
           </aside>
         </div>

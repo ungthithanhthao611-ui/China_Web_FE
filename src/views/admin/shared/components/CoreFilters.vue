@@ -1,5 +1,8 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   config: {
@@ -85,9 +88,9 @@ const emit = defineEmits([
   'reset-about-filters',
 ])
 
-const safeLabel = computed(() => props.config?.label || 'bản ghi')
+const safeLabel = computed(() => props.config?.label ? t(props.config.label) : t('admin.common.all'))
 const searchPlaceholder = computed(
-  () => `Tìm kiếm ${String(safeLabel.value).toLowerCase()}...`,
+  () => `${t('admin.common.search')}...`,
 )
 
 const sectionOptions = computed(
@@ -100,8 +103,8 @@ const completenessOptions = computed(
   () => props.aboutFilterConfig?.completenessOptions || [],
 )
 const mediaStateOptions = computed(() => [
-  { value: 'with_media', label: 'Có media' },
-  { value: 'without_media', label: 'Chưa có media' },
+  { value: 'with_media', label: t('admin.common.with_media') },
+  { value: 'without_media', label: t('admin.common.without_media') },
 ])
 </script>
 
@@ -109,7 +112,7 @@ const mediaStateOptions = computed(() => [
   <div class="filters">
     <div class="filters__main-grid">
       <div class="filters__group filters__group--search">
-        <span class="filters__label">Từ khóa</span>
+        <span class="filters__label">{{ $t('admin.common.keyword') }}</span>
         <input
           id="about-filter-keyword"
           :value="searchKeyword"
@@ -121,14 +124,14 @@ const mediaStateOptions = computed(() => [
       </div>
 
       <div v-if="hasStatusFilter" class="filters__group filters__group--status">
-        <span class="filters__label">Trạng thái</span>
+        <span class="filters__label">{{ $t('admin.common.status') }}</span>
         <select
           id="about-filter-status"
           :value="statusFilter"
-          aria-label="Lọc trạng thái"
+          :aria-label="$t('admin.common.filter')"
           @change="emit('update:statusFilter', $event.target.value)"
         >
-          <option value="">Tất cả trạng thái</option>
+          <option value="">{{ $t('admin.common.all_status') }}</option>
           <option
             v-for="status in statusOptions"
             :key="status.value"
@@ -140,14 +143,14 @@ const mediaStateOptions = computed(() => [
       </div>
 
       <div v-if="hasProductStockFilter" class="filters__group filters__group--stock">
-        <span class="filters__label">Tồn kho</span>
+        <span class="filters__label">{{ $t('admin.common.stock') }}</span>
         <select
           id="product-filter-stock"
           :value="productStockFilter"
-          aria-label="Lọc tồn kho"
+          :aria-label="$t('admin.common.filter')"
           @change="emit('update:productStockFilter', $event.target.value)"
         >
-          <option value="">Tất cả tồn kho</option>
+          <option value="">{{ $t('admin.common.all_stock') }}</option>
           <option
             v-for="option in productStockFilterOptions"
             :key="option.value"
@@ -162,11 +165,11 @@ const mediaStateOptions = computed(() => [
         v-if="hasAdvancedAboutFilters"
         class="filters__group filters__group--view-mode"
       >
-        <span class="filters__label">Chế độ xem</span>
+        <span class="filters__label">{{ $t('admin.common.view_mode') }}</span>
         <select
           id="about-filter-view-mode"
           :value="aboutViewMode"
-          aria-label="Chế độ xem About"
+          :aria-label="$t('admin.common.filter')"
           @change="emit('update:aboutViewMode', $event.target.value)"
         >
           <option
@@ -186,10 +189,10 @@ const mediaStateOptions = computed(() => [
         <select
           id="about-filter-section"
           :value="aboutSectionFilter"
-          aria-label="Lọc theo section"
+          :aria-label="$t('admin.common.filter')"
           @change="emit('update:aboutSectionFilter', $event.target.value)"
         >
-          <option value="">Tất cả section</option>
+          <option value="">{{ $t('admin.common.all_sections') }}</option>
           <option
             v-for="option in sectionOptions"
             :key="option.value"
@@ -205,10 +208,10 @@ const mediaStateOptions = computed(() => [
         <select
           id="about-filter-block"
           :value="aboutBlockFilter"
-          aria-label="Lọc theo block"
+          :aria-label="$t('admin.common.filter')"
           @change="emit('update:aboutBlockFilter', $event.target.value)"
         >
-          <option value="">Tất cả block</option>
+          <option value="">{{ $t('admin.common.all_blocks') }}</option>
           <option
             v-for="option in blockOptions"
             :key="`${option.value}-${option.label}`"
@@ -220,14 +223,14 @@ const mediaStateOptions = computed(() => [
       </div>
 
       <div class="filters__group">
-        <span class="filters__label">Tình trạng dữ liệu</span>
+        <span class="filters__label">{{ $t('admin.common.data_completeness') }}</span>
         <select
           id="about-filter-completeness"
           :value="aboutCompletenessFilter"
-          aria-label="Lọc tình trạng dữ liệu"
+          :aria-label="$t('admin.common.filter')"
           @change="emit('update:aboutCompletenessFilter', $event.target.value)"
         >
-          <option value="">Tất cả</option>
+          <option value="">{{ $t('admin.common.all') }}</option>
           <option
             v-for="option in completenessOptions"
             :key="option.value"
@@ -243,10 +246,10 @@ const mediaStateOptions = computed(() => [
         <select
           id="about-filter-media"
           :value="aboutMediaFilter"
-          aria-label="Lọc media"
+          :aria-label="$t('admin.common.filter')"
           @change="emit('update:aboutMediaFilter', $event.target.value)"
         >
-          <option value="">Tất cả</option>
+          <option value="">{{ $t('admin.common.all') }}</option>
           <option
             v-for="option in mediaStateOptions"
             :key="option.value"
@@ -265,7 +268,7 @@ const mediaStateOptions = computed(() => [
         :disabled="loading"
         @click="emit('search')"
       >
-        {{ loading ? '...' : 'Áp dụng' }}
+        {{ loading ? '...' : $t('admin.common.apply') }}
       </button>
 
       <button
@@ -275,7 +278,7 @@ const mediaStateOptions = computed(() => [
         :disabled="loading"
         @click="emit('reset-about-filters')"
       >
-        Reset
+        {{ $t('admin.common.reset') }}
       </button>
     </div>
   </div>

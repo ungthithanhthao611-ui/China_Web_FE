@@ -36,7 +36,7 @@ const usedProducts = computed(() => {
   if (!Array.isArray(raw)) return []
   return raw.map((item) => ({
     id: item?.id || item?.product_id || String(Math.random()),
-    name: item?.name || item?.product?.name || 'Sản phẩm',
+    name: item?.name || item?.product?.name || t('user.projects.defaultProductName'),
     slug: item?.slug || item?.product?.slug || '',
     image_url: item?.image_url || item?.product?.image_url || '',
     note: item?.note || '',
@@ -49,13 +49,17 @@ const infoItems = computed(() => {
   const result = []
 
   if (project.value.location) {
-    result.push({ icon: 'map-pin', label: 'ĐỊA ĐIỂM', value: project.value.location })
+    result.push({ icon: 'map-pin', label: t('user.projects.infoLocation'), value: project.value.location })
   }
   if (project.value.project_year) {
-    result.push({ icon: 'calendar', label: 'THỜI GIAN', value: `Năm ${project.value.project_year}` })
+    result.push({
+      icon: 'calendar',
+      label: t('user.projects.infoTime'),
+      value: `${t('user.projects.infoYearPrefix')} ${project.value.project_year}`
+    })
   }
   if (project.value.category?.name) {
-    result.push({ icon: 'layout', label: t('user.products.sidebarTitle') || 'HẠNG MỤC', value: project.value.category.name })
+    result.push({ icon: 'layout', label: t('user.projects.infoCategory'), value: project.value.category.name })
   }
 
   return result
@@ -94,7 +98,7 @@ async function loadProject(slug) {
     if (project.value?.meta_title) {
       document.title = project.value.meta_title
     } else if (project.value?.title) {
-      document.title = `${project.value.title} | Thiên Đồng Việt Nam`
+      document.title = `${project.value.title} ${t('user.home.companySuffix')}`
     }
 
     const desc = project.value?.meta_description || project.value?.summary || ''
@@ -106,7 +110,7 @@ async function loadProject(slug) {
     }
     meta.setAttribute('content', desc)
   } catch (err) {
-    error.value = err?.message || 'Không thể tải chi tiết dự án.'
+    error.value = err?.message || t('user.projects.errorLoading')
     project.value = null
   } finally {
     loading.value = false
@@ -156,7 +160,7 @@ onBeforeUnmount(() => {
       <div class="pd-state__inner">
         <h1>{{ t('user.home.newsEmpty') }}</h1>
         <p>{{ error }}</p>
-        <router-link to="/du-an" class="pd-back">← Trở lại danh sách dự án</router-link>
+        <router-link to="/du-an" class="pd-back">← {{ t('user.projects.backToList') }}</router-link>
       </div>
     </section>
 
@@ -185,13 +189,13 @@ onBeforeUnmount(() => {
         <div class="container">
           <router-link to="/du-an" class="pd-back">
             <ArrowLeft :size="16" />
-            TRỞ LẠI DANH SÁCH DỰ ÁN
+            {{ t('user.projects.backToList').toUpperCase() }}
           </router-link>
 
           <div class="pd-layout">
             <!-- ─── Left: overview + gallery ─── -->
             <article class="pd-main">
-              <h2 class="pd-section-title">Tổng quan dự án</h2>
+              <h2 class="pd-section-title">{{ t('user.projects.overviewTitle') }}</h2>
 
               <div v-if="project.summary" class="pd-desc">
                 {{ project.summary }}
@@ -202,7 +206,7 @@ onBeforeUnmount(() => {
 
               <!-- Gallery -->
               <div v-if="galleryImages.length" class="pd-gallery">
-                <h3 class="pd-section-title pd-section-title--sub">Thư viện ảnh</h3>
+                <h3 class="pd-section-title pd-section-title--sub">{{ t('user.projects.galleryTitle') }}</h3>
                 <div class="pd-gallery__grid">
                   <figure
                     v-for="img in galleryImages"
@@ -220,7 +224,7 @@ onBeforeUnmount(() => {
             <aside class="pd-sidebar">
               <!-- Thông tin -->
               <div class="pd-info-card">
-                <h3 class="pd-info-card__title">Thông tin</h3>
+                <h3 class="pd-info-card__title">{{ t('user.projects.infoTitle') }}</h3>
                 <ul class="pd-info-list">
                   <li v-for="(item, index) in infoItems" :key="index" class="pd-info-item">
                     <span class="pd-info-item__icon">
@@ -246,10 +250,10 @@ onBeforeUnmount(() => {
                 :class="{ 'pd-materials--visible': materialsVisible }"
               >
                 <div class="pd-materials__intro">
-                  <span class="pd-materials__eyebrow">Chạm vào để khám phá</span>
-                  <h3 class="pd-info-card__title pd-materials__title">Vật liệu sử dụng</h3>
+                  <span class="pd-materials__eyebrow">{{ t('user.projects.materialsEyebrow') }}</span>
+                  <h3 class="pd-info-card__title pd-materials__title">{{ t('user.projects.materialsTitle') }}</h3>
                   <p class="pd-materials__desc">
-                    Những bề mặt tạo nên thần thái công trình — từ chất đá chủ đạo đến vật liệu nhấn, mỗi lựa chọn đều mang một câu chuyện thiết kế riêng.
+                    {{ t('user.projects.materialsDesc') }}
                   </p>
                 </div>
                 <div class="pd-material-list">
@@ -267,7 +271,7 @@ onBeforeUnmount(() => {
                     </div>
                     <div class="pd-material-item__info">
                       <strong>{{ prod.name }}</strong>
-                      <span class="pd-material-item__cta">Khám phá vật liệu <span aria-hidden="true">↗</span></span>
+                      <span class="pd-material-item__cta">{{ t('user.projects.materialsCta') }} <span aria-hidden="true">↗</span></span>
                       <span v-if="prod.note" class="pd-material-item__note">{{ prod.note }}</span>
                     </div>
                   </router-link>

@@ -9,7 +9,7 @@ import { listProducts } from '@/views/user/services/productsApi'
 const loading = ref(true)
 const items = ref([])
 const { locale, t } = useI18n({ useScope: 'global' })
-const { rootRef, isVisible } = useSectionReveal({ threshold: 0.24 })
+const { rootRef, isVisible } = useSectionReveal({ threshold: 0.1 })
 const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
 
 function resolveAssetUrl(url) {
@@ -110,7 +110,7 @@ onMounted(loadProducts)
           <router-link :to="`/products/${item.slug}`" class="visual-link">
             <div class="visual">
               <img v-if="item.image" :src="item.image" :alt="item.name" loading="lazy" />
-              <span class="cat-badge">{{ item.category || 'Sản phẩm' }}</span>
+              <span class="cat-badge">{{ item.category || t('user.home.products') }}</span>
               <div v-if="!item.image" class="placeholder">P</div>
             </div>
           </router-link>
@@ -120,7 +120,7 @@ onMounted(loadProducts)
             <h3>
               <router-link :to="`/products/${item.slug}`">{{ item.name }}</router-link>
             </h3>
-            <p class="summary">{{ item.summary || 'Thông tin sản phẩm đang được cập nhật.' }}</p>
+            <p class="summary">{{ item.summary || t('user.home.aboutEmpty') }}</p>
             <div class="meta">
               <router-link :to="`/products/${item.slug}`" class="more">
                 <span>{{ t('user.home.viewMore') }}</span>

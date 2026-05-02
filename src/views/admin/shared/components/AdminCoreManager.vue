@@ -1,6 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 import AboutGroupedView from '@/views/admin/features/about/pages/AboutGroupedView.vue'
 import { useEntityManager } from '@/views/admin/shared/composables/useEntityManager.js'
@@ -161,7 +164,7 @@ const {
 
 const router = useRouter()
 
-const safeEditLabel = computed(() => config?.value?.editLabel || 'Sửa')
+const safeEditLabel = computed(() => config?.value?.editLabel ? t(config.value.editLabel) : t('admin.common.edit'))
 const isUsersEntity = computed(() => resolvedEntityKey.value === 'users')
 const shouldUseAboutGroupedView = computed(
   () => isAboutContentBlockItemsEntity.value && aboutViewMode.value === 'grouped',
@@ -204,55 +207,55 @@ const inlineUserDetailFields = computed(() => {
   return [
     {
       key: 'username',
-      label: 'Tên đăng nhập',
+      label: t('admin.entities.users.fields.username'),
       value: inlineUserDetailRecord.value.username,
     },
     {
       key: 'full_name',
-      label: 'Họ và tên',
+      label: t('admin.entities.users.fields.username'),
       value: inlineUserDetailRecord.value.full_name,
     },
     {
       key: 'email',
-      label: 'Email',
+      label: t('admin.entities.users.fields.email'),
       value: inlineUserDetailRecord.value.email,
     },
     {
       key: 'phone',
-      label: 'Số điện thoại',
+      label: t('admin.entities.users.fields.phone'),
       value: inlineUserDetailRecord.value.phone,
     },
     {
       key: 'address',
-      label: 'Địa chỉ',
+      label: t('admin.common.overview'),
       value: inlineUserDetailRecord.value.address,
     },
     {
       key: 'created_at',
-      label: 'Ngày tạo tài khoản',
+      label: t('admin.entities.users.fields.created_at'),
       value: formatInlineUserDateTime(inlineUserDetailRecord.value.created_at),
     },
     {
       key: 'updated_at',
-      label: 'Cập nhật gần nhất',
+      label: t('admin.common.updated_at'),
       value: formatInlineUserDateTime(inlineUserDetailRecord.value.updated_at),
     },
     {
       key: 'status',
-      label: 'Trạng thái tài khoản',
-      value: inlineUserDetailRecord.value.is_active ? 'Đang hoạt động' : 'Đã bị khóa',
+      label: t('admin.common.status'),
+      value: inlineUserDetailRecord.value.is_active ? t('admin.about.toolbar.complete') : t('admin.about.toolbar.missing_content'),
       tone: inlineUserDetailRecord.value.is_active ? 'success' : 'danger',
     },
     {
       key: 'role',
-      label: 'Phân quyền',
+      label: t('admin.entities.users.fields.role'),
       value: inlineUserDetailRecord.value.role,
     },
   ]
 })
 
 function formatInlineUserDateTime(value) {
-  if (!value) return 'Chưa cập nhật'
+  if (!value) return t('admin.common.no_data')
 
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)
@@ -267,7 +270,7 @@ function formatInlineUserDateTime(value) {
 }
 
 function normalizeInlineUserValue(value) {
-  return String(value ?? '').trim() || 'Chưa cập nhật'
+  return String(value ?? '').trim() || t('admin.common.no_data')
 }
 
 function applyFilters() {
@@ -306,7 +309,7 @@ async function openDetail(record) {
       )
     } catch (error) {
       inlineUserDetailError.value =
-        error?.message || 'Không thể tải chi tiết tài khoản người dùng.'
+        error?.message || t('admin.common.manager.user_detail_error')
     } finally {
       inlineUserDetailLoading.value = false
     }
@@ -325,11 +328,11 @@ async function openDetail(record) {
       class="entity-manager__config-warning"
       role="alert"
     >
-      <p class="entity-manager__config-warning-eyebrow">Cấu hình module không hợp lệ</p>
-      <h3>Không thể khởi tạo module quản trị</h3>
-      <p>
-        Entity key hiện tại: <strong>{{ resolvedEntityKey || props.entityKey }}</strong>.
-        Vui lòng kiểm tra wrapper manager và cấu hình trong <code>ENTITY_MANAGER_CONFIGS</code>.
+      <p class="entity-manager__config-warning-eyebrow">{{ $t('admin.common.manager.invalid_config_eyebrow') }}</p>
+      <h3>{{ $t('admin.common.manager.invalid_config_title') }}</h3>
+      <p class="description">
+        {{ $t('admin.common.manager.current_entity_key') }} <strong>{{ resolvedEntityKey || props.entityKey }}</strong>.
+        {{ $t('admin.common.manager.check_config_hint') }}
       </p>
     </div>
 
@@ -463,8 +466,8 @@ async function openDetail(record) {
         <section class="inline-user-detail-modal__dialog">
           <div class="inline-user-detail__header">
             <div>
-              <p class="inline-user-detail__eyebrow">Quản lý tài khoản</p>
-              <h3>Chi tiết tài khoản người dùng</h3>
+              <p class="inline-user-detail__eyebrow">{{ $t('admin.entities.users.label') }}</p>
+              <h3>{{ $t('admin.entities.users.description') }}</h3>
             </div>
             <div class="inline-user-detail__actions">
               <button
@@ -472,7 +475,7 @@ async function openDetail(record) {
                 class="inline-user-detail__button inline-user-detail__button--ghost"
                 @click="closeInlineUserDetail"
               >
-                Đóng
+                {{ $t('admin.actions.close') }}
               </button>
               <button
                 type="button"
@@ -480,13 +483,13 @@ async function openDetail(record) {
                 :disabled="inlineUserDetailLoading || !inlineUserDetailRecord?.id"
                 @click="openDetail(inlineUserDetailRecord)"
               >
-                {{ inlineUserDetailLoading ? 'Đang tải...' : 'Làm mới' }}
+                {{ inlineUserDetailLoading ? $t('admin.common.loading') : $t('admin.common.refresh') }}
               </button>
             </div>
           </div>
 
           <div v-if="inlineUserDetailLoading" class="inline-user-detail__state">
-            Đang tải chi tiết tài khoản...
+            {{ $t('admin.common.loading') }}
           </div>
 
           <div
@@ -506,7 +509,7 @@ async function openDetail(record) {
                   />
                 </div>
                 <div class="inline-user-card__title">
-                  <p>Thông tin đầy đủ</p>
+                  <p>{{ $t('admin.common.manager.full_info') }}</p>
                   <h4>
                     {{ normalizeInlineUserValue(inlineUserDetailRecord.username || inlineUserDetailRecord.email) }}
                   </h4>
@@ -516,8 +519,8 @@ async function openDetail(record) {
 
               <div class="inline-user-card__section-head">
                 <div>
-                  <p class="inline-user-detail__eyebrow">Thông tin đầy đủ</p>
-                  <h5>Chi tiết tài khoản</h5>
+                  <p class="inline-user-detail__eyebrow">{{ $t('admin.common.manager.full_info') }}</p>
+                  <h5>{{ $t('admin.common.manager.account_details') }}</h5>
                 </div>
               </div>
 
@@ -538,11 +541,11 @@ async function openDetail(record) {
             <article class="inline-user-history">
               <div class="inline-user-card__section-head">
                 <div>
-                  <p class="inline-user-detail__eyebrow">Bảo mật tài khoản</p>
-                  <h5>Lịch sử đăng nhập</h5>
+                  <p class="inline-user-detail__eyebrow">{{ $t('admin.common.manager.account_security') }}</p>
+                  <h5>{{ $t('admin.common.manager.login_history') }}</h5>
                 </div>
                 <span class="inline-user-history__count">
-                  {{ inlineUserLoginHistoryCount }} bản ghi
+                  {{ $t('admin.common.manager.records_count', { count: inlineUserLoginHistoryCount }) }}
                 </span>
               </div>
 
@@ -573,7 +576,7 @@ async function openDetail(record) {
               </div>
 
               <div v-else class="inline-user-history__empty">
-                Chưa có dữ liệu lịch sử đăng nhập.
+                {{ $t('admin.common.no_data') }}
               </div>
             </article>
           </div>

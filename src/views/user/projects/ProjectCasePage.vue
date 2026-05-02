@@ -23,7 +23,7 @@ async function loadProjects() {
     const res = await getProjects({ limit: 50 })
     projects.value = res?.items || []
   } catch (err) {
-    error.value = err?.message || t('user.home.errorLoading')
+    error.value = err?.message || t('user.projects.errorLoading')
     projects.value = []
   } finally {
     loading.value = false
@@ -33,7 +33,7 @@ async function loadProjects() {
 watch(locale, loadProjects)
 
 onMounted(() => {
-  document.title = t('user.home.projects') + ' | Thiên Đồng Việt Nam'
+  document.title = t('user.home.projects') + ' ' + t('user.home.companySuffix')
   uiState.isHeaderHidden = false
   uiState.isFooterHidden = false
   loadProjects()
@@ -60,21 +60,21 @@ onMounted(() => {
     <section v-if="loading" class="pj-state" aria-live="polite">
       <div class="pj-state__card">
         <div class="pj-state__spinner" />
-        <p>{{ t('user.home.loading') || 'Đang tải danh sách dự án…' }}</p>
+        <p>{{ t('user.projects.loadingList') }}</p>
       </div>
     </section>
 
     <section v-else-if="error" class="pj-state pj-state--error" aria-live="assertive">
       <div class="pj-state__card">
         <p>{{ error }}</p>
-        <router-link to="/" class="pj-state__link">{{ t('user.home.backHome') || 'Quay về trang chủ' }}</router-link>
+        <router-link to="/" class="pj-state__link">{{ t('user.projects.backHome') }}</router-link>
       </div>
     </section>
 
     <section v-else-if="!projects.length" class="pj-state">
       <div class="pj-state__card">
-        <p>{{ t('user.home.newsEmpty') || 'Hiện chưa có dự án nào. Vui lòng quay lại sau.' }}</p>
-        <router-link to="/" class="pj-state__link">{{ t('user.home.backHome') || 'Quay về trang chủ' }}</router-link>
+        <p>{{ t('user.projects.emptyList') }}</p>
+        <router-link to="/" class="pj-state__link">{{ t('user.projects.backHome') }}</router-link>
       </div>
     </section>
 

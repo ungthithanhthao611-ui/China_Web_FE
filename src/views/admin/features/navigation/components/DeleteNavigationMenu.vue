@@ -11,6 +11,6 @@ const emit = defineEmits(['trigger'])
 
 <template>
   <button type="button" class="btn btn-danger-outline" :disabled="disabled" @click="emit('trigger')">
-    Xóa menu
+    {{ $t('admin.navigation.delete_menu') }}
   </button>
 </template>

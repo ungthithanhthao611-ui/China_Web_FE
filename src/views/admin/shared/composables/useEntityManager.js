@@ -1,10 +1,10 @@
 /**
- * useEntityManager — Composable chứa TOÀN BỘ logic động cơ quản lý entity.
- * Được gọi từ AdminCoreManager.vue hoặc bất kỳ domain wrapper nào.
+ * useEntityManager â€” Composable chá»©a TOÃ€N Bá»˜ logic Ä‘á»™ng cÆ¡ quáº£n lÃ½ entity.
+ * ÄÆ°á»£c gá»i tá»« AdminCoreManager.vue hoáº·c báº¥t ká»³ domain wrapper nÃ o.
  *
  * @param {Object} props - reactive props (token, entityKey, active)
- * @param {Function} emit - emit function từ defineEmits
- * @returns {Object} - tất cả state, computed, functions cần cho template
+ * @param {Function} emit - emit function tá»« defineEmits
+ * @returns {Object} - táº¥t cáº£ state, computed, functions cáº§n cho template
  */
 import {
   computed,
@@ -15,6 +15,7 @@ import {
   ref,
   watch,
 } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import {
   createAdminEntityRecord,
@@ -44,10 +45,10 @@ const ENTITY_KEY_ALIASES = Object.freeze({
 })
 
 const FALLBACK_ENTITY_CONFIG = Object.freeze({
-  label: 'Bản ghi',
-  eyebrow: 'Mô-đun quản trị',
+  label: 'Báº£n ghi',
+  eyebrow: 'MÃ´-Ä‘un quáº£n trá»‹',
   description:
-    'Cấu hình module chưa sẵn sàng. Vui lòng kiểm tra entity-key hoặc cấu hình ENTITY_MANAGER_CONFIGS.',
+    'Cáº¥u hÃ¬nh module chÆ°a sáºµn sÃ ng. Vui lÃ²ng kiá»ƒm tra entity-key hoáº·c cáº¥u hÃ¬nh ENTITY_MANAGER_CONFIGS.',
   titleField: 'id',
   table: ['id'],
   fields: [],
@@ -55,9 +56,10 @@ const FALLBACK_ENTITY_CONFIG = Object.freeze({
 })
 
 export function useEntityManager(props, emit) {
-  // ═══════════════════════════════════════════════════════════
+  const { t } = useI18n()
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // STATE
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
 
   const records = ref([])
@@ -95,10 +97,10 @@ export function useEntityManager(props, emit) {
   const bannerFocusDragging = ref(false)
   const actionConfirmDialog = reactive({
     visible: false,
-    eyebrow: 'Xác nhận thao tác',
+    eyebrow: t('admin.common.confirm_delete'),
     title: '',
     message: '',
-    confirmText: 'Xác nhận',
+    confirmText: t('admin.common.save'),
     tone: 'primary',
   })
   let actionConfirmResolver = null
@@ -108,9 +110,9 @@ export function useEntityManager(props, emit) {
   let recordsLoadRequestId = 0
   let refreshCycleRequestId = 0
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // COMPUTED
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   const resolvedEntityKey = computed(() => {
     const rawEntityKey = String(props.entityKey || '').trim()
     return ENTITY_KEY_ALIASES[rawEntityKey] || rawEntityKey
@@ -149,11 +151,11 @@ export function useEntityManager(props, emit) {
     return source
       .map((option) => {
         if (typeof option === 'string') {
-          return { value: option, label: option }
+          return { value: option, label: t(option) }
         }
         return {
           value: String(option?.value || '').trim(),
-          label: String(option?.label || option?.value || '').trim(),
+          label: t(String(option?.label || option?.value || '').trim()),
         }
       })
       .filter((option) => option.value)
@@ -164,9 +166,9 @@ export function useEntityManager(props, emit) {
   const hasStatusFilter = computed(() => formFields.value.includes('status'))
   const hasProductStockFilter = computed(() => resolvedEntityKey.value === 'products')
   const productStockFilterOptions = computed(() => [
-    { value: 'in_stock', label: 'Còn hàng' },
-    { value: 'low_stock', label: 'Sắp hết hàng (≤ 5)' },
-    { value: 'out_of_stock', label: 'Hết hàng' },
+    { value: 'in_stock', label: t('admin.common.in_stock') },
+    { value: 'low_stock', label: `${t('admin.common.low_stock')} (â‰¤ 5)` },
+    { value: 'out_of_stock', label: t('admin.common.out_of_stock') },
   ])
   const hasMediaFields = computed(() => {
     if (props.entityKey === 'videos') return false
@@ -255,23 +257,24 @@ export function useEntityManager(props, emit) {
   const aboutViewModeOptions = computed(() => {
     if (!aboutAdminConfig.value?.groupedView) return []
     return [
-      { value: 'table', label: 'Danh sách bảng' },
-      { value: 'grouped', label: 'Grouped view' },
+      { value: 'table', label: t('admin.common.table_view') },
+      { value: 'grouped', label: t('admin.common.grouped_view') },
     ]
   })
   const hasAdvancedAboutFilters = computed(
     () => isAboutContentBlockItemsEntity.value && Boolean(aboutFilterConfig.value),
   )
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // PREVIEW HELPERS
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   const previewHelpers = createEntityManagerPreviewHelpers({
     apiOrigin: API_ORIGIN,
-    entityKey: computed(() => props.entityKey),
-    getRelationOptions: (field) => relationOptions[field] || [],
+    entityKey: resolvedEntityKey,
     getRecords: () => records.value,
+    getRelationOptions: (field) => relationOptions[field] || [],
     getMediaOptions: () => mediaOptions.value,
+    t,
   })
 
   const {
@@ -349,18 +352,18 @@ export function useEntityManager(props, emit) {
 
   const selectedMediaLabel = (field) => {
     const primaryLabel = previewHelpers.selectedMediaLabel(form, field)
-    if (primaryLabel !== 'Chưa chọn media') return primaryLabel
+    if (primaryLabel !== 'ChÆ°a chá»n media') return primaryLabel
     if (props.entityKey === 'content_block_items' && field === 'image_id') {
       return String(form.__legacy_image_url || '').trim()
-        ? 'Ảnh cũ (metadata)'
+        ? 'áº¢nh cÅ© (metadata)'
         : primaryLabel
     }
     return primaryLabel
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // FORM HELPERS
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   const formHelpers = createEntityManagerFormHelpers({
     props,
     form,
@@ -384,6 +387,7 @@ export function useEntityManager(props, emit) {
       return Math.min(100, Math.max(0, numeric))
     },
     isAllowedVideoUrl,
+    t,
   })
 
   const {
@@ -416,9 +420,9 @@ export function useEntityManager(props, emit) {
     validateForm,
   } = formHelpers
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // BANNER HELPERS
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   const bannerHelpers = createEntityManagerBannerHelpers({
     form,
     isBannerEntity,
@@ -461,9 +465,9 @@ export function useEntityManager(props, emit) {
     event.currentTarget?.releasePointerCapture?.(event.pointerId)
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // NOTIFICATION
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   function notifySuccess(message) {
     emit('notify-success', message)
   }
@@ -472,15 +476,15 @@ export function useEntityManager(props, emit) {
     emit('notify-error', message)
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // CONFIRM DIALOG
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   function closeActionConfirmDialog(confirmed = false) {
     actionConfirmDialog.visible = false
-    actionConfirmDialog.eyebrow = 'Xác nhận thao tác'
+    actionConfirmDialog.eyebrow = 'XÃ¡c nháº­n thao tÃ¡c'
     actionConfirmDialog.title = ''
     actionConfirmDialog.message = ''
-    actionConfirmDialog.confirmText = 'Xác nhận'
+    actionConfirmDialog.confirmText = 'XÃ¡c nháº­n'
     actionConfirmDialog.tone = 'primary'
     if (actionConfirmResolver) {
       const resolve = actionConfirmResolver
@@ -490,7 +494,7 @@ export function useEntityManager(props, emit) {
   }
 
   function openActionConfirmDialog({
-    eyebrow = 'Xác nhận thao tác',
+    eyebrow = 'XÃ¡c nháº­n thao tÃ¡c',
     title,
     message,
     confirmText,
@@ -523,19 +527,19 @@ export function useEntityManager(props, emit) {
     const label = entityLabelForAction(record)
     if (action === 'update') {
       return openActionConfirmDialog({
-        eyebrow: 'Cập nhật bản ghi',
-        title: `Cập nhật ${label}?`,
-        message: 'Xác nhận để lưu các thông tin đã chỉnh sửa.',
-        confirmText: 'Xác nhận cập nhật',
+        eyebrow: 'Cáº­p nháº­t báº£n ghi',
+        title: `Cáº­p nháº­t ${label}?`,
+        message: 'XÃ¡c nháº­n Ä‘á»ƒ lÆ°u cÃ¡c thÃ´ng tin Ä‘Ã£ chá»‰nh sá»­a.',
+        confirmText: 'XÃ¡c nháº­n cáº­p nháº­t',
         tone: 'primary',
       })
     }
     if (action === 'delete') {
       return openActionConfirmDialog({
-        eyebrow: 'Xóa bản ghi',
-        title: `Xóa ${label}?`,
-        message: 'Hành động này không thể hoàn tác.',
-        confirmText: 'Xác nhận xóa',
+        eyebrow: 'XÃ³a báº£n ghi',
+        title: `XÃ³a ${label}?`,
+        message: 'HÃ nh Ä‘á»™ng nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.',
+        confirmText: 'XÃ¡c nháº­n xÃ³a',
         tone: 'danger',
       })
     }
@@ -547,35 +551,35 @@ export function useEntityManager(props, emit) {
     if (isBannerEntity.value) {
       if (action === 'create')
         return name
-          ? `Đã tạo banner mới thành công: "${name}".`
-          : 'Đã tạo banner mới thành công.'
+          ? `ÄÃ£ táº¡o banner má»›i thÃ nh cÃ´ng: "${name}".`
+          : 'ÄÃ£ táº¡o banner má»›i thÃ nh cÃ´ng.'
       if (action === 'update')
         return name
-          ? `Đã cập nhật banner thành công: "${name}".`
-          : 'Đã cập nhật banner thành công.'
+          ? `ÄÃ£ cáº­p nháº­t banner thÃ nh cÃ´ng: "${name}".`
+          : 'ÄÃ£ cáº­p nháº­t banner thÃ nh cÃ´ng.'
       if (action === 'delete')
         return name
-          ? `Đã xóa banner thành công: "${name}".`
-          : 'Đã xóa banner thành công.'
+          ? `ÄÃ£ xÃ³a banner thÃ nh cÃ´ng: "${name}".`
+          : 'ÄÃ£ xÃ³a banner thÃ nh cÃ´ng.'
     }
-    const label = String(config.value?.label || 'bản ghi').trim()
-    if (action === 'create') return `Đã tạo ${label.toLowerCase()} thành công.`
+    const label = String(config.value?.label || 'báº£n ghi').trim()
+    if (action === 'create') return `ÄÃ£ táº¡o ${label.toLowerCase()} thÃ nh cÃ´ng.`
     if (action === 'update') {
       return name
-        ? `Đã cập nhật ${label.toLowerCase()} thành công: "${name}".`
-        : `Đã cập nhật ${label.toLowerCase()} thành công.`
+        ? `ÄÃ£ cáº­p nháº­t ${label.toLowerCase()} thÃ nh cÃ´ng: "${name}".`
+        : `ÄÃ£ cáº­p nháº­t ${label.toLowerCase()} thÃ nh cÃ´ng.`
     }
     if (action === 'delete') {
       return name
-        ? `Đã xóa ${label.toLowerCase()} thành công: "${name}".`
-        : `Đã xóa ${label.toLowerCase()} thành công.`
+        ? `ÄÃ£ xÃ³a ${label.toLowerCase()} thÃ nh cÃ´ng: "${name}".`
+        : `ÄÃ£ xÃ³a ${label.toLowerCase()} thÃ nh cÃ´ng.`
     }
-    return 'Thao tác đã hoàn tất thành công.'
+    return 'Thao tÃ¡c Ä‘Ã£ hoÃ n táº¥t thÃ nh cÃ´ng.'
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // UTILITY
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   function currentFormPreviewUrl() {
     if (isEntityMediaEntity.value) return relationPreviewPath('entity_id')
     if (!formOpen.value) return ''
@@ -690,9 +694,9 @@ export function useEntityManager(props, emit) {
     return true
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // DATA LOADING
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   async function loadRelationOptions() {
     const token = normalizedToken()
     const requestId = ++relationLoadRequestId
@@ -800,7 +804,7 @@ export function useEntityManager(props, emit) {
         requestKey !== entityRequestKey()
       )
         return
-      notifyError(error.message || 'Không thể tải dữ liệu liên kết.')
+      notifyError(error.message || 'KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u liÃªn káº¿t.')
     }
   }
 
@@ -852,7 +856,7 @@ export function useEntityManager(props, emit) {
         return
       mediaOptions.value = []
       notifyError(
-        error.message || 'Không thể tải danh sách phương tiện (media).',
+        error.message || 'KhÃ´ng thá»ƒ táº£i danh sÃ¡ch phÆ°Æ¡ng tiá»‡n (media).',
       )
     }
   }
@@ -917,7 +921,7 @@ export function useEntityManager(props, emit) {
         return
       records.value = []
       totalRecords.value = 0
-      notifyError(error.message || 'Không thể tải dữ liệu nội dung.')
+      notifyError(error.message || 'KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u ná»™i dung.')
     } finally {
       if (
         isComponentAlive &&
@@ -948,9 +952,9 @@ export function useEntityManager(props, emit) {
     await loadRecords()
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // FORM OPEN / CLOSE / SUBMIT
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   async function revealInlineEditor() {
     if (isFormModalEntity.value || !isComponentAlive) return
     await nextTick()
@@ -1055,7 +1059,7 @@ export function useEntityManager(props, emit) {
         closeForm()
       }
     } catch (error) {
-      const errorMsg = error.message || 'Không thể lưu bản ghi.'
+      const errorMsg = error.message || 'KhÃ´ng thá»ƒ lÆ°u báº£n ghi.'
       formErrors.value = [errorMsg]
       notifyError(errorMsg)
       if (
@@ -1082,7 +1086,7 @@ export function useEntityManager(props, emit) {
       notifySuccess(actionSuccessMessage('delete', record))
       await loadRecords()
     } catch (error) {
-      notifyError(error.message || 'Không thể xóa bản ghi.')
+      notifyError(error.message || 'KhÃ´ng thá»ƒ xÃ³a báº£n ghi.')
     } finally {
       deletingId.value = null
     }
@@ -1098,17 +1102,17 @@ export function useEntityManager(props, emit) {
         token,
       )
       Object.assign(form, response)
-      notifySuccess('Đã tự động dịch các trường văn bản. Vui lòng kiểm tra lại trước khi lưu.')
+      notifySuccess('ÄÃ£ tá»± Ä‘á»™ng dá»‹ch cÃ¡c trÆ°á»ng vÄƒn báº£n. Vui lÃ²ng kiá»ƒm tra láº¡i trÆ°á»›c khi lÆ°u.')
     } catch (error) {
-      notifyError(error.message || 'Lỗi khi tự động dịch.')
+      notifyError(error.message || 'Lá»—i khi tá»± Ä‘á»™ng dá»‹ch.')
     } finally {
       saving.value = false
     }
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // MEDIA UPLOAD
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   function handleFileChange(event) {
     uploadFile.value = event.target.files?.[0] || null
   }
@@ -1125,7 +1129,7 @@ export function useEntityManager(props, emit) {
   async function uploadVideoFile() {
     const token = normalizedToken()
     if (!token || !videoUploadFile.value) {
-      notifyError('Vui lòng chọn tệp video cần tải lên trước.')
+      notifyError('Vui lÃ²ng chá»n tá»‡p video cáº§n táº£i lÃªn trÆ°á»›c.')
       return
     }
     const allowedTypes = [
@@ -1164,14 +1168,14 @@ export function useEntityManager(props, emit) {
       videoUploadFile.value = null
       if (videoFileInputRef.value) videoFileInputRef.value.value = ''
       if (media.storage_backend === 'cloudinary')
-        notifySuccess(`Đã tải video #${media.id} lên Cloudinary thành công.`)
+        notifySuccess(`ÄÃ£ táº£i video #${media.id} lÃªn Cloudinary thÃ nh cÃ´ng.`)
       else if (media.fallback_reason)
         notifySuccess(
-          `Đã tải video #${media.id} lên máy chủ local. Cloudinary bị bỏ qua: ${media.fallback_reason}`,
+          `ÄÃ£ táº£i video #${media.id} lÃªn mÃ¡y chá»§ local. Cloudinary bá»‹ bá» qua: ${media.fallback_reason}`,
         )
-      else notifySuccess(`Đã tải video #${media.id} lên hệ thống thành công.`)
+      else notifySuccess(`ÄÃ£ táº£i video #${media.id} lÃªn há»‡ thá»‘ng thÃ nh cÃ´ng.`)
     } catch (error) {
-      notifyError(error.message || 'Không thể tải video lên.')
+      notifyError(error.message || 'KhÃ´ng thá»ƒ táº£i video lÃªn.')
     } finally {
       videoUploading.value = false
     }
@@ -1180,7 +1184,7 @@ export function useEntityManager(props, emit) {
   async function uploadMedia() {
     const token = normalizedToken()
     if (!token || !uploadFile.value) {
-      notifyError('Vui lòng chọn tệp cần tải lên trước.')
+      notifyError('Vui lÃ²ng chá»n tá»‡p cáº§n táº£i lÃªn trÆ°á»›c.')
       return
     }
     uploading.value = true
@@ -1228,15 +1232,15 @@ export function useEntityManager(props, emit) {
       uploadTitle.value = ''
       uploadAltText.value = ''
       if (media.storage_backend === 'cloudinary')
-        notifySuccess(`Đã tải ảnh #${media.id} lên Cloudinary thành công.`)
+        notifySuccess(`ÄÃ£ táº£i áº£nh #${media.id} lÃªn Cloudinary thÃ nh cÃ´ng.`)
       else if (media.fallback_reason)
         notifySuccess(
-          `Đã tải ảnh #${media.id} lên máy chủ local. Cloudinary bị bỏ qua: ${media.fallback_reason}`,
+          `ÄÃ£ táº£i áº£nh #${media.id} lÃªn mÃ¡y chá»§ local. Cloudinary bá»‹ bá» qua: ${media.fallback_reason}`,
         )
       else
-        notifySuccess(`Đã tải ảnh #${media.id} lên hệ thống thành công.`)
+        notifySuccess(`ÄÃ£ táº£i áº£nh #${media.id} lÃªn há»‡ thá»‘ng thÃ nh cÃ´ng.`)
     } catch (error) {
-      notifyError(error.message || 'Không thể tải tệp media lên.')
+      notifyError(error.message || 'KhÃ´ng thá»ƒ táº£i tá»‡p media lÃªn.')
     } finally {
       uploading.value = false
     }
@@ -1292,11 +1296,11 @@ export function useEntityManager(props, emit) {
       await loadMediaOptions()
       notifySuccess(
         total > 1
-          ? `Đã tải ${total} ảnh lên thành công → ${fieldLabel(field)}`
-          : `Đã tải ảnh lên thành công → ${fieldLabel(field)}`,
+          ? `ÄÃ£ táº£i ${total} áº£nh lÃªn thÃ nh cÃ´ng â†’ ${fieldLabel(field)}`
+          : `ÄÃ£ táº£i áº£nh lÃªn thÃ nh cÃ´ng â†’ ${fieldLabel(field)}`,
       )
     } catch (error) {
-      notifyError(error.message || 'Tải tệp lên thất bại.')
+      notifyError(error.message || 'Táº£i tá»‡p lÃªn tháº¥t báº¡i.')
     } finally {
       productInlineUploading.value = ''
       galleryUploadProgress.value = ''
@@ -1312,9 +1316,9 @@ export function useEntityManager(props, emit) {
     form.gallery_urls = existing.filter((u) => u !== urlToRemove).join('\n')
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // PAGINATION & UI
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   function setPage(page) {
     currentPage.value = Math.min(Math.max(1, page), totalPages.value)
   }
@@ -1329,9 +1333,9 @@ export function useEntityManager(props, emit) {
       cancelActionConfirmDialog()
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // WATCHERS
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   watch(
     () => props.entityKey,
     async () => {
@@ -1345,7 +1349,7 @@ export function useEntityManager(props, emit) {
       resetEntityState()
       if (!hasValidEntityConfig.value && resolvedEntityKey.value) {
         notifyError(
-          `Module "${resolvedEntityKey.value}" chưa có cấu hình quản trị hợp lệ. Vui lòng kiểm tra entity-key của wrapper hoặc ENTITY_MANAGER_CONFIGS.`,
+          `Module "${resolvedEntityKey.value}" chÆ°a cÃ³ cáº¥u hÃ¬nh quáº£n trá»‹ há»£p lá»‡. Vui lÃ²ng kiá»ƒm tra entity-key cá»§a wrapper hoáº·c ENTITY_MANAGER_CONFIGS.`,
         )
       }
       if (props.active && normalizedToken()) await refreshAll()
@@ -1412,9 +1416,9 @@ export function useEntityManager(props, emit) {
     { immediate: true },
   )
 
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // LIFECYCLE
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   onBeforeUnmount(() => {
     isComponentAlive = false
     relationLoadRequestId += 1
@@ -1432,9 +1436,9 @@ export function useEntityManager(props, emit) {
     pageSize.value = configuredPageSize()
   })
 
-  // ═══════════════════════════════════════════════════════════
-  // RETURN — tất cả bindings cho template
-  // ═══════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // RETURN â€” táº¥t cáº£ bindings cho template
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   return {
     // state
     records,

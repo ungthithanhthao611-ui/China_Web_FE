@@ -23,14 +23,32 @@ function resolveImageUrl(url) {
 
 const factoryOverview = computed(() => {
   const raw = payload.value?.factory_overview || {}
-  const useApi = locale.value === 'vi'
+  const isVi = locale.value === 'vi'
+
+  const translateFactoryName = (name) => {
+    if (isVi || !name) return name;
+    if (name.includes('China Factory') || name.includes('Nhà máy Trung Quốc')) return t('user.home.factoryNameValue');
+    return name;
+  };
+
+  const translateFactoryAddress = (address) => {
+    if (isVi || !address) return address;
+    if (address.includes('52 Ấp Đồng Chinh')) return t('user.home.factoryAddressValue');
+    return address;
+  };
+
+  const translateFactoryCapacity = (capacity) => {
+    if (isVi || !capacity) return capacity;
+    if (capacity.toLowerCase().includes('đang cập nhật') || capacity.toLowerCase().includes('being updated')) return t('user.home.factoryCapacityValue');
+    return capacity;
+  };
 
   return {
-    title: (useApi && String(raw.title || '').trim()) || t('user.home.factoryOverviewTitle'),
-    description: (useApi && String(raw.description || '').trim()) || t('user.home.factoryOverviewDescription'),
-    factory_name: String(raw.factory_name || '').trim(),
-    factory_address: String(raw.factory_address || '').trim(),
-    production_capacity: String(raw.production_capacity || '').trim(),
+    title: t('user.home.factoryOverviewTitle') || raw.title,
+    description: t('user.home.factoryOverviewDescription') || raw.description,
+    factory_name: translateFactoryName(raw.factory_name),
+    factory_address: translateFactoryAddress(raw.factory_address),
+    production_capacity: translateFactoryCapacity(raw.production_capacity),
     main_image_url: String(raw.main_image_url || '').trim(),
     stats: Array.isArray(raw.stats) ? raw.stats : [],
   }
@@ -121,8 +139,8 @@ const overviewMetricCards = computed(() => {
     {
       value: '500',
       unit: '',
-      label: t('user.home.experiencedStaff'),
-      icon: Users,
+      label: t('user.home.annualCapacity'),
+      icon: Cog,
     },
   ]
 
@@ -132,12 +150,19 @@ const overviewMetricCards = computed(() => {
     const numericMatch = rawValue.match(/^[\d.,]+\+?/)
     const unitMatch = rawValue.match(/(m²|m2|sqm|%)/i)
 
+    const translateMetricLabel = (label) => {
+      if (locale.value === 'vi' || !label) return label;
+      if (label.includes('Diện tích')) return t('user.home.factoryArea');
+      if (label.includes('Công suất')) return t('user.home.annualCapacity');
+      return label;
+    }
+
     if (!rawValue) return fallbackCard
 
     return {
       value: numericMatch?.[0] || fallbackCard.value,
       unit: unitMatch?.[0] || fallbackCard.unit,
-      label: String(metric?.label || '').trim() || fallbackCard.label,
+      label: translateMetricLabel(metric?.label) || fallbackCard.label,
       icon: fallbackCard.icon,
     }
   })

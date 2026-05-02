@@ -1,5 +1,6 @@
 <script setup>
 import { computed, reactive, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 const props = defineProps({
   formOpen: {
@@ -268,6 +269,8 @@ const props = defineProps({
   },
 });
 
+const { locale, t } = useI18n();
+
 const emit = defineEmits([
   "close",
   "submit",
@@ -314,7 +317,11 @@ const galleryUrlList = computed(() => {
 
 const quickPreviewOpen = ref(true);
 
-const safeConfigLabel = computed(() => props.config?.label || "Bản ghi");
+const safeConfigLabel = computed(() => {
+  const labelKey = props.config?.label || "Bản ghi";
+  const translated = t(labelKey);
+  return translated !== labelKey ? translated : labelKey;
+});
 const isOrdersEntity = computed(() => props.entityKey === "orders");
 const orderEditableFields = computed(() => ["status", "payment_status", "note"]);
 const orderReadonlyFields = computed(() => {
@@ -356,7 +363,7 @@ const orderFieldValue = (field) => {
   }
   if (field === "item_count") {
     const count = Number(value || 0);
-    return `${count} sản phẩm`;
+    return `${count} ${t('admin.common.editor.product')}`;
   }
   if (field === "created_at" || field === "updated_at" || field === "placed_at") {
     return formatOrderDateTime(value);
@@ -371,27 +378,33 @@ const orderCustomerContact = computed(() => {
   const values = [props.form?.customer_phone, props.form?.customer_email]
     .map((item) => String(item || "").trim())
     .filter(Boolean);
-  return values.length ? values.join(" • ") : "Chưa có thông tin liên hệ";
+  return values.length ? values.join(" • ") : t('admin.common.no_data');
 });
 const orderAddressSummary = computed(() => {
   const address = String(props.form?.shipping_address || "").trim();
-  return address || "Chưa có địa chỉ giao hàng";
+  return address || t('admin.common.no_data');
 });
-const orderStatusText = computed(
-  () => String(props.form?.status_label || props.form?.status || "Chưa cập nhật").trim(),
-);
-const orderPaymentStatusText = computed(
-  () =>
-    String(
-      props.form?.payment_status_label || props.form?.payment_status || "Chưa cập nhật",
-    ).trim(),
-);
-const orderPaymentMethodText = computed(
-  () =>
-    String(
-      props.form?.payment_method_label || props.form?.payment_method || "Chưa cập nhật",
-    ).trim(),
-);
+const orderStatusText = computed(() => {
+  const value = String(props.form?.status || "").trim();
+  if (!value) return t('admin.common.no_data');
+  const key = `admin.entities.orders.status_options.${value}`;
+  const translated = t(key);
+  return translated !== key ? translated : value;
+});
+const orderPaymentStatusText = computed(() => {
+  const value = String(props.form?.payment_status || "").trim();
+  if (!value) return t('admin.common.no_data');
+  const key = `admin.entities.orders.payment_status_options.${value}`;
+  const translated = t(key);
+  return translated !== key ? translated : value;
+});
+const orderPaymentMethodText = computed(() => {
+  const value = String(props.form?.payment_method || "").trim();
+  if (!value) return t('admin.common.no_data');
+  const key = `admin.entities.orders.payment_method_options.${value}`;
+  const translated = t(key);
+  return translated !== key ? translated : value;
+});
 const orderStatusTone = computed(() => {
   const value = String(props.form?.status || "").trim().toLowerCase();
   if (value === "delivered") return "is-success";
@@ -408,13 +421,16 @@ const orderPaymentTone = computed(() => {
 const orderHeroTitle = computed(
   () => String(props.form?.code || `ORD-${editingRecordId || "--"}`).trim(),
 );
-const orderHeroPlacedAt = computed(() => formatOrderDateTime(props.form?.placed_at));
+const orderHeroPlacedAt = computed(() => {
+  if (!props.form?.placed_at) return t('admin.common.no_data');
+  return new Date(props.form.placed_at).toLocaleString(locale.value);
+});
 const orderCustomerNameText = computed(() => orderFieldValue("customer_name"));
 const orderCustomerEmailText = computed(() => orderFieldValue("customer_email"));
 const orderCustomerPhoneText = computed(() => orderFieldValue("customer_phone"));
 const orderNoteSummary = computed(() => {
   const note = String(props.form?.note || "").trim();
-  return note || "Không có ghi chú";
+  return note || t('admin.entities.orders.fields.no_note');
 });
 const orderSubtotalText = computed(() =>
   formatMoney(props.form?.subtotal_amount, props.form?.currency || "VND"),
@@ -431,19 +447,19 @@ const orderTotalText = computed(() =>
 const orderSummaryCards = computed(() => [
   {
     key: "total_amount",
-    label: "Tổng thanh toán",
+    label: t('admin.entities.orders.fields.total_amount'),
     value: orderTotalText.value,
     icon: "💳",
   },
   {
     key: "payment_method",
-    label: "Phương thức thanh toán",
+    label: t('admin.entities.orders.fields.payment_method'),
     value: orderPaymentMethodText.value,
     icon: "🧾",
   },
   {
     key: "note",
-    label: "Ghi chú",
+    label: t('admin.entities.orders.fields.note'),
     value: orderNoteSummary.value,
     icon: "📝",
   },
@@ -455,32 +471,32 @@ const orderTimeline = computed(() => {
       key: "status",
       title: orderStatusText.value,
       time: placedAt,
-      description: `Đơn hàng đang ở trạng thái ${orderStatusText.value.toLowerCase()}.`,
+      description: t('admin.entities.orders.timeline.status_desc', { status: orderStatusText.value.toLowerCase() }),
       tone: orderStatusTone.value,
     },
     {
       key: "payment",
       title: orderPaymentStatusText.value,
       time: placedAt,
-      description: `Trạng thái thanh toán hiện tại là ${orderPaymentStatusText.value.toLowerCase()}.`,
+      description: t('admin.entities.orders.timeline.payment_desc', { status: orderPaymentStatusText.value.toLowerCase() }),
       tone: orderPaymentTone.value,
     },
     {
       key: "created",
-      title: "Đã đặt hàng",
+      title: t('admin.entities.orders.timeline.placed_title'),
       time: placedAt,
-      description: "Đơn hàng đã được tạo thành công trên hệ thống.",
+      description: t('admin.entities.orders.timeline.placed_desc'),
       tone: "is-info",
     },
   ];
 });
 const orderMetaRows = computed(() => [
-  { key: "code", label: "Mã đơn hàng", value: orderHeroTitle.value },
-  { key: "placed_at", label: "Ngày đặt", value: orderHeroPlacedAt.value },
-  { key: "order_id", label: "ID đặt hàng", value: `#${props.form?.id || editingRecordId || "-"}` },
-  { key: "payment_method", label: "Thanh toán", value: orderPaymentMethodText.value },
-  { key: "payment_status", label: "Trạng thái thanh toán", value: orderPaymentStatusText.value },
-  { key: "admin_note", label: "Ghi chú admin", value: orderNoteSummary.value },
+  { key: "code", label: t('admin.entities.orders.fields.code'), value: orderHeroTitle.value },
+  { key: "placed_at", label: t('admin.entities.orders.fields.placed_at'), value: orderHeroPlacedAt.value },
+  { key: "order_id", label: "ID", value: `#${props.form?.id || editingRecordId || "-"}` },
+  { key: "payment_method", label: t('admin.entities.orders.fields.payment_method'), value: orderPaymentMethodText.value },
+  { key: "payment_status", label: t('admin.entities.orders.fields.payment_status'), value: orderPaymentStatusText.value },
+  { key: "admin_note", label: t('admin.entities.orders.fields.note'), value: orderNoteSummary.value },
 ]);
 const orderItemImage = (item) => {
   const direct = String(item?.product_image_url || "").trim();
@@ -569,7 +585,7 @@ const currentBlockKey = computed(() => {
 
 const currentBlockLabel = computed(() => {
   const block = currentBlockOption.value;
-  if (!block) return "Chưa chọn khối";
+  if (!block) return t('admin.common.editor.no_block_selected');
   return String(
     block?.title ||
       block?.name ||
@@ -636,7 +652,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
       <div class="editor-head">
         <div class="editor-head__content">
           <div class="editor-head__badge-wrap">
-            <p class="eyebrow">{{ formMode === "create" ? "Thêm mới" : "Chỉnh sửa" }}</p>
+            <p class="eyebrow">{{ formMode === "create" ? $t('admin.common.create') : $t('admin.common.edit') }}</p>
             <span class="editor-head__badge">{{ safeConfigLabel }}</span>
             <button
               v-if="supportsTranslation"
@@ -647,10 +663,10 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
             >
               <span v-if="saving" class="spinner-tiny"></span>
               <span v-else>🪄</span>
-              Dịch Tự Động
+              {{ $t('admin.about.translation.auto_translate') }}
             </button>
           </div>
-          <h3>{{ formMode === "create" ? `Tạo ${safeConfigLabel}` : `Sửa ${safeConfigLabel}` }}</h3>
+          <h3>{{ formMode === "create" ? $t('admin.common.create_entity', { label: safeConfigLabel }) : $t('admin.common.edit_entity', { label: safeConfigLabel }) }}</h3>
         </div>
         <button
           type="button"
@@ -669,15 +685,15 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
       <div v-if="hasMediaFields && !isProductsEntity" class="upload-panel-minimal">
         <div class="upload-panel-minimal__header">
           <div class="upload-panel-minimal__title">
-            <span class="upload-panel-badge">QUẢN LÝ MEDIA</span>
-            <strong>Tải Ảnh/Video Lên Cloudinary</strong>
+            <span class="upload-panel-badge">{{ $t('admin.about.upload.title').toUpperCase() }}</span>
+            <strong>{{ $t('admin.about.upload.title') }} Cloudinary</strong>
           </div>
         </div>
 
         <div class="upload-panel-grid">
           <div class="upload-panel-section">
             <div class="upload-input-group">
-              <label>Bạn muốn tải lên cho mục nào?</label>
+              <label>{{ $t('admin.common.media.target_field') }}</label>
               <select
                 :value="uploadTargetField"
                 class="minimal-select"
@@ -690,7 +706,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
             </div>
             
             <div class="upload-input-group">
-              <label>Chọn tệp từ máy tính</label>
+              <label>{{ $t('admin.common.media.select_file') }}</label>
               <div class="file-input-wrapper">
                 <input 
                   type="file" 
@@ -700,7 +716,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                 />
                 <label for="minimal-file-input" class="file-input-proxy">
                   <span v-if="uploadFileName">{{ uploadFileName }}</span>
-                  <span v-else>Nhấn để chọn file...</span>
+                  <span v-else>{{ $t('admin.common.media.click_to_select') }}</span>
                 </label>
               </div>
             </div>
@@ -709,20 +725,20 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
           <div class="upload-panel-section">
             <div class="upload-input-row">
               <div class="upload-input-group">
-                <label>Tiêu đề ảnh (Tùy chọn)</label>
+                <label>{{ $t('admin.common.media.media_title_optional') }}</label>
                 <input
                   :value="uploadTitle"
                   type="text"
-                  placeholder="Ví dụ: Ảnh sản phẩm OS.01"
+                  :placeholder="$t('admin.common.media.media_title_placeholder')"
                   @input="emit('update:uploadTitle', $event.target.value)"
                 />
               </div>
               <div class="upload-input-group">
-                <label>Mô tả Alt (SEO)</label>
+                <label>{{ $t('admin.common.media.alt_text_seo') }}</label>
                 <input
                   :value="uploadAltText"
                   type="text"
-                  placeholder="Mô tả cho công cụ tìm kiếm"
+                  :placeholder="$t('admin.common.media.alt_text_placeholder')"
                   @input="emit('update:uploadAltText', $event.target.value)"
                 />
               </div>
@@ -736,7 +752,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
               @click="emit('upload-media')"
             >
               <div v-if="uploading" class="spinner-tiny"></div>
-              <span>{{ uploading ? "Đang tải..." : "Tải lên Cloudinary" }}</span>
+              <span>{{ uploading ? $t('admin.about.upload.uploading') : $t('admin.about.upload.upload_btn') }}</span>
             </button>
           </div>
         </div>
@@ -747,19 +763,19 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
           <div class="order-editor-breadcrumbs">
             <span>Dashboard</span>
             <span>/</span>
-            <span>Quản lý đơn hàng</span>
+            <span>{{ $t('admin.entities.orders.label') }}</span>
             <span>/</span>
-            <strong>Chi tiết đơn hàng</strong>
+            <strong>{{ $t('admin.entities.orders.detail_title') }}</strong>
           </div>
 
           <div class="order-editor-topbar">
             <div class="order-editor-topbar__main">
-              <p class="order-editor-kicker">Chi tiết đơn hàng</p>
+              <p class="order-editor-kicker">{{ $t('admin.entities.orders.detail_title') }}</p>
               <h4>{{ orderHeroTitle }}</h4>
-              <p class="order-editor-topbar__time">🗓️ Ngày đặt: {{ orderHeroPlacedAt }}</p>
+              <p class="order-editor-topbar__time">🗓️ {{ $t('admin.entities.orders.fields.placed_at') }}: {{ orderHeroPlacedAt }}</p>
             </div>
             <div class="order-editor-topbar__status">
-              <span>Trạng thái</span>
+              <span>{{ $t('admin.entities.orders.fields.status') }}</span>
               <strong :class="['order-editor-status-chip', orderStatusTone]">
                 {{ orderStatusText }}
               </strong>
@@ -783,23 +799,23 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
           <div class="order-editor-dashboard-grid">
             <article class="order-editor-card order-editor-card--customer">
               <div class="order-editor-card__head order-editor-card__head--icon">
-                <strong>👤 Thông tin khách hàng</strong>
+                <strong>👤 {{ $t('admin.entities.orders.customer_info') }}</strong>
               </div>
               <div class="order-editor-profile-list">
                 <div class="order-editor-profile-row">
-                  <span>Họ và tên</span>
+                  <span>{{ $t('admin.entities.orders.fields.customer_name') }}</span>
                   <strong>{{ orderCustomerNameText }}</strong>
                 </div>
                 <div class="order-editor-profile-row">
-                  <span>Số điện thoại</span>
+                  <span>{{ $t('admin.entities.orders.fields.customer_phone') }}</span>
                   <strong>{{ orderCustomerPhoneText }}</strong>
                 </div>
                 <div class="order-editor-profile-row">
-                  <span>Email</span>
+                  <span>{{ $t('admin.entities.orders.fields.customer_email') }}</span>
                   <strong>{{ orderCustomerEmailText }}</strong>
                 </div>
                 <div class="order-editor-profile-row">
-                  <span>Địa chỉ giao hàng</span>
+                  <span>{{ $t('admin.entities.orders.fields.shipping_address') }}</span>
                   <strong>{{ orderAddressSummary }}</strong>
                 </div>
               </div>
@@ -807,15 +823,15 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
 
             <article class="order-editor-card order-editor-card--products">
               <div class="order-editor-card__head order-editor-card__head--icon">
-                <strong>📦 Sản phẩm đã đặt</strong>
+                <strong>📦 {{ $t('admin.entities.orders.ordered_products') }}</strong>
               </div>
 
               <div v-if="orderHasItems" class="order-editor-table-wrap">
                 <div class="order-editor-table order-editor-table--head">
-                  <span>Sản phẩm</span>
-                  <span>Đơn giá</span>
-                  <span>Số lượng</span>
-                  <span>Thành tiền</span>
+                  <span>{{ $t('admin.entities.orders.fields.product') }}</span>
+                  <span>{{ $t('admin.entities.orders.fields.unit_price') }}</span>
+                  <span>{{ $t('admin.entities.orders.fields.quantity') }}</span>
+                  <span>{{ $t('admin.entities.orders.fields.subtotal_amount') }}</span>
                 </div>
 
                 <article
@@ -828,7 +844,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                       <img
                         v-if="orderItemImage(item)"
                         :src="orderItemImage(item)"
-                        :alt="item.product_name || `Sản phẩm ${index + 1}`"
+                        :alt="item.product_name || `${$t('admin.common.editor.product')} ${index + 1}`"
                         loading="lazy"
                       />
                       <div v-else class="order-editor-product-thumb__placeholder">
@@ -836,8 +852,8 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                       </div>
                     </div>
                     <div class="order-editor-product-copy">
-                      <strong>{{ item.product_name || `Sản phẩm #${index + 1}` }}</strong>
-                      <small>SKU: {{ item.product_sku || 'Chưa có SKU' }}</small>
+                      <strong>{{ item.product_name || `${$t('admin.entities.products.label')} #${index + 1}` }}</strong>
+                      <small>SKU: {{ item.product_sku || $t('admin.entities.products.fields.no_sku') }}</small>
                     </div>
                   </div>
                   <strong>{{ orderItemUnitPrice(item) }}</strong>
@@ -847,25 +863,25 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
 
                 <div class="order-editor-totals">
                   <div>
-                    <span>Tạm tính</span>
+                    <span>{{ $t('admin.entities.orders.fields.subtotal_amount') }}</span>
                     <strong>{{ orderSubtotalText }}</strong>
                   </div>
                   <div v-if="Number(form.discount_amount || 0) > 0">
-                    <span>Giảm giá</span>
+                    <span>{{ $t('admin.entities.orders.fields.discount_amount') }}</span>
                     <strong>{{ orderDiscountText }}</strong>
                   </div>
                   <div class="order-editor-totals__grand">
-                    <span>Tổng thanh toán</span>
+                    <span>{{ $t('admin.entities.orders.fields.total_amount') }}</span>
                     <strong>{{ orderTotalText }}</strong>
                   </div>
                 </div>
               </div>
-              <p v-else class="order-editor-empty">Chưa có dữ liệu sản phẩm cho đơn hàng này.</p>
+              <p v-else class="order-editor-empty">{{ $t('admin.entities.orders.no_items_data') }}</p>
             </article>
 
             <article class="order-editor-card order-editor-card--timeline">
               <div class="order-editor-card__head order-editor-card__head--icon">
-                <strong>🕘 Lịch sử đơn hàng</strong>
+                <strong>🕘 {{ $t('admin.entities.orders.order_history') }}</strong>
               </div>
               <div class="order-editor-timeline">
                 <div
@@ -889,7 +905,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
 
             <article class="order-editor-card order-editor-card--meta">
               <div class="order-editor-card__head order-editor-card__head--icon">
-                <strong>📋 Thông tin bổ sung</strong>
+                <strong>📋 {{ $t('admin.entities.orders.additional_info') }}</strong>
               </div>
               <div class="order-editor-meta-list">
                 <div
@@ -906,9 +922,9 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
 
           <article class="order-editor-card order-editor-card--full order-editor-card--actions">
             <div class="order-editor-card__head order-editor-card__head--icon">
-              <strong>⚙️ Cập nhật trạng thái đơn hàng</strong>
+              <strong>⚙️ {{ $t('admin.entities.orders.update_status_title') }}</strong>
               <small>
-                Chỉnh sửa trạng thái xử lý, trạng thái thanh toán và ghi chú nội bộ của admin.
+                {{ $t('admin.entities.orders.update_status_desc') }}
               </small>
             </div>
             <div class="order-editor-actions-grid">
@@ -1013,7 +1029,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                 <div>
                   <strong>{{ selectedMediaLabel(field) }}</strong>
                   <small v-if="form[field]">#{{ form[field] }}</small>
-                  <small v-else>Nguồn ngoài / metadata cũ</small>
+                  <small v-else>{{ $t('admin.common.editor.external_source') }}</small>
                 </div>
               </div>
             </div>
@@ -1108,7 +1124,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                     :disabled="videoUploading"
                     @click="emit('upload-video')"
                   >
-                    {{ videoUploading ? "Uploading..." : "Upload" }}
+                    {{ videoUploading ? $t('admin.about.upload.uploading') : $t('admin.about.upload.upload_btn_short') }}
                   </button>
                 </div>
                 <div class="video-file-row">
@@ -1118,21 +1134,21 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                     @change="emit('video-file-change', $event)"
                   />
                   <span class="video-file-row__name">
-                    {{ videoUploadFile?.name || "Chua chon file video" }}
+                    {{ videoUploadFile?.name || $t('admin.about.upload.no_file') }}
                   </span>
                 </div>
                 <small class="field-help">
-                  Chon file video tu may tinh roi bam Upload de tu dong dien vao Video URL.
+                  {{ $t('admin.about.upload.video_hint') }}
                 </small>
                 <div class="video-library-select">
                   <select @change="emit('video-library-select', $event.target.value)">
-                    <option value="">-- Chon tu Thu vien Media --</option>
+                    <option value="">-- {{ $t('admin.about.upload.select_library') }} --</option>
                     <option v-for="media in videoLibraryOptions" :key="media.id" :value="media.url">
                       #{{ media.id }} - {{ media.title || media.file_name }}
                     </option>
                   </select>
                   <small v-if="videoLibraryOptions.length">
-                    Hoac chon tu {{ videoLibraryOptions.length }} video da tai len
+                    {{ $t('admin.about.upload.library_count', { count: videoLibraryOptions.length }) }}
                   </small>
                 </div>
               </div>
@@ -1146,10 +1162,10 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                 }"
               >
                 <span>
-                  {{ isAllowedVideoUrl(form.video_url) ? "Nguồn video hợp lệ" : "Nguồn video không hợp lệ" }}
+                  {{ isAllowedVideoUrl(form.video_url) ? $t('admin.common.editor.valid_video') : $t('admin.common.editor.invalid_video') }}
                 </span>
                 <small>
-                  {{ videoUrlHint(form.video_url) || "Hỗ trợ: MP4/WebM, YouTube, Vimeo" }}
+                  {{ videoUrlHint(form.video_url) || $t('admin.common.editor.video_support_hint') }}
                 </small>
               </div>
               <video
@@ -1168,7 +1184,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                 target="_blank"
                 rel="noreferrer noopener"
               >
-                Mở nguồn video
+                {{ $t('admin.common.editor.open_video') }}
               </a>
             </div>
 
@@ -1184,7 +1200,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                   <label :for="`inline-upload-${field}`" class="inline-upload-btn" :class="{ 'is-uploading': productInlineUploading === field }">
                     <div v-if="productInlineUploading === field" class="spinner-tiny"></div>
                     <span v-else>📁</span>
-                    <span>{{ productInlineUploading === field ? 'Đang tải...' : 'Chọn file tải lên' }}</span>
+                    <span>{{ productInlineUploading === field ? $t('admin.common.editor.uploading') : $t('admin.common.editor.choose_file') }}</span>
                   </label>
                   <input
                     :id="`inline-upload-${field}`"
@@ -1209,9 +1225,9 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                   <label :for="`inline-upload-${field}`" class="inline-upload-btn" :class="{ 'is-uploading': productInlineUploading === field }">
                     <div v-if="productInlineUploading === field" class="spinner-tiny"></div>
                     <span v-else>📁</span>
-                    <span v-if="productInlineUploading === field && galleryUploadProgress">Đang tải {{ galleryUploadProgress }}...</span>
-                    <span v-else-if="productInlineUploading === field">Đang tải...</span>
-                    <span v-else>Chọn nhiều ảnh tải lên</span>
+                    <span v-if="productInlineUploading === field && galleryUploadProgress">{{ $t('admin.common.saving') }} {{ galleryUploadProgress }}...</span>
+                    <span v-else-if="productInlineUploading === field">{{ $t('admin.common.saving') }}...</span>
+                    <span v-else>{{ $t('admin.common.gallery_upload_btn') }}</span>
                   </label>
                   <input
                     :id="`inline-upload-${field}`"
@@ -1222,7 +1238,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                     :disabled="!!productInlineUploading"
                     @change="handleInlineFile(field, $event)"
                   />
-                  <small class="gallery-count" v-if="galleryUrlList.length">Đang có: {{ galleryUrlList.length }} ảnh</small>
+                  <small class="gallery-count" v-if="galleryUrlList.length">{{ $t('admin.common.gallery_count', { count: galleryUrlList.length }) }}</small>
                 </div>
                 <small v-if="fieldHelpText(field)" class="field-help">{{ fieldHelpText(field) }}</small>
 
@@ -1243,16 +1259,16 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                     <button
                       type="button"
                       class="gallery-preview-remove"
-                      title="Xóa ảnh này"
+                      :title="$t('admin.common.gallery_remove')"
                       @click="emit('remove-gallery-url', url)"
                     >×</button>
                     <small class="gallery-preview-idx">#{{ idx + 1 }}</small>
                   </div>
                 </div>
-                <div v-else class="gallery-empty-hint">Chưa có ảnh liên quan. Nhấn "Chọn nhiều ảnh tải lên" để thêm.</div>
+                <div v-else class="gallery-empty-hint">{{ $t('admin.common.gallery_empty') }}</div>
 
                 <details class="gallery-raw-toggle">
-                  <summary>Chỉnh sửa URL thủ công</summary>
+                  <summary>{{ $t('admin.common.edit_manual') }}</summary>
                   <textarea
                     :value="form[field]"
                     rows="3"
@@ -1308,7 +1324,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
         </template>
 
         <div v-if="isBannerEntity" class="banner-form-preview">
-          <p class="eyebrow">Xem trước trực tiếp (Live Preview)</p>
+          <p class="eyebrow">{{ $t('admin.common.live_preview') }}</p>
           <div class="banner-preview-card banner-preview-card--editor">
             <div
               class="banner-preview-card__media"
@@ -1343,7 +1359,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                 class="banner-focus-indicator"
                 :style="bannerFocusIndicatorStyle()"
               ></div>
-              <div v-else class="banner-preview-card__empty">Select or upload banner media</div>
+              <div v-else class="banner-preview-card__empty">{{ $t('admin.common.banner_empty') }}</div>
               <div class="banner-preview-card__overlay"></div>
             </div>
             <div class="banner-preview-card__content">
@@ -1359,7 +1375,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
             </div>
           </div>
           <div v-if="canAdjustBannerFocus()" class="banner-focus-tools">
-            <small>Nhấp chuột hoặc kéo trực tiếp trên ảnh xem trước để chọn vùng hiển thị (crop area).</small>
+            <small>{{ $t('admin.common.crop_hint') }}</small>
             <div class="banner-focus-tools__row">
               <small>
                 X: {{ Math.round(form.focus_x ?? 50) }}% / Y: {{ Math.round(form.focus_y ?? 50) }}%
@@ -1369,7 +1385,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                 class="btn btn-secondary"
                 @click="emit('reset-banner-focus')"
               >
-                Căn giữa
+                {{ $t('admin.common.center_btn') }}
               </button>
             </div>
           </div>
@@ -1399,11 +1415,11 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
 
         <div v-if="currentFormPreviewUrl()" class="selected-media-preview selected-media-preview--link">
           <div>
-            <strong>Xem trước Public</strong>
+            <strong>{{ $t('admin.common.public_preview') }}</strong>
             <small>{{ currentFormPreviewUrl() }}</small>
           </div>
           <a :href="currentFormPreviewUrl()" target="_blank" rel="noreferrer noopener">
-            Mở xem trước bản ghi hiện tại
+            {{ $t('admin.common.open_preview') }}
           </a>
         </div>
 
@@ -1413,24 +1429,24 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
         >
           <div class="content-item-preview__head">
             <div>
-              <strong>Xem nhanh trước khi lưu</strong>
-              <small>Preview dữ liệu hiện tại để kiểm tra nhanh trước khi ghi DB.</small>
+              <strong>{{ $t('admin.common.quick_preview') }}</strong>
+              <small>{{ $t('admin.common.quick_preview_desc') }}</small>
             </div>
             <button
               type="button"
               class="btn btn-secondary"
               @click="quickPreviewOpen = !quickPreviewOpen"
             >
-              {{ quickPreviewOpen ? "Ẩn preview" : "Xem nhanh" }}
+              {{ quickPreviewOpen ? $t("admin.common.hide_preview") : $t("admin.common.show_preview") }}
             </button>
           </div>
 
           <div v-if="quickPreviewOpen" class="content-item-preview__body">
             <div class="content-item-preview__meta">
-              <span>Khối: {{ currentBlockLabel }}</span>
-              <span v-if="currentBlockKey">block_key: {{ currentBlockKey }}</span>
-              <span v-if="previewItemKey">item_key: {{ previewItemKey }}</span>
-              <span v-if="previewSortOrder !== null">thứ tự: {{ previewSortOrder }}</span>
+              <span>{{ $t('admin.common.editor.block') }}: {{ currentBlockLabel }}</span>
+              <span v-if="currentBlockKey">{{ $t('admin.common.editor.block_key') }} {{ currentBlockKey }}</span>
+              <span v-if="previewItemKey">{{ $t('admin.common.editor.item_key') }} {{ previewItemKey }}</span>
+              <span v-if="previewSortOrder !== null">{{ $t('admin.common.editor.sort_order') }} {{ previewSortOrder }}</span>
             </div>
 
             <article v-if="previewHasContent" class="content-item-preview__card">
@@ -1443,12 +1459,12 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
               <div class="content-item-preview__content">
                 <h4 v-if="previewTitle">{{ previewTitle }}</h4>
                 <p v-if="previewSubtitle">{{ previewSubtitle }}</p>
-                <p
-                  v-if="currentBlockKey === 'timeline' && timelineParts.year"
-                  class="content-item-preview__timeline"
-                >
-                  Mốc thời gian: {{ timelineParts.year }}{{ timelineParts.month ? `-${timelineParts.month}` : "" }}
-                </p>
+                  <p
+                    v-if="currentBlockKey === 'timeline' && timelineParts.year"
+                    class="content-item-preview__timeline"
+                  >
+                    {{ $t('admin.common.timeline_mark') }}: {{ timelineParts.year }}{{ timelineParts.month ? `-${timelineParts.month}` : "" }}
+                  </p>
                 <p v-if="previewContent" class="content-item-preview__text">{{ previewContent }}</p>
                 <a
                   v-if="previewLink"
@@ -1462,7 +1478,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
             </article>
 
             <p v-else class="content-item-preview__empty">
-              Chưa có dữ liệu để preview. Nhập tiêu đề/nội dung/hình ảnh để xem nhanh.
+              {{ $t('admin.common.no_preview_data') }}
             </p>
           </div>
         </section>
@@ -1474,7 +1490,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
           :disabled="saving"
           @click="emit('close')"
         >
-          Hủy bỏ
+          {{ $t('admin.common.discard') }}
         </button>
         <button
           type="button"
@@ -1482,7 +1498,7 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
           :disabled="saving"
           @click="emit('submit')"
         >
-          {{ saving ? "Đang lưu..." : "Lưu thay đổi" }}
+          {{ saving ? $t("admin.common.saving") : $t("admin.common.save_changes") }}
         </button>
       </div>
       </form>

@@ -76,7 +76,7 @@ onMounted(loadProjects)
             <div class="content">
               <div class="meta">
                 <MapPin :size="12" />
-                <span>{{ item.location || 'TP.HCM, VIỆT NAM' }}</span>
+                <span>{{ item.location || (locale === 'vi' ? 'VIỆT NAM' : 'VIETNAM') }}</span>
               </div>
 
               <h3>

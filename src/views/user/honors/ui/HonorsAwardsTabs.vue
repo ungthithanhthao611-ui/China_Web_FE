@@ -1,7 +1,10 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import HonorCard from './HonorCard.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   corporateItems: {
@@ -87,16 +90,15 @@ watch(activeTab, () => {
 </script>
 
 <template>
-  <section id="page3b" class="section section-awards">
+  <section id="page3" class="section section-awards">
     <div class="section-bg"></div>
     <div class="stage">
       <header class="section-top">
         <div class="section-top__copy">
-          <span class="eyebrow">CÔNG NGHỆ - CHỨNG NHẬN</span>
-          <h2>Chứng nhận & Năng lực</h2>
+          <span class="eyebrow">{{ t('user.capability.techTitle') }}</span>
+          <h2>{{ t('user.capability.honorsAwards') }}</h2>
           <p>
-            Máy móc, quy trình sản xuất, công suất vận hành và các chứng chỉ ISO, CE theo tiêu chuẩn
-            dự án được trình bày trong một giao diện đồng bộ.
+            {{ t('user.capability.honorsAwardsDesc') || 'Máy móc, quy trình sản xuất, công suất vận hành và các chứng chỉ ISO, CE.' }}
           </p>
         </div>
 
@@ -109,7 +111,7 @@ watch(activeTab, () => {
               :aria-selected="activeTab === 'corporate'"
               @click="activeTab = 'corporate'"
             >
-              Công nghệ sản xuất
+              {{ t('user.capability.techTitle') }}
             </button>
             <button
               type="button"
@@ -118,19 +120,19 @@ watch(activeTab, () => {
               :aria-selected="activeTab === 'project'"
               @click="activeTab = 'project'"
             >
-              ISO & CE
+              {{ t('user.capability.certifications') || 'ISO & CE' }}
             </button>
           </div>
         </div>
       </header>
 
       <div v-if="activeTab === 'corporate'">
-        <div v-if="!corporateItems.length" class="empty">Chưa có nội dung công nghệ sản xuất.</div>
+        <div v-if="!corporateItems.length" class="empty">{{ t('user.capability.emptyGallery') || 'Chưa có nội dung công nghệ sản xuất.' }}</div>
         <template v-else>
           <div class="section-toolbar">
             <div class="section-toolbar__summary">
               <strong>{{ corporateItems.length }}</strong>
-              <span>mục công nghệ sản xuất</span>
+              <span>{{ t('user.capability.itemsCount') }} {{ t('user.capability.techTitle').toLowerCase() }}</span>
             </div>
 
             <div v-if="showCorporatePagination" class="pager" aria-label="Phân trang công nghệ sản xuất">
@@ -138,7 +140,7 @@ watch(activeTab, () => {
                 type="button"
                 class="pager__btn"
                 :disabled="isCorporateFirstPage"
-                aria-label="Trang trước công nghệ sản xuất"
+                :aria-label="t('user.capability.prevPageTechnology')"
                 @click="prevCorporatePage"
               >
                 <ChevronLeft :size="18" />
@@ -148,7 +150,7 @@ watch(activeTab, () => {
                 type="button"
                 class="pager__btn"
                 :disabled="isCorporateLastPage"
-                aria-label="Trang tiếp theo công nghệ sản xuất"
+                :aria-label="t('user.capability.nextPageTechnology')"
                 @click="nextCorporatePage"
               >
                 <ChevronRight :size="18" />
@@ -161,7 +163,7 @@ watch(activeTab, () => {
               v-for="item in pagedCorporateItems"
               :key="`corporate-${item.id}`"
               :item="item"
-              :image-src="imageResolver(item.image_url)"
+              :image-src="imageResolver(item.image_url || item.image)"
               variant="frame"
             />
           </div>
@@ -169,20 +171,20 @@ watch(activeTab, () => {
       </div>
 
       <div v-else>
-        <div v-if="!projectItems.length" class="empty">Chưa có chứng nhận ISO & CE.</div>
+        <div v-if="!projectItems.length" class="empty">{{ t('user.capability.emptyCertifications') }}</div>
         <template v-else>
           <div class="section-toolbar">
             <div class="section-toolbar__summary">
               <strong>{{ projectItems.length }}</strong>
-              <span>chứng nhận ISO & CE</span>
+              <span>{{ t('user.capability.certifications') }}</span>
             </div>
 
-            <div v-if="showProjectPagination" class="pager" aria-label="Phân trang chứng nhận ISO và CE">
+            <div v-if="showProjectPagination" class="pager" :aria-label="t('user.capability.paginationCertifications')">
               <button
                 type="button"
                 class="pager__btn"
                 :disabled="isProjectFirstPage"
-                aria-label="Trang trước chứng nhận ISO và CE"
+                :aria-label="t('user.capability.prevPageCertifications')"
                 @click="prevProjectPage"
               >
                 <ChevronLeft :size="18" />
@@ -192,7 +194,7 @@ watch(activeTab, () => {
                 type="button"
                 class="pager__btn"
                 :disabled="isProjectLastPage"
-                aria-label="Trang tiếp theo chứng nhận ISO và CE"
+                :aria-label="t('user.capability.nextPageCertifications')"
                 @click="nextProjectPage"
               >
                 <ChevronRight :size="18" />
@@ -205,7 +207,7 @@ watch(activeTab, () => {
               v-for="item in pagedProjectItems"
               :key="`project-${item.id}`"
               :item="item"
-              :image-src="imageResolver(item.image_url)"
+              :image-src="imageResolver(item.image_url || item.image)"
               variant="frame"
             />
           </div>

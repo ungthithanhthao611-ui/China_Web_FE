@@ -1,7 +1,10 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import HonorCard from './HonorCard.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   items: {
@@ -51,35 +54,34 @@ watch(
     <div class="stage">
       <header class="heading">
         <div class="heading-copy">
-          <span class="eyebrow">NĂNG LỰC SẢN XUẤT</span>
-          <h2>Hình ảnh nhà máy</h2>
+          <span class="eyebrow">{{ t('user.capability.eyebrow') }}</span>
+          <h2>{{ t('user.capability.factoryGallery') }}</h2>
           <p>
-            Hình ảnh thực tế về nhà xưởng, kho bãi và hoạt động vận hành tại hiện trường, được trình
-            bày theo tinh thần showroom cao cấp.
+            {{ t('user.capability.factoryGalleryDesc') }}
           </p>
         </div>
 
         <div class="heading-note">
           <span>Factory Gallery</span>
           <strong>{{ items.length || 0 }}</strong>
-          <p>Ảnh đang hiển thị từ CMS.</p>
+          <p>{{ t('user.capability.imagesFromCms') }}</p>
         </div>
       </header>
 
-      <div v-if="!items.length" class="empty">Chưa có hình ảnh nhà máy để hiển thị.</div>
+      <div v-if="!items.length" class="empty">{{ t('user.capability.emptyGallery') }}</div>
       <template v-else>
         <div class="section-toolbar">
           <div class="section-toolbar__summary">
             <strong>{{ items.length }}</strong>
-            <span>ảnh nhà máy từ CMS</span>
+            <span>{{ t('user.capability.factoryImagesCount') }}</span>
           </div>
 
-          <div v-if="showPagination" class="pager" aria-label="Phân trang hình ảnh nhà máy">
+          <div v-if="showPagination" class="pager" :aria-label="t('user.capability.paginationGallery')">
             <button
               type="button"
               class="pager__btn"
               :disabled="isFirstPage"
-              aria-label="Trang trước hình ảnh nhà máy"
+              :aria-label="t('user.capability.prevPageGallery')"
               @click="prevPage"
             >
               <ChevronLeft :size="18" />
@@ -89,7 +91,7 @@ watch(
               type="button"
               class="pager__btn"
               :disabled="isLastPage"
-              aria-label="Trang tiếp theo hình ảnh nhà máy"
+              :aria-label="t('user.capability.nextPageGallery')"
               @click="nextPage"
             >
               <ChevronRight :size="18" />
@@ -102,7 +104,7 @@ watch(
             v-for="item in pagedItems"
             :key="`qualification-${item.id}`"
             :item="item"
-            :image-src="imageResolver(item.image_url)"
+            :image-src="imageResolver(item.image_url || item.image)"
             variant="gallery"
           />
         </div>

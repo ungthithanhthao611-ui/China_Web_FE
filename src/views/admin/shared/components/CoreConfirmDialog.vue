@@ -49,7 +49,7 @@ const emit = defineEmits(["cancel", "accept"]);
             class="btn btn-secondary"
             @click="emit('cancel')"
           >
-            Hủy
+            {{ $t('admin.common.cancel') }}
           </button>
           <button
             type="button"

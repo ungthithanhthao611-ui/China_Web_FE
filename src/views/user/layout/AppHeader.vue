@@ -1,7 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ChevronDown, Mail, MapPin, Menu, Phone, Search, X, LogIn, User } from 'lucide-vue-next'
 import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { findMenuItems, normalizeMenuItems, toLinkProps } from '@/shared/utils/navigation'
@@ -18,8 +18,6 @@ const HEADER_CONTACT_FALLBACK = Object.freeze({
   phone: '0982 818 273',
   phoneSecondary: '0968 297 104',
   location: '52 Ấp Đồng Chinh, Xã Phước Hoà, Huyện Phú Giáo, Tỉnh Bình Dương',
-  brandPrimary: 'THIÊN ĐỒNG',
-  brandSecondary: 'VIỆT NAM',
 })
 
 const isMobileMenuOpen = ref(false)
@@ -30,16 +28,13 @@ const mobileExpandedGroups = ref([])
 const isLanguageOpen = ref(false)
 const { locale, t } = useI18n({ useScope: 'global' })
 const route = useRoute()
+const router = useRouter()
 const bootstrapStore = useBootstrapStore()
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 
 const isUserMenuOpen = ref(false)
 const userMenuRef = ref(null)
-
-const openAuthModal = () => {
-  router.push('/login')
-}
 
 const handleLogout = () => {
   authStore.logout()
@@ -154,12 +149,12 @@ const fallbackNavItems = computed(() => [
     name: t('user.home.about'),
     path: '/about/company-introduction',
     children: [
-      { name: 'Tổng Quan Công Ty', path: '/about/company-introduction' },
-      { name: 'Lịch Sử Phát Triển', path: '/about/development-course' },
-      { name: 'Tầm Nhìn & Sứ Mệnh', path: '/about/corporate-culture' },
-      { name: 'Giá Trị Cốt Lõi', path: '/about/corporate-culture' },
-      { name: 'Ban Lãnh Đạo', path: '/about/leadership-care' },
-      { name: 'Sơ Đồ Tổ Chức', path: '/about/organization-chart' },
+      { name: t('user.home.aboutUs'), path: '/about/company-introduction' },
+      { name: t('user.home.history'), path: '/about/development-course' },
+      { name: t('user.home.visionMission'), path: '/about/corporate-culture' },
+      { name: t('user.home.coreValues'), path: '/about/corporate-culture' },
+      { name: t('user.home.leadership'), path: '/about/leadership-care' },
+      { name: t('user.home.orgChart'), path: '/about/organization-chart' },
     ],
   },
   {
@@ -175,6 +170,10 @@ const fallbackNavItems = computed(() => [
     name: t('user.home.news'),
     path: '/news',
   },
+  {
+    name: t('user.home.capability'),
+    path: '/honors',
+  },
   { name: t('user.home.contactTitle'), path: '/contact' },
 ])
 
@@ -187,31 +186,38 @@ const headerMenuItems = computed(() =>
 const navItems = computed(() => {
   const sourceItems = headerMenuItems.value.length ? headerMenuItems.value : fallbackNavItems.value
 
+  const translateName = (n) => {
+    if (!n || locale.value === 'vi') return n
+    const normalized = String(n).trim().toLowerCase()
+
+    if (normalized === 'trang chủ' || normalized === 'home') return t('user.home.home')
+    if (normalized === 'giới thiệu' || normalized === 'about' || normalized === 'about us') return t('user.home.about')
+    if (normalized === 'sản phẩm' || normalized === 'products') return t('user.home.products')
+    if (normalized === 'dự án' || normalized === 'projects') return t('user.home.projects')
+    if (normalized === 'tin tức' || normalized === 'news') return t('user.home.news')
+    if (normalized === 'liên hệ' || normalized === 'contact' || normalized === 'contact us') return t('user.home.contactTitle')
+    if (normalized === 'năng lực' || normalized === 'capability' || normalized === 'honors') return t('user.home.capability')
+    if (normalized === 'đối tác' || normalized === 'partners') return t('user.home.partners')
+    
+    // Sub-menu items
+    if (normalized === 'về chúng tôi' || normalized === 'tổng quan công ty' || normalized === 'company overview') return t('user.home.aboutUs')
+    if (normalized === 'tầm nhìn & sứ mệnh' || normalized === 'vision & mission') return t('user.home.visionMission')
+    if (normalized === 'giá trị cốt lõi' || normalized === 'core values') return t('user.home.coreValues')
+    if (normalized === 'lịch sử phát triển' || normalized === 'development course' || normalized === 'history' || normalized === 'lịch sử') return t('user.home.history')
+    if (normalized === 'ban lãnh đạo' || normalized === 'leadership') return t('user.home.leadership')
+    if (normalized === 'sơ đồ tổ chức' || normalized === 'organization chart' || normalized === 'org chart') return t('user.home.orgChart')
+    if (normalized === 'văn hóa' || normalized === 'culture') return t('user.home.visionMission')
+    if (normalized === 'tuyển dụng' || normalized === 'career' || normalized === 'careers') return t('user.home.career') || 'Careers'
+    if (normalized === 'hình ảnh nhà máy' || normalized === 'factory images') return t('user.home.factoryImages')
+    if (normalized === 'công nghệ sản xuất' || normalized === 'production technology') return t('user.home.productionTech')
+    if (normalized === 'chứng nhận iso & ce' || normalized === 'certifications') return t('user.home.certifications')
+    
+    return n
+  }
+
   return sourceItems.map((item) => {
     const normalizedPath = normalizeNavPath(item.path)
     
-    const translateName = (n) => {
-      if (!n) return n
-      if (n === 'Trang Chủ') return t('user.home.home')
-      if (n === 'Giới Thiệu') return t('user.home.about')
-      if (n === 'Sản Phẩm') return t('user.home.products')
-      if (n === 'Dự Án') return t('user.home.projects')
-      if (n === 'Tin Tức') return t('user.home.news')
-      if (n === 'Liên Hệ') return t('user.home.contactTitle')
-      if (n === 'Năng Lực') return t('user.home.capability')
-      
-      // Sub-menu items
-      if (n === 'Về Chúng Tôi' || n === 'Tổng Quan Công Ty') return t('user.home.aboutUs')
-      if (n === 'Tầm Nhìn & Sứ Mệnh') return t('user.home.visionMission')
-      if (n === 'Giá Trị Cốt Lõi') return t('user.home.coreValues')
-      if (n === 'Lịch Sử Phát Triển') return t('user.home.history')
-      if (n === 'Ban Lãnh Đạo') return t('user.home.leadership')
-      if (n === 'Sơ Đồ Tổ Chức') return t('user.home.orgChart')
-      if (n === 'Đối Tác') return t('user.home.partners')
-      
-      return n
-    }
-
     if (normalizedPath !== '/products') {
       return { 
         ...item, 
@@ -241,16 +247,19 @@ const siteName = computed(() => {
   if (locale.value === 'vi') return readSetting(['site_name', 'company_name'], fallback)
   return fallback
 })
+
 const brandPrimary = computed(() => {
   const fallback = t('user.home.brandPrimary')
   if (locale.value === 'vi') return readSetting(['site_short_name', 'company_short_name', 'brand_name'], fallback)
   return fallback
 })
+
 const brandSecondary = computed(() => {
   const fallback = t('user.home.brandSecondary')
   if (locale.value === 'vi') return readSetting(['site_short_region', 'brand_region', 'country_name'], fallback)
   return fallback
 })
+
 const companyLogoUrl = computed(() => logoImage)
 const headerEmail = computed(() =>
   readSetting(['company_email', 'contact_email', 'email'], HEADER_CONTACT_FALLBACK.email),
@@ -614,7 +623,7 @@ onBeforeUnmount(() => {
                     <div class="user-avatar">
                       <User :size="20" />
                     </div>
-                    <span class="user-name">{{ authStore.user?.full_name || authStore.user?.username || 'User' }}</span>
+                    <span class="user-name">{{ authStore.user?.full_name || authStore.user?.username || (locale === 'vi' ? 'Người dùng' : 'User') }}</span>
                     <ChevronDown :size="16" :class="{ rotated: isUserMenuOpen }" />
                   </button>
 
@@ -1137,6 +1146,84 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
 }
 
+.language-switcher {
+  position: relative;
+  z-index: 2210;
+}
+
+.language-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(214, 176, 116, 0.28);
+  border-radius: 12px;
+  color: var(--header-text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.24s ease;
+
+  &:hover {
+    background: rgba(214, 176, 116, 0.1);
+    border-color: var(--header-accent);
+  }
+
+  svg {
+    color: var(--header-accent);
+    transition: transform 0.26s ease;
+
+    &.rotated {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.language-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  background: linear-gradient(180deg, rgba(13, 24, 48, 0.98), rgba(18, 33, 62, 0.96));
+  border: 1px solid rgba(214, 176, 116, 0.2);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--header-muted);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+
+  &:hover {
+    background: rgba(214, 176, 116, 0.12);
+    color: var(--header-accent-strong);
+  }
+
+  &.is-active {
+    background: rgba(214, 176, 116, 0.18);
+    color: var(--header-accent-strong);
+    cursor: default;
+  }
+}
 
 .mobile-toggle {
   display: none;
@@ -1275,7 +1362,7 @@ onBeforeUnmount(() => {
   margin-top: 0;
 
   &.is-open {
-    max-height: 500px;
+    max-height: 1500px;
     margin-top: 12px;
   }
 
@@ -1312,6 +1399,36 @@ onBeforeUnmount(() => {
   gap: 10px;
 }
 
+.mobile-language {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mobile-language__button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(214, 176, 116, 0.14);
+  border-radius: 10px;
+  color: var(--header-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.is-active {
+    background: rgba(214, 176, 116, 0.18);
+    border-color: var(--header-accent);
+    color: var(--header-accent-strong);
+  }
+}
+
 .mobile-contact-link {
   display: flex;
   align-items: flex-start;
@@ -1338,6 +1455,16 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
+.mobile-contact-link--auth {
+  margin-top: 6px;
+  padding: 12px;
+  background: rgba(214, 176, 116, 0.1);
+  border: 1px solid rgba(214, 176, 116, 0.2);
+  border-radius: 12px;
+  color: var(--header-accent-strong);
+  justify-content: center;
+  font-weight: 600;
+}
 
 .search-overlay {
   position: fixed;
@@ -1508,6 +1635,16 @@ onBeforeUnmount(() => {
 
   .mobile-toggle {
     display: inline-flex;
+  }
+
+  .user-auth-actions {
+    border-left: none;
+    margin-left: 0;
+    padding-left: 0;
+  }
+  
+  .user-name {
+    display: none;
   }
 }
 
@@ -1714,14 +1851,14 @@ onBeforeUnmount(() => {
 .user-menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
   color: #f5efe2;
   text-decoration: none;
   font-size: 14px;
-  border-radius: 10px;
   transition: all 0.2s ease;
-  background: none;
+  background: transparent;
   border: none;
   width: 100%;
   text-align: left;
@@ -1743,17 +1880,5 @@ onBeforeUnmount(() => {
 
 .rotate-180 {
   transform: rotate(180deg);
-}
-
-@media (max-width: 1023px) {
-  .user-auth-actions {
-    border-left: none;
-    margin-left: 0;
-    padding-left: 0;
-  }
-  
-  .user-name {
-    display: none;
-  }
 }
 </style>

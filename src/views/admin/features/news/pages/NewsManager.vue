@@ -4,16 +4,16 @@
       <!-- 1. Unified Header -->
       <header class="intro-card">
         <div class="intro-copy">
-          <p class="intro-eyebrow">Nội dung & Truyền thông</p>
-          <h2>Quản lý tin tức</h2>
-          <p>Tạo và biên tập các bài viết tin tức, thông cáo báo chí của doanh nghiệp.</p>
+          <p class="intro-eyebrow">{{ $t('admin.news.eyebrow') }}</p>
+          <h2>{{ $t('admin.news.title') }}</h2>
+          <p>{{ $t('admin.news.description') }}</p>
         </div>
         <div class="intro-actions">
           <button class="btn btn-ghost btn-sm" @click="showCrawlModal = true">
-            <Download :size="14" /> Crawl URL
+            <Download :size="14" /> {{ $t('admin.news.actions.crawl') }}
           </button>
           <button type="button" class="btn btn-primary btn-sm" @click="goToCreate">
-            <Plus :size="14" /> Tạo bài viết
+            <Plus :size="14" /> {{ $t('admin.news.actions.create') }}
           </button>
         </div>
       </header>
@@ -24,25 +24,25 @@
           <table class="ultimate-table">
             <thead>
               <tr>
-                <th style="width: 80px;">Ảnh</th>
-                <th>Tiêu đề bài viết</th>
-                <th style="width: 140px;">Trạng thái</th>
-                <th style="width: 160px;">Ngày xuất bản</th>
-                <th style="width: 120px;">Thao tác</th>
+                <th style="width: 80px;">{{ $t('admin.news.table.image') }}</th>
+                <th>{{ $t('admin.news.table.title') }}</th>
+                <th style="width: 140px;">{{ $t('admin.news.table.status') }}</th>
+                <th style="width: 160px;">{{ $t('admin.news.table.published_at') }}</th>
+                <th style="width: 120px;">{{ $t('admin.news.table.actions') }}</th>
               </tr>
             </thead>
             <tbody>
               <!-- Loading -->
               <tr v-if="loading">
                 <td colspan="5" class="text-center py-12">
-                  <span class="text-sub">Đang tải dữ liệu...</span>
+                  <span class="text-sub">{{ $t('admin.news.table.loading') }}</span>
                 </td>
               </tr>
 
               <!-- Empty -->
               <tr v-else-if="posts.length === 0">
                 <td colspan="5" class="text-center py-12 text-sub">
-                  Chưa có bài viết nào. Hãy tạo bài viết đầu tiên.
+                  {{ $t('admin.news.table.empty') }}
                 </td>
               </tr>
 
@@ -60,12 +60,12 @@
                 <td>
                   <div class="table-cell-title">
                     <span>{{ post.title }}</span>
-                    <p class="table-cell-subtext">{{ post.summary || 'Chưa có mô tả ngắn' }}</p>
+                    <p class="table-cell-subtext">{{ post.summary || $t('admin.news.table.no_summary') }}</p>
                   </div>
                 </td>
                 <td>
                   <span :class="['badge', post.status === 'published' ? 'badge-active' : 'badge-inactive']">
-                    {{ post.status === 'published' ? 'Đã đăng' : 'Bản nháp' }}
+                    {{ post.status === 'published' ? $t('admin.news.table.status_published') : $t('admin.news.table.status_draft') }}
                   </span>
                 </td>
                 <td><span class="table-cell-subtext">{{ formatDate(post.published_at || post.created_at) }}</span></td>
@@ -73,13 +73,17 @@
                   <button
                     type="button"
                     class="btn btn-secondary-inline"
-                    title="Sửa bài viết"
+                    :title="$t('admin.news.actions.edit')"
                     @click="goToEdit(post.id)"
                   >
-                    Sửa
+                    {{ $t('admin.news.actions.edit') }}
                   </button>
-                  <button class="btn btn-danger-inline" title="Xóa bài viết" @click="deleteTarget = post">
-                    Xóa
+                  <button 
+                    class="btn btn-danger-inline" 
+                    :title="$t('admin.news.actions.delete')" 
+                    @click="deleteTarget = post"
+                  >
+                    {{ $t('admin.news.actions.delete') }}
                   </button>
                 </td>
               </tr>
@@ -94,11 +98,11 @@
       <div v-if="showCrawlModal" class="modal-overlay" @click.self="showCrawlModal = false">
         <div class="modal-card">
           <div class="modal-header">
-            <h2>Crawl bài viết từ URL</h2>
+            <h2>{{ $t('admin.news.modals.crawl_title') }}</h2>
             <button class="close-btn" @click="showCrawlModal = false"><X :size="18" /></button>
           </div>
           <div class="modal-body">
-            <p class="text-sub mb-3">Nhập URL bài viết bạn muốn crawl vào trình biên tập:</p>
+            <p class="text-sub mb-3">{{ $t('admin.news.modals.crawl_desc') }}</p>
             <input
               v-model="crawlUrl"
               type="url"
@@ -108,9 +112,9 @@
             />
           </div>
           <div class="modal-footer">
-            <button class="btn btn-ghost btn-sm" @click="showCrawlModal = false">Hủy</button>
+            <button class="btn btn-ghost btn-sm" @click="showCrawlModal = false">{{ $t('admin.news.actions.cancel') }}</button>
             <button class="btn btn-primary btn-sm" :disabled="!crawlUrl.trim()" @click="submitCrawl">
-              Bắt đầu crawl
+              {{ $t('admin.news.actions.start_crawl') }}
             </button>
           </div>
         </div>
@@ -125,12 +129,12 @@
             <div class="modal-icon modal-icon--danger">
               <AlertTriangle :size="24" />
             </div>
-            <h3>Xóa bài viết</h3>
-            <p class="text-sub">Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.</p>
+            <h3>{{ $t('admin.news.modals.delete_title') }}</h3>
+            <p class="text-sub">{{ $t('admin.news.modals.delete_confirm') }}</p>
           </div>
           <div class="modal-footer modal-footer--center">
-            <button class="btn btn-secondary btn-sm" style="flex: 1;" @click="deleteTarget = null">Hủy</button>
-            <button class="btn btn-danger btn-sm" style="flex: 1;" @click="executeDelete">Xác nhận xóa</button>
+            <button class="btn btn-secondary btn-sm" style="flex: 1;" @click="deleteTarget = null">{{ $t('admin.news.actions.cancel') }}</button>
+            <button class="btn btn-danger btn-sm" style="flex: 1;" @click="executeDelete">{{ $t('admin.news.actions.confirm_delete') }}</button>
           </div>
         </div>
       </div>
@@ -141,6 +145,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   Plus, Edit, Trash2, Download, X,
   AlertTriangle, Loader2
@@ -158,6 +163,7 @@ const props = defineProps({
   },
 })
 
+const { t } = useI18n()
 const router = useRouter()
 const token = localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || ''
 
@@ -207,7 +213,7 @@ async function executeDelete() {
     deleteTarget.value = null
     await fetchPosts()
   } catch (err) {
-    alert('Không thể xóa bài viết: ' + err.message)
+    alert(t('admin.common.error_occurred') + ': ' + err.message)
   }
 }
 

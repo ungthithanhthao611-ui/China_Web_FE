@@ -23,49 +23,49 @@ const fallbackFooterGroups = computed(() => [
     title: t('user.home.about'),
     titlePath: '/about/company-introduction',
     links: [
-      { name: 'Tổng Quan Công Ty', path: '/about/company-introduction' },
-      { name: 'Lịch Sử Phát Triển', path: '/about/development-course' },
-      { name: 'Tầm Nhìn & Sứ Mệnh', path: '/about/corporate-culture' },
-      { name: 'Giá Trị Cốt Lõi', path: '/about/corporate-culture' },
-      { name: 'Ban Lãnh Đạo', path: '/about/leadership-care' },
-      { name: 'Sơ Đồ Tổ Chức', path: '/about/organization-chart' },
+      { name: t('user.home.overview'), path: '/about/company-introduction' },
+      { name: t('user.home.history'), path: '/about/development-course' },
+      { name: t('user.home.visionMission'), path: '/about/corporate-culture' },
+      { name: t('user.home.coreValues'), path: '/about/corporate-culture' },
+      { name: t('user.home.leadership'), path: '/about/leadership-care' },
+      { name: t('user.home.orgChart'), path: '/about/organization-chart' },
     ],
   },
   {
     title: t('user.home.capability'),
     titlePath: '/honors',
     links: [
-      { name: 'Hình Ảnh Nhà Máy', path: '/honors' },
-      { name: 'Công Nghệ Sản Xuất', path: '/honors' },
-      { name: 'Chứng Nhận ISO & CE', path: '/honors' },
+      { name: t('user.home.factoryImages'), path: '/honors' },
+      { name: t('user.home.productionTech'), path: '/honors' },
+      { name: t('user.home.certifications'), path: '/honors' },
     ],
   },
   {
     title: t('user.home.products'),
     titlePath: '/products',
     links: [
-      { name: 'Danh Mục Sản Phẩm', path: '/products' },
+      { name: t('user.home.productCatalog'), path: '/products' },
     ],
   },
   {
     title: t('user.home.projects'),
-    titlePath: '/du-an',
+    titlePath: '/projects',
     links: [
-      { name: 'Dự Án Tiêu Biểu', path: '/du-an' },
+      { name: t('user.home.featuredProjects'), path: '/projects' },
     ],
   },
   {
     title: t('user.home.news'),
     titlePath: '/news',
     links: [
-      { name: 'Tin Tức Mới Nhất', path: '/news' },
+      { name: t('user.home.latestNews'), path: '/news' },
     ],
   },
   {
     title: t('user.home.contactTitle'),
     titlePath: '/contact',
     links: [
-      { name: 'Liên Hệ Chúng Tôi', path: '/contact' },
+      { name: t('user.home.contactUs'), path: '/contact' },
     ],
   },
 ])

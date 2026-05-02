@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   AlertCircle,
   ArrowLeft,
@@ -53,6 +54,7 @@ import {
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const VALID_TABS = ['overview', 'edit', 'security', 'orders']
 const ORDER_PAGE_SIZE = 4
@@ -87,12 +89,12 @@ const passwordForm = ref({
   confirm_password: '',
 })
 
-const tabs = [
-  { id: 'overview', label: 'Tổng quan', icon: UserCircle2 },
-  { id: 'edit', label: 'Chỉnh sửa thông tin', icon: Save },
-  { id: 'security', label: 'Đổi mật khẩu', icon: KeyRound },
-  { id: 'orders', label: 'Đơn hàng / mua hàng', icon: ShoppingBag },
-]
+const tabs = computed(() => [
+  { id: 'overview', label: t('user.profile.overview'), icon: UserCircle2 },
+  { id: 'edit', label: t('user.profile.editInfo'), icon: Save },
+  { id: 'security', label: t('user.profile.security'), icon: KeyRound },
+  { id: 'orders', label: t('user.profile.orders'), icon: ShoppingBag },
+])
 
 const supportItems = [
   {
@@ -233,7 +235,7 @@ const getOrderPreviewPricing = (order) => {
   const displayPrice = getOrderItemDisplayPrice(previewItem)
 
   return {
-    productName: cleanText(previewItem?.product_name) || 'Sản phẩm trong đơn',
+    productName: cleanText(previewItem?.product_name) || t('user.profile.productInOrder'),
     extraItems: Math.max(0, items.length - 1),
     finalPriceLabel: formatCurrencyVnd(displayPrice.finalPrice),
     originalPriceLabel: displayPrice.hasSale ? formatCurrencyVnd(displayPrice.originalPrice) : '',
@@ -285,7 +287,7 @@ const orderPages = computed(() =>
 
 const orderCountLabel = computed(() => {
   const total = Number(orderHistoryTotal.value || normalizedOrders.value.length || 0)
-  return `${total} đơn hàng`
+  return t('user.profile.orderCountLabel', { count: total })
 })
 
 watch(
@@ -483,18 +485,18 @@ onMounted(loadProfile)
     <section class="profile-hero">
       <div class="profile-hero__inner">
         <nav class="profile-breadcrumb" aria-label="Breadcrumb">
-          <RouterLink to="/">Trang chủ</RouterLink>
+          <RouterLink to="/">{{ t('user.home.home') }}</RouterLink>
           <span>/</span>
-          <strong>Tài khoản</strong>
+          <strong>{{ t('user.profile.myAccount') }}</strong>
         </nav>
-        <h1>Tài khoản của tôi</h1>
+        <h1>{{ t('user.profile.myAccount') }}</h1>
       </div>
     </section>
 
     <section class="profile-shell">
       <div v-if="loading" class="profile-state">
         <LoaderCircle class="profile-spinner" :size="30" />
-        <p>Đang tải thông tin tài khoản...</p>
+        <p>{{ t('user.profile.loadingAccount') }}</p>
       </div>
 
       <div v-else-if="pageErrorMessage && !hasProfile" class="profile-state profile-state--error">
@@ -530,7 +532,7 @@ onMounted(loadProfile)
 
             <label class="profile-avatar-action" for="profile-avatar-input">
               <Upload :size="15" />
-              <span>{{ avatarUploading ? 'Đang tải...' : 'Cập nhật ảnh' }}</span>
+              <span>{{ avatarUploading ? t('user.profile.uploading') : t('user.profile.updateAvatar') }}</span>
             </label>
             <input
               id="profile-avatar-input"
@@ -572,18 +574,18 @@ onMounted(loadProfile)
           <section v-if="activeTab === 'overview'" class="profile-card profile-card--content">
             <div class="profile-section-head">
               <div>
-                <p class="profile-section-head__eyebrow">Thông tin tài khoản</p>
-                <h3>Tổng quan</h3>
+                <p class="profile-section-head__eyebrow">{{ t('user.profile.accountInfo') }}</p>
+                <h3>{{ t('user.profile.overview') }}</h3>
               </div>
               <button type="button" class="profile-outline-btn" @click="loadProfile">
-                Làm mới
+                {{ t('user.profile.restore') }}
               </button>
             </div>
 
             <div class="profile-panels-grid">
               <section class="profile-panel">
                 <div class="profile-panel__header">
-                  <h4>Chi tiết tài khoản</h4>
+                  <h4>{{ t('user.profile.accountDetails') }}</h4>
                 </div>
 
                 <div class="profile-details">
@@ -601,8 +603,8 @@ onMounted(loadProfile)
 
               <section class="profile-panel">
                 <div class="profile-panel__header">
-                  <h4>Lịch sử đăng nhập</h4>
-                  <span class="profile-pill">{{ loginHistoryCount }} bản ghi</span>
+                  <h4>{{ t('user.profile.loginHistory') }}</h4>
+                  <span class="profile-pill">{{ loginHistoryCount }} {{ t('user.profile.records') }}</span>
                 </div>
 
                 <div v-if="loginHistory.length" class="profile-timeline">
@@ -632,8 +634,8 @@ onMounted(loadProfile)
           <section v-else-if="activeTab === 'edit'" class="profile-card profile-card--content">
             <div class="profile-section-head">
               <div>
-                <p class="profile-section-head__eyebrow">Chỉnh sửa hồ sơ</p>
-                <h3>Chỉnh sửa thông tin</h3>
+                <p class="profile-section-head__eyebrow">{{ t('user.profile.editProfileEyebrow') }}</p>
+                <h3>{{ t('user.profile.editInfo') }}</h3>
               </div>
             </div>
 
@@ -665,12 +667,12 @@ onMounted(loadProfile)
 
               <div class="profile-form__actions">
                 <button type="button" class="profile-outline-btn" @click="fillProfileForm">
-                  Khôi phục
+                  {{ t('user.profile.restore') }}
                 </button>
                 <button type="submit" class="profile-dark-btn" :disabled="profileSaving">
                   <LoaderCircle v-if="profileSaving" :size="16" class="profile-spinner" />
                   <Save v-else :size="16" />
-                  <span>{{ profileSaving ? 'Đang lưu...' : 'Lưu thay đổi' }}</span>
+                  <span>{{ profileSaving ? t('user.profile.saving') : t('user.profile.saveChanges') }}</span>
                 </button>
               </div>
             </form>
@@ -679,40 +681,40 @@ onMounted(loadProfile)
           <section v-else-if="activeTab === 'security'" class="profile-card profile-card--content">
             <div class="profile-section-head">
               <div>
-                <p class="profile-section-head__eyebrow">Bảo mật đăng nhập</p>
-                <h3>Đổi mật khẩu</h3>
+                <p class="profile-section-head__eyebrow">{{ t('user.profile.securityEyebrow') }}</p>
+                <h3>{{ t('user.profile.security') }}</h3>
               </div>
             </div>
 
             <form class="profile-form" @submit.prevent="handlePasswordSubmit">
               <label class="profile-field profile-field--full">
-                <span>Mật khẩu hiện tại</span>
+                <span>{{ t('user.profile.currentPassword') }}</span>
                 <input v-model="passwordForm.current_password" type="password" required />
               </label>
 
               <label class="profile-field">
-                <span>Mật khẩu mới</span>
+                <span>{{ t('user.profile.newPassword') }}</span>
                 <input v-model="passwordForm.new_password" type="password" required />
               </label>
 
               <label class="profile-field">
-                <span>Nhập lại mật khẩu mới</span>
+                <span>{{ t('user.profile.confirmPassword') }}</span>
                 <input v-model="passwordForm.confirm_password" type="password" required />
               </label>
 
               <div class="profile-security-note">
                 <ShieldCheck :size="18" />
-                <span>Sử dụng mật khẩu mạnh, tối thiểu 6 ký tự và khác mật khẩu hiện tại.</span>
+                <span>{{ t('user.profile.securityNote') }}</span>
               </div>
 
               <div class="profile-form__actions">
                 <button type="button" class="profile-outline-btn" @click="resetPasswordForm">
-                  Xóa nhanh
+                  {{ t('user.profile.quickClear') }}
                 </button>
                 <button type="submit" class="profile-dark-btn" :disabled="passwordSaving">
                   <LoaderCircle v-if="passwordSaving" :size="16" class="profile-spinner" />
                   <KeyRound v-else :size="16" />
-                  <span>{{ passwordSaving ? 'Đang cập nhật...' : 'Đổi mật khẩu' }}</span>
+                  <span>{{ passwordSaving ? t('user.profile.updating') : t('user.profile.updatePassword') }}</span>
                 </button>
               </div>
             </form>
@@ -722,8 +724,8 @@ onMounted(loadProfile)
             <section class="profile-card profile-card--content">
               <div class="profile-section-head profile-section-head--orders">
                 <div>
-                  <p class="profile-section-head__eyebrow">LỊCH SỬ GIAO DỊCH</p>
-                  <h3>Đơn hàng / lịch sử mua hàng</h3>
+                  <p class="profile-section-head__eyebrow">{{ t('user.profile.transactionHistoryEyebrow') }}</p>
+                  <h3>{{ t('user.profile.orders') }}</h3>
                 </div>
 
                 <span class="profile-orders-badge">
@@ -734,7 +736,7 @@ onMounted(loadProfile)
 
               <div v-if="ordersLoading" class="profile-orders-state">
                 <LoaderCircle class="profile-spinner" :size="26" />
-                <p>Đang tải lịch sử đơn hàng...</p>
+                <p>{{ t('user.profile.loadingOrders') }}</p>
               </div>
 
               <div v-else-if="orderErrorMessage" class="profile-orders-state profile-orders-state--error">
@@ -747,11 +749,11 @@ onMounted(loadProfile)
 
               <div v-else-if="normalizedOrders.length" class="profile-orders-board">
                 <div class="profile-orders-table-head">
-                  <span>MÃ ĐƠN HÀNG</span>
-                  <span>NGƯỜI NHẬN</span>
-                  <span>TỔNG THANH TOÁN</span>
-                  <span>TRẠNG THÁI</span>
-                  <span>THAO TÁC</span>
+                  <span>{{ t('user.profile.orderCode') }}</span>
+                  <span>{{ t('user.profile.recipient') }}</span>
+                  <span>{{ t('user.profile.totalPayment') }}</span>
+                  <span>{{ t('user.profile.status') }}</span>
+                  <span>{{ t('user.profile.action') }}</span>
                 </div>
 
                 <article
@@ -760,8 +762,8 @@ onMounted(loadProfile)
                   class="profile-order-row"
                 >
                   <div class="profile-order-cell profile-order-cell--code">
-                    <span class="profile-order-cell__label">Mã đơn hàng</span>
-                    <strong>{{ cleanText(item.code) || `#${item.id}` }}</strong>
+                    <span class="profile-order-cell__label">{{ t('user.profile.orderCode') }}</span>
+                    <span>{{ cleanText(item.code) || `#${item.id}` }}</span>
                     <small>
                       <CalendarDays :size="14" />
                       {{ item.placedAtLabel }}
@@ -769,8 +771,8 @@ onMounted(loadProfile)
                   </div>
 
                   <div class="profile-order-cell">
-                    <span class="profile-order-cell__label">Người nhận</span>
-                    <strong>{{ item.recipientName }}</strong>
+                    <span class="profile-order-cell__label">{{ t('user.profile.recipient') }}</span>
+                    <span>{{ item.recipientName }}</span>
                     <small>
                       <Package :size="14" />
                       {{ item.itemCountLabel }}
@@ -778,25 +780,25 @@ onMounted(loadProfile)
                   </div>
 
                   <div class="profile-order-cell">
-                    <span class="profile-order-cell__label">Tổng thanh toán</span>
-                    <strong>{{ item.totalLabel }}</strong>
+                    <span class="profile-order-cell__label">{{ t('user.profile.totalPayment') }}</span>
+                    <span>{{ item.totalLabel }}</span>
                     <small class="profile-order-cell__payment">
                       {{ item.paymentLabel }}
                     </small>
                     <div v-if="item.previewPricing.hasPrice" class="profile-order-price-preview">
-                      <span class="profile-order-price-preview__label">Giá sản phẩm</span>
+                      <span class="profile-order-price-preview__label">{{ t('user.profile.productPrice') }}</span>
                       <p class="profile-order-price-preview__name">
                         {{ item.previewPricing.productName }}
                         <span v-if="item.previewPricing.extraItems > 0">
-                          + {{ item.previewPricing.extraItems }} sản phẩm khác
+                          {{ t('user.profile.extraItems', { count: item.previewPricing.extraItems }) }}
                         </span>
                       </p>
                       <div
                         v-if="item.previewPricing.hasSale"
                         class="profile-order-price-preview__badges"
                       >
-                        <span class="profile-order-price-preview__badge profile-order-price-preview__badge--sale">Giá khuyến mãi</span>
-                        <span class="profile-order-price-preview__badge profile-order-price-preview__badge--original">Giá gốc</span>
+                        <span class="profile-order-price-preview__badge profile-order-price-preview__badge--sale">{{ t('user.profile.salePrice') }}</span>
+                        <span class="profile-order-price-preview__badge profile-order-price-preview__badge--original">{{ t('user.profile.originalPrice') }}</span>
                       </div>
                       <strong
                         class="profile-order-price-preview__current"
@@ -811,7 +813,7 @@ onMounted(loadProfile)
                   </div>
 
                   <div class="profile-order-cell profile-order-cell--status">
-                    <span class="profile-order-cell__label">Trạng thái</span>
+                    <span class="profile-order-cell__label">{{ t('user.profile.status') }}</span>
                     <div class="profile-order-status-stack">
                       <span
                         class="profile-order-status-pill"
@@ -835,14 +837,14 @@ onMounted(loadProfile)
                   </div>
 
                   <div class="profile-order-cell profile-order-cell--action">
-                    <span class="profile-order-cell__label">Thao tác</span>
+                    <span class="profile-order-cell__label">{{ t('user.profile.action') }}</span>
                     <button
                       type="button"
                       class="profile-dark-btn profile-dark-btn--order"
                       @click="goToOrderDetail(item.id)"
                     >
                       <Eye :size="16" />
-                      <span>Xem chi tiết</span>
+                      <span>{{ t('user.profile.viewDetails') }}</span>
                     </button>
                   </div>
                 </article>
@@ -881,10 +883,10 @@ onMounted(loadProfile)
 
               <div v-else class="profile-orders-state">
                 <Package :size="28" />
-                <h4>Bạn chưa có đơn hàng nào</h4>
-                <p>Hãy mua sắm để tạo đơn hàng đầu tiên.</p>
+                <h4>{{ t('user.profile.noOrders') }}</h4>
+                <p>{{ t('user.profile.shopNowHint') }}</p>
                 <RouterLink class="profile-dark-btn profile-dark-btn--link" to="/products">
-                  Tiếp tục mua sắm
+                  {{ t('user.profile.continueShopping') }}
                 </RouterLink>
               </div>
             </section>
@@ -1371,9 +1373,10 @@ onMounted(loadProfile)
   gap: 8px;
   padding: 0 18px;
   border-radius: 10px;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .profile-dark-btn {
@@ -1471,8 +1474,8 @@ onMounted(loadProfile)
 
 .profile-orders-table-head span {
   color: #64748b;
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1489,12 +1492,13 @@ onMounted(loadProfile)
   min-width: 0;
 }
 
-.profile-order-cell strong {
+.profile-order-cell > span:not(.profile-order-cell__label) {
   display: block;
   color: #0f172a;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.5;
   word-break: break-word;
+  font-weight: 500;
 }
 
 .profile-order-cell small {
@@ -1527,7 +1531,7 @@ onMounted(loadProfile)
 .profile-order-price-preview__label {
   color: #64748b;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -1558,7 +1562,8 @@ onMounted(loadProfile)
   padding: 3px 9px;
   border-radius: 999px;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .profile-order-price-preview__badge--sale {
@@ -1574,8 +1579,9 @@ onMounted(loadProfile)
 .profile-order-price-preview__current {
   display: block;
   color: #0f172a;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.4;
+  font-weight: 600;
 }
 
 .profile-order-price-preview__current--sale {

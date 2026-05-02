@@ -30,6 +30,7 @@ export function createEntityManagerFormHelpers({
   isVideosEntity,
   clampBannerFocus,
   isAllowedVideoUrl,
+  t,
 }) {
   const recordDisplayName = (record = null) => {
     const source = record || form;
@@ -50,20 +51,33 @@ export function createEntityManagerFormHelpers({
   };
 
   const entityLabelForAction = (record = null) => {
-    const configLabel = String(config.value?.label || "Record").trim();
-    const singular = configLabel.endsWith("s")
-      ? configLabel.slice(0, -1)
-      : configLabel;
-    return recordDisplayName(record) || singular || "Record";
+    const configLabel = String(config.value?.label || "admin.common.all").trim();
+    const label = t(configLabel);
+    const singular = label.endsWith("s")
+      ? label.slice(0, -1)
+      : label;
+    return recordDisplayName(record) || singular || t('admin.common.all');
   };
 
-  const fieldLabel = (field) =>
-    config.value?.fieldLabels?.[field] ||
-    field.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  const fieldLabel = (field) => {
+    const customLabel = config.value?.fieldLabels?.[field];
+    if (customLabel) return t(customLabel);
+    return field.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  };
 
-  const fieldPlaceholder = (field) => config.value?.placeholders?.[field] || "";
+  const fieldPlaceholder = (field) => {
+    const key = config.value?.placeholders?.[field];
+    if (!key) return "";
+    const translated = t(key);
+    return translated !== key ? translated : key;
+  };
 
-  const fieldHelpText = (field) => config.value?.helpText?.[field] || "";
+  const fieldHelpText = (field) => {
+    const key = config.value?.helpText?.[field];
+    if (!key) return "";
+    const translated = t(key);
+    return translated !== key ? translated : key;
+  };
 
   const slugify = (value) =>
     String(value || "")
@@ -179,8 +193,8 @@ export function createEntityManagerFormHelpers({
   const entityMediaTargetTypeLabel = () => {
     if (!isEntityMediaEntity.value) return "";
     return String(form.entity_type || "").trim() === "project"
-      ? "Đích dự án"
-      : "Đích danh mục dự án";
+      ? t('admin.common.helpers.project_target')
+      : t('admin.common.helpers.category_target');
   };
 
   const selectedRelationSummary = (field) => {
@@ -191,7 +205,7 @@ export function createEntityManagerFormHelpers({
       return `${entityMediaTargetTypeLabel()}: ${label}`;
     }
 
-    return `Đã chọn: ${label}`;
+    return t('admin.common.helpers.selected', { label });
   };
 
   const relationPreviewPath = (field) => {
@@ -232,15 +246,15 @@ export function createEntityManagerFormHelpers({
 
   const relationPreviewLabel = (field) => {
     if (field === "entity_id" && isEntityMediaEntity.value) {
-      return "Xem trang đích đã chọn";
+      return t('admin.common.helpers.view_target');
     }
     if (props.entityKey === "project_category_items" && field === "category_id") {
-      return "Xem trước chuyên mục";
+      return t('admin.common.helpers.view_category');
     }
     if (props.entityKey === "project_category_items" && field === "project_id") {
-      return "Xem chi tiết dự án";
+      return t('admin.common.helpers.view_project');
     }
-    return "Mở xem trước";
+    return t('admin.common.helpers.open_preview');
   };
 
   const mediaUploadAccept = () =>
@@ -354,7 +368,10 @@ export function createEntityManagerFormHelpers({
   const selectOptions = (field) => {
     const configuredOptions = configSelectOptions(field);
     if (configuredOptions) {
-      return configuredOptions;
+      return configuredOptions.map(opt => {
+        if (typeof opt === 'string') return { value: opt, label: t(opt) };
+        return { ...opt, label: t(opt.label || opt.value) };
+      });
     }
 
     const options = {
@@ -364,26 +381,41 @@ export function createEntityManagerFormHelpers({
       branch_type: ["subsidiary", "branch", "office"],
       contact_type: ["headquarters", "branch", "sales", "support"],
     };
-    return options[field] || [];
+
+    const source = options[field] || [];
+    return source.map(opt => {
+      if (typeof opt === 'string') {
+        const key = `admin.common.${opt}`;
+        const translated = t(key);
+        return { value: opt, label: translated !== key ? translated : t(opt) };
+      }
+      return { ...opt, label: t(opt.label || opt.value) };
+    });
   };
 
   const formatCell = (value, field = "") => {
     if (value === null || value === undefined || value === "") return "-";
 
+    if (field === 'status' || field === 'payment_status' || field === 'payment_method' || field === 'role') {
+      const key = `admin.entities.${props.entityKey}.${field}_options.${value}`;
+      const translated = t(key);
+      return translated !== key ? translated : value;
+    }
+
     if (["original_price", "sale_price", "price", "effective_price", "unit_price", "line_total", "subtotal_amount", "total_amount"].includes(field)) {
       const amount = Number(value);
-      if (!Number.isFinite(amount) || amount <= 0) return "Liên hệ báo giá";
+      if (!Number.isFinite(amount) || amount <= 0) return t('admin.common.no_config'); // Or a new key like 'contact_for_price'
       return `${new Intl.NumberFormat("vi-VN").format(amount)}đ`;
     }
 
     if (field === "stock_quantity") {
       const quantity = Number(value || 0);
-      if (!Number.isFinite(quantity) || quantity <= 0) return "Hết hàng";
-      if (quantity <= 5) return `${quantity} (Sắp hết)`;
+      if (!Number.isFinite(quantity) || quantity <= 0) return t('admin.common.out_of_stock');
+      if (quantity <= 5) return `${quantity} (${t('admin.common.low_stock')})`;
       return `${quantity}`;
     }
 
-    if (typeof value === "boolean") return value ? "Bật/Phát" : "Tắt/Ẩn";
+    if (typeof value === "boolean") return value ? t('admin.common.active') : t('admin.common.inactive');
     if (typeof value === "string" && value.length > 80) {
       return `${value.slice(0, 80)}...`;
     }
@@ -618,24 +650,20 @@ export function createEntityManagerFormHelpers({
         form[field] === undefined ||
         String(form[field]).trim() === ""
       ) {
-        errors.push(`Trường "${fieldLabel(field)}" là bắt buộc.`);
+        errors.push(t('admin.common.validation.required', { field: fieldLabel(field) }));
       }
     });
 
     if (form.slug && !SLUG_PATTERN.test(String(form.slug))) {
-      errors.push(
-        "Slug (đường dẫn) phải là chữ thường, chỉ chứa số, chữ cái không dấu hoặc dấu gạch ngang, không chứa dấu cách.",
-      );
+      errors.push(t('admin.common.validation.invalid_slug'));
     }
 
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(form.email))) {
-      errors.push("Định dạng email không hợp lệ.");
+      errors.push(t('admin.common.validation.invalid_email'));
     }
 
     if (isVideosEntity.value && form.video_url && !isAllowedVideoUrl(form.video_url)) {
-      errors.push(
-        "URL video phải là liên kết trực tiếp (http/https), hoặc link YouTube/Vimeo hợp lệ.",
-      );
+      errors.push(t('admin.common.validation.invalid_video_url'));
     }
 
     if (props.entityKey === "contacts") {
@@ -643,32 +671,31 @@ export function createEntityManagerFormHelpers({
       const longitude = parseCoordinateValue(form.longitude);
 
       if (latitude === null) {
-        errors.push("Vĩ độ (Latitude) phải là một con số.");
+        errors.push(t('admin.common.validation.invalid_lat'));
       } else if (latitude < -90 || latitude > 90) {
-        errors.push("Vĩ độ phải nằm trong khoảng từ -90 đến 90.");
+        errors.push(t('admin.common.validation.lat_range'));
       }
-
       if (longitude === null) {
-        errors.push("Kinh độ (Longitude) phải là một con số.");
+        errors.push(t('admin.common.validation.invalid_lng'));
       } else if (longitude < -180 || longitude > 180) {
-        errors.push("Kinh độ phải nằm trong khoảng từ -180 đến 180.");
+        errors.push(t('admin.common.validation.lng_range'));
       }
     }
 
     formFields.value.forEach((field) => {
-      if (
-        inputType(field) === "number" &&
-        !isUnsafeIntegerField(field) &&
-        form[field] !== "" &&
-        form[field] !== null &&
-        !Number.isFinite(Number(form[field]))
-      ) {
-        errors.push(`Trường "${fieldLabel(field)}" phải là một con số.`);
-      }
+        if (
+          inputType(field) === "number" &&
+          !isUnsafeIntegerField(field) &&
+          form[field] !== "" &&
+          form[field] !== null &&
+          !Number.isFinite(Number(form[field]))
+        ) {
+          errors.push(t('admin.common.validation.invalid_number', { field: fieldLabel(field) }));
+        }
     });
 
     if (metadataValue === "__invalid_json__") {
-      errors.push("Dữ liệu Metadata JSON không đúng định dạng JSON.");
+      errors.push(t('admin.common.validation.invalid_json'));
     }
 
     validateContentBlockItemRules(errors, metadataValue);

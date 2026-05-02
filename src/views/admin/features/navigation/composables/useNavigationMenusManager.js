@@ -1,4 +1,5 @@
 import { computed, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import {
   createNavigationMenu,
@@ -17,6 +18,7 @@ import {
 import { publishNavigationMenusUpdated } from '@/shared/utils/navigationSync'
 
 export function useNavigationMenusManager(props, emit, options = {}) {
+  const { t } = useI18n()
   const { hydrateTree, serializeTree, createEmptyNode } = createNavigationTreeHelpers()
 
   const languages = ref([])
@@ -129,7 +131,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
       return Boolean(await options.confirmAction(payload))
     }
 
-    notifyError('Không thể mở hộp thoại xác nhận cho thao tác này.')
+    notifyError(t('admin.common.error'))
     return false
   }
 
@@ -200,7 +202,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
         menuForm.language_id = String(languages.value[0].id)
       }
     } catch (error) {
-      notifyError(error.message || 'Không thể tải danh sách ngôn ngữ.')
+      notifyError(error.message || t('admin.common.error'))
     } finally {
       loadingLanguages.value = false
     }
@@ -229,7 +231,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
         syncMenuTree(selectedMenu.value)
       }
     } catch (error) {
-      notifyError(error.message || 'Không thể tải danh sách menu điều hướng.')
+      notifyError(error.message || t('admin.common.error'))
     } finally {
       loadingNavigation.value = false
     }
@@ -239,7 +241,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     const token = normalizedToken()
     if (!token) {
       emit('menus-count', 0)
-      notifyError('Vui lòng đăng nhập quản trị để tiếp tục.')
+      notifyError(t('admin.common.error'))
       return
     }
 
@@ -266,7 +268,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
       await loadLanguages()
     }
     resetMenuForm()
-    openDrawer('createMenu', 'Thêm menu mới')
+    openDrawer('createMenu', t('admin.navigation.add_menu'))
   }
 
   async function openEditMenuDrawer() {
@@ -281,7 +283,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     menuForm.location = selectedMenu.value.location || ''
     menuForm.language_id = String(selectedMenu.value.language_id || '')
     menuForm.is_active = Boolean(selectedMenu.value.is_active)
-    openDrawer('editMenu', 'Chỉnh sửa menu')
+    openDrawer('editMenu', t('admin.navigation.edit_menu'))
   }
 
   function openCreateRootNodeDrawer() {
@@ -291,7 +293,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     }
     resetNodeForm()
     parentForNewNodeCid.value = ''
-    openDrawer('createNode', 'Thêm mục gốc')
+    openDrawer('createNode', t('admin.navigation.add_root'))
   }
 
   function openCreateChildNodeDrawer(cid) {
@@ -321,13 +323,13 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     nodeForm.page_id = context.node.page_id ?? ''
     nodeForm.anchor = context.node.anchor || ''
     nodeForm.sort_order = context.node.sort_order ?? 0
-    openDrawer('editNode', `Chỉnh sửa mục "${context.node.title}"`)
+    openDrawer('editNode', t('admin.common.edit'))
   }
 
   async function submitDrawer() {
     const token = normalizedToken()
     if (!token) {
-      notifyError('Vui lòng đăng nhập quản trị để tiếp tục.')
+      notifyError(t('admin.common.error'))
       return
     }
 
@@ -352,10 +354,10 @@ export function useNavigationMenusManager(props, emit, options = {}) {
         await loadNavigationMenus()
         publishNavigationMenusUpdated()
         selectedNavMenuId.value = String(created.id)
-        notifySuccess(`Đã tạo menu "${created.name}".`)
+        notifySuccess(t('admin.common.success'))
         closeDrawer()
       } catch (error) {
-        notifyError(error.message || 'Không thể tạo menu mới.')
+        notifyError(error.message || t('admin.common.error'))
       } finally {
         savingNavigation.value = false
       }
@@ -364,7 +366,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
 
     if (drawerMode.value === 'editMenu') {
       if (!selectedMenu.value) {
-        notifyError('Vui lòng chọn menu trước.')
+        notifyError(t('admin.navigation.select_menu_scope'))
         return
       }
       if (!menuForm.name.trim()) {
@@ -396,10 +398,10 @@ export function useNavigationMenusManager(props, emit, options = {}) {
         })
         await loadNavigationMenus()
         publishNavigationMenusUpdated()
-        notifySuccess('Đã cập nhật thông tin menu.')
+        notifySuccess(t('admin.common.success'))
         closeDrawer()
       } catch (error) {
-        notifyError(error.message || 'Không thể cập nhật menu.')
+        notifyError(error.message || t('admin.common.error'))
       } finally {
         savingNavigation.value = false
       }
@@ -466,7 +468,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
       context.node.page_id = toIntOrUndefined(nodeForm.page_id) ?? ''
       context.node.anchor = nodeForm.anchor.trim()
       context.node.sort_order = toIntOrUndefined(nodeForm.sort_order) ?? 0
-      notifySuccess('Đã cập nhật mục điều hướng tạm thời. Hãy bấm "Lưu thay đổi" để ghi vào hệ thống.')
+      notifySuccess(t('admin.common.success'))
       closeDrawer()
     }
   }
@@ -479,7 +481,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     const confirmed = await requestConfirm({
       title: 'Xác nhận xóa mục điều hướng',
       message: `Bạn có chắc chắn muốn xóa mục điều hướng "${nodeTitle}"?`,
-      confirmText: 'Xóa mục',
+      confirmText: t('admin.common.delete'),
       tone: 'danger',
     })
     if (!confirmed) {
@@ -487,13 +489,13 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     }
 
     context.nodes.splice(context.index, 1)
-    notifySuccess('Đã xóa mục điều hướng tạm thời. Hãy bấm "Lưu thay đổi" để ghi vào hệ thống.')
+    notifySuccess(t('admin.common.success'))
   }
 
   async function handleDeleteMenu() {
     const token = normalizedToken()
     if (!token || !selectedMenu.value) {
-      notifyError('Vui lòng chọn menu trước.')
+      notifyError(t('admin.navigation.select_menu_scope'))
       return false
     }
 
@@ -506,10 +508,10 @@ export function useNavigationMenusManager(props, emit, options = {}) {
       clearNotifications()
       await loadNavigationMenus()
       publishNavigationMenusUpdated()
-      notifySuccess(`Đã xóa menu "${deletedMenuLabel}" thành công.`)
+      notifySuccess(t('admin.common.success'))
       return true
     } catch (error) {
-      notifyError(error.message || 'Không thể xóa menu.')
+      notifyError(error.message || t('admin.common.error'))
       return false
     } finally {
       savingNavigation.value = false
@@ -519,7 +521,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
   async function handleSaveTree() {
     const token = normalizedToken()
     if (!token || !selectedMenu.value) {
-      notifyError('Vui lòng chọn menu trước.')
+      notifyError(t('admin.navigation.select_menu_scope'))
       return
     }
 
@@ -528,11 +530,40 @@ export function useNavigationMenusManager(props, emit, options = {}) {
       await replaceNavigationMenuTree(selectedMenu.value.id, token, serializeTree(navTree.value))
       await loadNavigationMenus()
       publishNavigationMenusUpdated()
-      notifySuccess('Đã lưu cây menu điều hướng.')
+      notifySuccess(t('admin.common.success'))
     } catch (error) {
-      notifyError(error.message || 'Không thể lưu cây menu điều hướng.')
+      notifyError(error.message || t('admin.common.error'))
     } finally {
       savingNavigation.value = false
+    }
+  }
+
+  async function handleExportXml() {
+    if (!selectedMenu.value) {
+      notifyError(t('admin.navigation.select_menu_scope'))
+      return
+    }
+
+    try {
+      const treeData = serializeTree(navTree.value)
+      const xmlString = `<?xml version="1.0" encoding="UTF-8"?>
+<navigation_menu name="${selectedMenu.value.name}" location="${selectedMenu.value.location}">
+  ${treeData.map((node) => `  <item title="${node.title}" url="${node.url}" target="${node.target}" sort="${node.sort_order}" />`).join('\n')}
+</navigation_menu>`
+
+      const blob = new Blob([xmlString], { type: 'application/xml' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `menu_${selectedMenu.value.id || 'export'}.xml`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      notifySuccess(t('admin.common.success'))
+    } catch (error) {
+      notifyError(error.message || t('admin.common.error'))
     }
   }
 
@@ -567,7 +598,8 @@ export function useNavigationMenusManager(props, emit, options = {}) {
       if (props.active) {
         await refreshAll()
       }
-    }
+    },
+    { immediate: true }
   )
 
   watch(
@@ -619,5 +651,6 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     removeNode,
     handleDeleteMenu,
     handleSaveTree,
+    handleExportXml,
   }
 }

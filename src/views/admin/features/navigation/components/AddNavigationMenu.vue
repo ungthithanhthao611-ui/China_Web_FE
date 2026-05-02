@@ -10,5 +10,7 @@ const emit = defineEmits(['trigger'])
 </script>
 
 <template>
-  <button type="button" class="btn btn-primary" :disabled="disabled" @click="emit('trigger')">Thêm menu</button>
+  <button type="button" class="btn btn-primary" :disabled="disabled" @click="emit('trigger')">
+    {{ $t('admin.navigation.add_menu') }}
+  </button>
 </template>

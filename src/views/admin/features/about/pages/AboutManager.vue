@@ -1521,13 +1521,13 @@ function recordDisplayName(record, block) {
 function fieldPreviewText(field, draft) {
   if (!draft) return ''
   if (field.key === 'image_id') {
-    return draft.image_id ? 'Đã có ảnh' : 'Chưa có ảnh'
+    return draft.image_id ? t('admin.about.card.has_content') : t('admin.about.card.no_content')
   }
   return normalizeText(draft[field.key])
 }
 
 function fixedEntryStatus(block, entry) {
-  if (!entry.record) return 'Chưa tạo dữ liệu'
+  if (!entry.record) return t('admin.about.card.status_not_created')
   const record = {
     ...entry.record,
     block_key: normalizeText(entry.record?.block_key) || normalizeText(block?.block_key),
@@ -1536,10 +1536,10 @@ function fixedEntryStatus(block, entry) {
   const imageRequired = fieldsRequireImage(entry?.fields || [])
   const imageReady = !imageRequired || hasImage(record)
 
-  if (!contentReady && !imageReady) return 'Thiếu dữ liệu chính'
-  if (!contentReady) return 'Thiếu nội dung'
-  if (!imageReady) return 'Thiếu ảnh'
-  return 'Đủ dữ liệu'
+  if (!contentReady && !imageReady) return t('admin.about.card.status_missing_both')
+  if (!contentReady) return t('admin.about.card.status_missing_content')
+  if (!imageReady) return t('admin.about.card.status_missing_image')
+  return t('admin.about.card.status_ready')
 }
 
 watch(
@@ -1567,12 +1567,9 @@ watch(
     <div class="ultimate-clean-workspace">
       <section class="about-simple-guide">
         <div>
-          <p class="about-simple-guide__eyebrow">Trang Giới thiệu</p>
-          <h2>Quản lý theo từng page nhỏ, giống thêm/sửa sản phẩm</h2>
+          <p class="about-simple-guide__eyebrow">{{ $t('admin.about.simple_guide.eyebrow') }}</p>
           <p>
-            Chọn một page nhỏ bên dưới, bấm <strong>Chỉnh sửa</strong> để sửa nội dung có sẵn
-            hoặc bấm <strong>Thêm nội dung</strong> để tạo dòng mới. Dữ liệu tiếng Việt là nguồn chuẩn,
-            các ô EN/ZH là bản dịch đi kèm.
+            {{ $t('admin.about.simple_guide.description') }}
           </p>
         </div>
       </section>
@@ -1580,28 +1577,28 @@ watch(
       <!-- 1. Header & Stats -->
       <header class="about-admin-hero">
         <div class="about-admin-hero__copy">
-          <p class="eyebrow">About CMS Workspace</p>
-          <h1>Quản lý toàn bộ trang Giới thiệu theo section</h1>
+          <p class="eyebrow">{{ $t('admin.about.hero.eyebrow') }}</p>
+          <h1>{{ $t('admin.about.hero.title') }}</h1>
           <p class="about-admin-hero__text">
-            Bản 2 đã chuyển sang form nghiệp vụ theo từng block: tập trung vào nội dung thật sự của từng section.
+            {{ $t('admin.about.hero.description') }}
           </p>
         </div>
 
         <div class="about-admin-hero__stats">
           <article class="hero-stat-card">
-            <span class="hero-stat-card__label">Section</span>
+            <span class="hero-stat-card__label">{{ $t('admin.about.hero.stats.sections') }}</span>
             {{ dashboardSummary.sections }}
           </article>
           <article class="hero-stat-card">
-            <span class="hero-stat-card__label">Block</span>
+            <span class="hero-stat-card__label">{{ $t('admin.about.hero.stats.blocks') }}</span>
             {{ dashboardSummary.blocks }}
           </article>
           <article class="hero-stat-card">
-            <span class="hero-stat-card__label">Item</span>
+            <span class="hero-stat-card__label">{{ $t('admin.about.hero.stats.items') }}</span>
             {{ dashboardSummary.items }}
           </article>
           <article class="hero-stat-card hero-stat-card--warning">
-            <span class="hero-stat-card__label">Thiếu ảnh</span>
+            <span class="hero-stat-card__label">{{ $t('admin.about.hero.stats.missing_image') }}</span>
             {{ dashboardSummary.missingImage }}
           </article>
         </div>
@@ -1611,9 +1608,9 @@ watch(
       <section class="about-admin-toolbar">
         <div class="toolbar-grid">
           <label class="toolbar-field" for="about-section-filter">
-            <span>Section</span>
+            <span>{{ $t('admin.about.toolbar.section_filter') }}</span>
             <select id="about-section-filter" v-model="activeSectionFilter">
-              <option value="all">Tất cả section</option>
+              <option value="all">{{ $t('admin.about.toolbar.all_sections') }}</option>
               <option v-for="section in sectionDefinitions" :key="section.key" :value="section.key">
                 {{ section.label }}
               </option>
@@ -1621,33 +1618,33 @@ watch(
           </label>
 
           <label class="toolbar-field" for="about-completeness-filter">
-            <span>Trạng thái dữ liệu</span>
+            <span>{{ $t('admin.about.toolbar.status_filter') }}</span>
             <select id="about-completeness-filter" v-model="completenessFilter">
-              <option value="all">Tất cả</option>
-              <option value="missing_content">Thiếu nội dung</option>
-              <option value="missing_image">Thiếu ảnh</option>
-              <option value="missing_link">Thiếu link</option>
-              <option value="complete">Đủ dữ liệu chính</option>
+              <option value="all">{{ $t('admin.about.toolbar.all_status') }}</option>
+              <option value="missing_content">{{ $t('admin.about.toolbar.missing_content') }}</option>
+              <option value="missing_image">{{ $t('admin.about.toolbar.missing_image') }}</option>
+              <option value="missing_link">{{ $t('admin.about.toolbar.missing_link') }}</option>
+              <option value="complete">{{ $t('admin.about.toolbar.complete') }}</option>
             </select>
           </label>
 
           <label class="toolbar-field toolbar-field--wide" for="about-keyword-filter">
-            <span>Tìm theo nội dung</span>
+            <span>{{ $t('admin.about.toolbar.search_label') }}</span>
             <input
               id="about-keyword-filter"
               v-model="keywordFilter"
               type="text"
-              placeholder="Ví dụ: sứ mệnh, lịch sử, đối tác, tổng giám đốc..."
+              :placeholder="$t('admin.about.toolbar.search_placeholder')"
             />
           </label>
         </div>
 
         <div class="toolbar-actions">
-          <button type="button" class="btn btn-secondary" @click="resetFilters">Reset filter</button>
-          <button type="button" class="btn btn-secondary" @click="collapseAllSections">Thu gọn tất cả</button>
-          <button type="button" class="btn btn-secondary" @click="expandAllSections">Mở tất cả</button>
+          <button type="button" class="btn btn-secondary" @click="resetFilters">{{ $t('admin.about.toolbar.reset') }}</button>
+          <button type="button" class="btn btn-secondary" @click="collapseAllSections">{{ $t('admin.about.toolbar.collapse_all') }}</button>
+          <button type="button" class="btn btn-secondary" @click="expandAllSections">{{ $t('admin.about.toolbar.expand_all') }}</button>
           <button type="button" class="btn btn-primary" :disabled="loading" @click="refreshAll">
-            {{ loading ? 'Đang tải...' : 'Làm mới dữ liệu' }}
+            {{ loading ? $t('admin.about.toolbar.refreshing') : $t('admin.about.toolbar.refresh') }}
           </button>
         </div>
       </section>
@@ -1684,9 +1681,9 @@ watch(
                 <p class="section-card__eyebrow">{{ sectionPageLabel(section) }}</p>
                 <h2>{{ section.label }}</h2>
                 <div class="section-card__stats">
-                  <span class="section-chip">{{ section.counts.blocks }} nhóm nội dung</span>
-                  <span class="section-chip">{{ section.counts.items }} mục</span>
-                  <span v-if="section.counts.missingContent" class="section-chip section-chip--warning">{{ section.counts.missingContent }} thiếu nội dung</span>
+                  <span class="section-chip">{{ $t('admin.about.section.blocks_count', { count: section.counts.blocks }) }}</span>
+                  <span class="section-chip">{{ $t('admin.about.section.items_count', { count: section.counts.items }) }}</span>
+                  <span v-if="section.counts.missingContent" class="section-chip section-chip--warning">{{ $t('admin.about.section.missing_content_chip', { count: section.counts.missingContent }) }}</span>
                 </div>
               </div>
             </div>
@@ -1698,7 +1695,7 @@ watch(
                 class="btn btn-primary btn-sm"
                 @click="openSectionCreateForm(section)"
               >
-                Thêm nội dung
+                {{ $t('admin.about.section.add_content') }}
               </button>
               <button
                 v-if="section.previewHref"
@@ -1706,14 +1703,14 @@ watch(
                 class="btn btn-ghost btn-sm"
                 @click="openPreview(section.previewHref)"
               >
-                Xem
+                {{ $t('admin.about.section.view') }}
               </button>
               <button
                 type="button"
                 class="btn btn-secondary btn-sm"
                 @click="toggleSection(section.key)"
               >
-                {{ isSectionExpanded(section.key) ? 'Thu gọn' : 'Chỉnh sửa' }}
+                {{ isSectionExpanded(section.key) ? $t('admin.about.section.collapse') : $t('admin.about.section.edit') }}
               </button>
             </div>
           </header>
@@ -1722,10 +1719,10 @@ watch(
           <div v-if="section.previewHref" class="section-live-preview">
             <div class="section-live-preview__header">
               <div>
-                <p class="section-live-preview__eyebrow">Preview section hiện tại</p>
-                <h3>Render đúng section public đang chỉnh sửa</h3>
+                <p class="section-live-preview__eyebrow">{{ $t('admin.about.section.live_preview.eyebrow') }}</p>
+                <h3>{{ $t('admin.about.section.live_preview.title') }}</h3>
                 <p class="section-live-preview__description">
-                  Khu này chỉ hiển thị dữ liệu của section hiện tại theo giao diện người dùng để đối chiếu trước khi lưu.
+                  {{ $t('admin.about.section.live_preview.description') }}
                 </p>
               </div>
               <a
@@ -1734,7 +1731,7 @@ watch(
                 target="_blank"
                 rel="noreferrer"
               >
-                Mở preview lớn
+                {{ $t('admin.about.section.live_preview.open_large') }}
               </a>
             </div>
             <iframe
@@ -1753,11 +1750,10 @@ watch(
           >
             <div class="block-workspace__head">
               <div>
-                <p class="block-workspace__eyebrow">Nhóm nội dung trong {{ sectionPageLabel(section) }}</p>
+                <p class="block-workspace__eyebrow">{{ $t('admin.about.block.eyebrow', { page: sectionPageLabel(section) }) }}</p>
                 <h3>{{ block.schema?.label || block.blockLabel }}</h3>
                 <p class="block-workspace__meta">
-                  {{ block.counts.total }} item · {{ block.counts.missingContent }} thiếu nội dung ·
-                  {{ block.counts.missingImage }} thiếu ảnh · {{ block.counts.missingLink }} thiếu link
+                  {{ $t('admin.about.block.meta', { total: block.counts.total, missingContent: block.counts.missingContent, missingImage: block.counts.missingImage, missingLink: block.counts.missingLink }) }}
                 </p>
                 <p v-if="block.schema?.description" class="block-workspace__description">
                   {{ block.schema.description }}
@@ -1766,7 +1762,7 @@ watch(
 
               <div class="block-workspace__toolbar">
                 <button type="button" class="btn btn-secondary" @click="saveBlockChanges(block)">
-                  Lưu nhanh block
+                  {{ $t('admin.about.block.save_fast') }}
                 </button>
                 <button
                   v-if="block.schema?.dynamicItems"
@@ -1775,7 +1771,7 @@ watch(
                   :class="isNewItemEditorOpen(block.id) ? 'btn-secondary' : 'btn-primary'"
                   @click="isNewItemEditorOpen(block.id) ? cancelNewItemEditor(block.id) : openNewItemEditor(block)"
                 >
-                  {{ isNewItemEditorOpen(block.id) ? 'Đóng tạo mới' : 'Tạo mới' }}
+                  {{ isNewItemEditorOpen(block.id) ? $t('admin.about.block.close_create') : $t('admin.about.block.create_new') }}
                 </button>
               </div>
             </div>
@@ -1789,7 +1785,7 @@ watch(
               >
                 <div class="schema-card__header">
                   <div>
-                    <p class="schema-card__eyebrow">Mục cố định</p>
+                    <p class="schema-card__eyebrow">{{ $t('admin.about.card.fixed_eyebrow') }}</p>
                     <h4>{{ entry.label }}</h4>
                     <p v-if="entry.description" class="schema-card__description">{{ entry.description }}</p>
                   </div>
@@ -1886,12 +1882,12 @@ watch(
                         class="field-image-preview field-image-preview--hero"
                       >
                         <img :src="getDraftPreviewImageUrl(ensureFixedDraft(block, entry, entry.record))" :alt="entry.label" />
-                        <span>Ảnh bìa hiện tại của Hero Banner</span>
+                        <span>{{ $t('admin.about.card.hero_cover_current') }}</span>
                       </div>
 
                       <div v-if="field.type === 'image' && !isHeroCoverEntry(block, entry) && getDraftPreviewImageUrl(ensureFixedDraft(block, entry, entry.record))" class="field-image-preview">
                         <img :src="getDraftPreviewImageUrl(ensureFixedDraft(block, entry, entry.record))" :alt="entry.label" />
-                        <span>Xem nhanh ảnh đang gán cho mục này</span>
+                        <span>{{ $t('admin.about.card.image_preview_hint') }}</span>
                       </div>
 
                       <input
@@ -1915,7 +1911,7 @@ watch(
                         :disabled="translatingKeys.has(aboutTranslationKey(draftKeyForFixed(block.id, entry.itemKey)))"
                         @click="translateAboutDraft(ensureFixedDraft(block, entry, entry.record), draftKeyForFixed(block.id, entry.itemKey))"
                       >
-                        {{ translatingKeys.has(aboutTranslationKey(draftKeyForFixed(block.id, entry.itemKey))) ? 'Đang dịch...' : 'Dịch tự động' }}
+                      {{ translatingKeys.has(aboutTranslationKey(draftKeyForFixed(block.id, entry.itemKey))) ? $t('admin.about.translation.translating') : $t('admin.about.translation.auto_translate') }}
                       </button>
                     </div>
                     <div class="translation-panel__grid">

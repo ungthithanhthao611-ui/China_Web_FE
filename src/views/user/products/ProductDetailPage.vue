@@ -3,7 +3,6 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ChevronRight,
-  Home,
   ZoomIn,
   X,
   ChevronLeft,
@@ -13,6 +12,10 @@ import {
   Play,
   Package,
   Loader2,
+  ShoppingCart,
+  Zap,
+  Plus,
+  Minus,
 } from 'lucide-vue-next'
 import { uiState } from '@/shared/utils/uiState'
 import { useI18n } from 'vue-i18n'
@@ -21,7 +24,6 @@ import { useAuthStore } from '@/views/user/stores/auth'
 import { getProduct } from '@/views/user/services/productsApi'
 import { resolveProductDisplayPrice, resolveStockQuantity } from '@/views/user/utils/productPricing'
 import InquiryModal from './components/InquiryModal.vue'
-import { ShoppingCart, Zap, Plus, Minus } from 'lucide-vue-next'
 
 const props = defineProps({
   slug: {
@@ -41,7 +43,6 @@ const activeMediaIndex = ref(0)
 const lightboxOpen = ref(false)
 const showInquiry = ref(false)
 const relatedPage = ref(0)
-const isDescExpanded = ref(false)
 const viewportWidth = ref(typeof window === 'undefined' ? 1200 : window.innerWidth)
 
 const cartStore = useCartStore()
@@ -52,15 +53,15 @@ const cartNotice = ref('')
 let cartNoticeTimer = null
 
 const stockQuantity = computed(() => resolveStockQuantity(product.value))
-
 const isOutOfStock = computed(() => stockQuantity.value <= 0)
 const isLowStock = computed(() => stockQuantity.value > 0 && stockQuantity.value <= 5)
 const maxPurchasableQuantity = computed(() => Math.max(1, stockQuantity.value || 1))
 const canPurchase = computed(() => !isOutOfStock.value)
+
 const stockStatusText = computed(() => {
-  if (isOutOfStock.value) return 'Tạm hết hàng'
-  if (isLowStock.value) return `Sắp hết hàng · còn ${stockQuantity.value} sản phẩm`
-  return `Còn ${stockQuantity.value} sản phẩm trong kho`
+  if (isOutOfStock.value) return t('user.products.outOfStock')
+  if (isLowStock.value) return t('user.products.lowStock', { count: stockQuantity.value })
+  return t('user.products.inStock', { count: stockQuantity.value })
 })
 
 const showCartNotice = () => {
@@ -87,24 +88,21 @@ const clampQuantity = () => {
     quantity.value = 1
     return
   }
-
   quantity.value = Math.min(Math.floor(normalizedQuantity), maxPurchasableQuantity.value)
 }
 
 const handleAddToCart = async () => {
   if (!canPurchase.value) {
-    alert('Sản phẩm hiện đang tạm hết hàng')
+    alert(t('user.products.outOfStockAlert'))
     return
   }
 
   if (!authStore.isAuthenticated) {
-    // In a real app, you'd trigger the login modal here
-    alert('Vui lòng đăng nhập để thêm vào giỏ hàng')
+    alert(t('user.products.loginToCart'))
     return
   }
 
   clampQuantity()
-
   isAdding.value = true
   try {
     await cartStore.addItem(product.value.id, quantity.value)
@@ -118,19 +116,13 @@ const handleAddToCart = async () => {
 
 const handleBuyNow = async () => {
   if (!canPurchase.value) {
-    alert('Sản phẩm hiện đang tạm hết hàng')
+    alert(t('user.products.outOfStockAlert'))
     return
   }
-
   try {
     await handleAddToCart()
-    // Redirect to checkout or open cart
-    // For now, let's just open the cart (this requires communication with AppHeader or a global state)
-    // Actually, cartStore.addItem already updates the cart, so we just need to navigate to checkout
     router.push('/checkout')
-  } catch (err) {
-    // Error handled in handleAddToCart
-  }
+  } catch (err) {}
 }
 
 const primaryImage = computed(() => {
@@ -138,7 +130,7 @@ const primaryImage = computed(() => {
   if (primaryUrl) {
     return {
       url: primaryUrl,
-      alt: `${product.value?.name || 'Sản phẩm'} - ảnh chính`,
+      alt: `${product.value?.name || t('user.products.familyDefault')} ${t('user.products.mainImageAlt')}`,
     }
   }
 
@@ -150,7 +142,7 @@ const primaryImage = computed(() => {
 
   return {
     url: String(fallbackImage.url).trim(),
-    alt: fallbackImage.alt || `${product.value?.name || 'Sản phẩm'} - ảnh chính`,
+    alt: fallbackImage.alt || `${product.value?.name || t('user.products.familyDefault')} ${t('user.products.mainImageAlt')}`,
   }
 })
 
@@ -162,31 +154,24 @@ const gallery = computed(() => {
   const pushImage = (item) => {
     const url = String(item?.url || '').trim()
     if (!url || url === primaryUrl || seen.has(url)) return
-
     seen.add(url)
     images.push({
       url,
-      alt: item?.alt || `${product.value?.name || 'Sản phẩm'} - ảnh phụ`,
+      alt: item?.alt || `${product.value?.name || t('user.products.familyDefault')} ${t('user.products.subImageAlt')}`,
     })
   }
 
   if (product.value?.images?.length) {
     product.value.images.forEach((item) => {
-      pushImage({
-        url: item?.url,
-        alt: item?.alt,
-      })
+      pushImage({ url: item?.url, alt: item?.alt })
     })
   } else if (product.value?.gallery_urls) {
     product.value.gallery_urls
       .split('\n')
       .map((item) => item.trim())
       .filter((item) => item && item.startsWith('http'))
-      .forEach((url) => {
-        pushImage({ url })
-      })
+      .forEach((url) => { pushImage({ url }) })
   }
-
   return images
 })
 
@@ -198,22 +183,18 @@ const isDirectVideo = (url) => {
 const getEmbedVideoUrl = (url) => {
   const source = String(url || '').trim()
   if (!source || isDirectVideo(source)) return source
-
   try {
     const parsed = new URL(source)
     const hostname = parsed.hostname.replace(/^www\./, '')
-
     if (hostname === 'youtu.be') {
       const id = parsed.pathname.split('/').filter(Boolean)[0]
       return id ? `https://www.youtube.com/embed/${id}` : source
     }
-
     if (hostname.includes('youtube.com')) {
       if (parsed.pathname.includes('/embed/')) return source
       const id = parsed.searchParams.get('v')
       return id ? `https://www.youtube.com/embed/${id}` : source
     }
-
     if (hostname.includes('vimeo.com')) {
       const id = parsed.pathname.split('/').filter(Boolean)[0]
       return id ? `https://player.vimeo.com/video/${id}` : source
@@ -221,31 +202,25 @@ const getEmbedVideoUrl = (url) => {
   } catch {
     return source
   }
-
   return source
 }
 
 const mediaItems = computed(() => {
   const items = []
-
   if (primaryImage.value?.url) {
     items.push({
       type: 'image',
       url: primaryImage.value.url,
       alt: primaryImage.value.alt || product.value?.name || 'Product image',
-      isPrimary: true,
     })
   }
-
   gallery.value.forEach((item) => {
     items.push({
       type: 'image',
       url: item.url,
       alt: item.alt || product.value?.name || 'Product image',
-      isPrimary: false,
     })
   })
-
   if (product.value?.video_url) {
     const isDirect = isDirectVideo(product.value.video_url)
     items.push({
@@ -254,10 +229,8 @@ const mediaItems = computed(() => {
       embedUrl: getEmbedVideoUrl(product.value.video_url),
       isDirect,
       alt: `${product.value?.name || 'Product'} video demo`,
-      isPrimary: false,
     })
   }
-
   return items
 })
 
@@ -270,9 +243,7 @@ const currentMedia = computed(() => mediaItems.value[activeMediaIndex.value] || 
 const videoPoster = computed(() => primaryImage.value?.url || gallery.value[0]?.url || '')
 const relatedProducts = computed(() => product.value?.related_products || [])
 const relatedPageSize = computed(() => (viewportWidth.value <= 560 ? 2 : 4))
-const totalRelatedPages = computed(() =>
-  Math.max(1, Math.ceil(relatedProducts.value.length / relatedPageSize.value)),
-)
+const totalRelatedPages = computed(() => Math.max(1, Math.ceil(relatedProducts.value.length / relatedPageSize.value)))
 const pagedRelatedProducts = computed(() => {
   const startIndex = relatedPage.value * relatedPageSize.value
   return relatedProducts.value.slice(startIndex, startIndex + relatedPageSize.value)
@@ -282,17 +253,6 @@ const isFirstRelatedPage = computed(() => relatedPage.value === 0)
 const isLastRelatedPage = computed(() => relatedPage.value >= totalRelatedPages.value - 1)
 const hasPdf = computed(() => !!String(product.value?.catalog_pdf_url || '').trim())
 
-const categorySlug = computed(() => {
-  return String(product.value?.category_name || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-})
-
 const productFamilyLabel = computed(() => {
   const categoryName = String(product.value?.category_name || '').trim()
   if (!categoryName) return t('user.products.familyDefault')
@@ -301,7 +261,6 @@ const productFamilyLabel = computed(() => {
 
 const specRows = computed(() => {
   if (!product.value) return []
-
   return [
     { label: t('user.products.labelSize'), value: product.value.size },
     { label: t('user.products.labelMaterial'), value: product.value.material },
@@ -310,7 +269,6 @@ const specRows = computed(() => {
 })
 
 const activeAccordion = ref('specs')
-
 function toggleAccordion(key) {
   activeAccordion.value = activeAccordion.value === key ? null : key
 }
@@ -324,10 +282,7 @@ const descriptionText = computed(() => {
 })
 
 const detailDescriptionParagraphs = computed(() => {
-  return descriptionText.value
-    .split(/\n+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
+  return descriptionText.value.split(/\n+/).map((item) => item.trim()).filter(Boolean)
 })
 
 function updateViewportWidth() {
@@ -343,15 +298,13 @@ const getRelatedProductImage = (item) => {
 async function fetchProduct() {
   loading.value = true
   error.value = null
-
   try {
     const data = await getProduct(props.slug)
     product.value = data
     activeMediaIndex.value = defaultMediaIndex.value
     relatedPage.value = 0
-
     if (data?.name) {
-      document.title = `${data.name} | Thiên Đồng Việt`
+      document.title = `${data.name} ${t('user.home.companySuffix')}`
     }
   } catch (err) {
     error.value = err.message || t('user.products.errorLoading')
@@ -361,15 +314,8 @@ async function fetchProduct() {
   }
 }
 
-function prevRelatedPage() {
-  if (isFirstRelatedPage.value) return
-  relatedPage.value -= 1
-}
-
-function nextRelatedPage() {
-  if (isLastRelatedPage.value) return
-  relatedPage.value += 1
-}
+function prevRelatedPage() { if (!isFirstRelatedPage.value) relatedPage.value -= 1 }
+function nextRelatedPage() { if (!isLastRelatedPage.value) relatedPage.value += 1 }
 
 function openLightbox(index) {
   if (mediaItems.value[index]?.type !== 'image') return
@@ -377,63 +323,31 @@ function openLightbox(index) {
   lightboxOpen.value = true
 }
 
-function closeLightbox() {
-  lightboxOpen.value = false
-}
+function closeLightbox() { lightboxOpen.value = false }
 
 function prevImage() {
-  const imageItems = mediaItems.value.filter((item) => item.type === 'image')
-  if (!imageItems.length) return
-
-  const total = mediaItems.value.length || 0
-  activeMediaIndex.value = (activeMediaIndex.value - 1 + total) % total
-  while (mediaItems.value[activeMediaIndex.value]?.type !== 'image') {
-    activeMediaIndex.value = (activeMediaIndex.value - 1 + total) % total
-  }
+  const total = mediaItems.value.length
+  if (total <= 1) return
+  let idx = activeMediaIndex.value
+  do { idx = (idx - 1 + total) % total } while (mediaItems.value[idx]?.type !== 'image')
+  activeMediaIndex.value = idx
 }
 
 function nextImage() {
-  const imageItems = mediaItems.value.filter((item) => item.type === 'image')
-  if (!imageItems.length) return
-
-  const total = mediaItems.value.length || 0
-  activeMediaIndex.value = (activeMediaIndex.value + 1) % total
-  while (mediaItems.value[activeMediaIndex.value]?.type !== 'image') {
-    activeMediaIndex.value = (activeMediaIndex.value + 1) % total
-  }
+  const total = mediaItems.value.length
+  if (total <= 1) return
+  let idx = activeMediaIndex.value
+  do { idx = (idx + 1) % total } while (mediaItems.value[idx]?.type !== 'image')
+  activeMediaIndex.value = idx
 }
 
-watch(
-  () => route.query.inquiry,
-  (val) => {
-    if (val === '1') showInquiry.value = true
-  },
-  { immediate: true },
-)
-
-watch(
-  totalRelatedPages,
-  (pages) => {
-    const maxPage = Math.max(0, pages - 1)
-    if (relatedPage.value > maxPage) {
-      relatedPage.value = maxPage
-    }
-  },
-  { immediate: true },
-)
-
-watch(quantity, () => {
-  clampQuantity()
-})
-
-watch(
-  stockQuantity,
-  () => {
-    clampQuantity()
-  },
-  { immediate: true },
-)
-
+watch(() => route.query.inquiry, (val) => { if (val === '1') showInquiry.value = true }, { immediate: true })
+watch(totalRelatedPages, (pages) => {
+  const maxPage = Math.max(0, pages - 1)
+  if (relatedPage.value > maxPage) relatedPage.value = maxPage
+}, { immediate: true })
+watch(quantity, clampQuantity)
+watch(stockQuantity, clampQuantity, { immediate: true })
 watch(() => props.slug, fetchProduct)
 watch(locale, fetchProduct)
 
@@ -447,9 +361,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateViewportWidth)
-  if (cartNoticeTimer) {
-    window.clearTimeout(cartNoticeTimer)
-  }
+  if (cartNoticeTimer) window.clearTimeout(cartNoticeTimer)
 })
 </script>
 
@@ -486,11 +398,10 @@ onBeforeUnmount(() => {
           <div class="prod-gallery">
             <div
               v-if="currentMedia?.type === 'image'"
-              id="product-detail-main-media"
               class="prod-gallery__main"
               @click="openLightbox(activeMediaIndex)"
             >
-              <img :src="currentMedia?.url" :alt="currentMedia?.alt || product.name" />
+              <img :src="currentMedia?.url" :alt="currentMedia?.alt" />
               <div class="prod-gallery__zoom-hint">
                 <ZoomIn :size="18" />
                 <span>{{ t('user.products.zoomHint') }}</span>
@@ -498,28 +409,9 @@ onBeforeUnmount(() => {
             </div>
 
             <div v-else class="prod-gallery__main prod-gallery__main--video">
-              <video
-                v-if="currentMedia?.isDirect"
-                :src="currentMedia?.url"
-                controls
-                playsinline
-                class="prod-gallery__direct-video"
-              />
-              <iframe
-                v-else-if="currentMedia?.embedUrl"
-                :src="currentMedia.embedUrl"
-                title="Product Demo Video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-                loading="lazy"
-              />
-              <a
-                v-else
-                class="prod-gallery__video-fallback"
-                :href="currentMedia?.url"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <video v-if="currentMedia?.isDirect" :src="currentMedia?.url" controls playsinline class="prod-gallery__direct-video" />
+              <iframe v-else-if="currentMedia?.embedUrl" :src="currentMedia.embedUrl" allowfullscreen loading="lazy" />
+              <a v-else class="prod-gallery__video-fallback" :href="currentMedia?.url" target="_blank" rel="noopener noreferrer">
                 <Play :size="18" />
                 {{ t('user.products.openVideo') }}
               </a>
@@ -532,14 +424,13 @@ onBeforeUnmount(() => {
             <div v-if="mediaItems.length > 1" class="prod-gallery__thumbs">
               <button
                 v-for="(media, index) in mediaItems"
-                :key="`${media.type}-${index}`"
+                :key="index"
                 type="button"
                 :class="['thumb-btn', { active: activeMediaIndex === index }]"
-                :aria-label="media.type === 'video' ? t('user.products.videoHint') : `${t('user.products.zoomHint')} ${index + 1}`"
                 @click="activeMediaIndex = index"
               >
                 <template v-if="media.type === 'image'">
-                  <img :src="media.url" :alt="media.alt || `Ảnh ${index + 1}`" />
+                  <img :src="media.url" :alt="media.alt || `${t('user.products.familyDefault')} ${index + 1}`" />
                 </template>
                 <template v-else>
                   <div class="thumb-btn__video">
@@ -566,21 +457,15 @@ onBeforeUnmount(() => {
               <div class="price-head">
                 <span class="price-label">{{ t('user.products.priceLabel') }}:</span>
                 <div v-if="getDisplayPrice(product).hasSale" class="price-badges">
-                  <span class="price-badge price-badge--sale">Giá khuyến mãi</span>
-                  <span class="price-badge price-badge--original">Giá gốc</span>
+                  <span class="price-badge price-badge--sale">{{ t('user.products.salePrice') }}</span>
+                  <span class="price-badge price-badge--original">{{ t('user.products.originalPrice') }}</span>
                 </div>
               </div>
               <div class="price-stack">
-                <span
-                  class="price-value"
-                  :class="{ 'price-value--sale': getDisplayPrice(product).hasSale }"
-                >
+                <span class="price-value" :class="{ 'price-value--sale': getDisplayPrice(product).hasSale }">
                   {{ formatPrice(getDisplayPrice(product).finalPrice) }}
                 </span>
-                <span
-                  v-if="getDisplayPrice(product).hasSale"
-                  class="price-original"
-                >
+                <span v-if="getDisplayPrice(product).hasSale" class="price-original">
                   {{ formatPrice(getDisplayPrice(product).originalPrice) }}
                 </span>
               </div>
@@ -605,17 +490,16 @@ onBeforeUnmount(() => {
                 <button class="btn-add-cart" @click="handleAddToCart" :disabled="isAdding || !canPurchase">
                   <Loader2 v-if="isAdding" class="spinner" :size="18" />
                   <ShoppingCart v-else :size="18" />
-                  <span>{{ canPurchase ? 'Thêm vào giỏ hàng' : 'Tạm hết hàng' }}</span>
+                  <span>{{ canPurchase ? t('user.products.addToCart') : t('user.products.outOfStock') }}</span>
                 </button>
                 <button class="btn-buy-now" @click="handleBuyNow" :disabled="!canPurchase || isAdding">
                   <Zap :size="18" fill="currentColor" />
-                  <span>{{ canPurchase ? 'Mua ngay' : 'Chưa thể mua' }}</span>
+                  <span>{{ canPurchase ? t('user.products.buyNow') : t('user.products.notPurchasable') }}</span>
                 </button>
               </div>
             </div>
 
             <div class="prod-accordion">
-              <!-- Thông số kỹ thuật -->
               <div v-if="specRows.length" class="acc-item" :class="{ 'acc-item--active': activeAccordion === 'specs' }">
                 <button class="acc-item__head" type="button" @click="toggleAccordion('specs')">
                   <span>{{ t('user.products.accSpecs') }}</span>
@@ -631,7 +515,6 @@ onBeforeUnmount(() => {
                 </div>
               </div>
 
-              <!-- Ứng dụng thực tế -->
               <div v-if="product.use_case" class="acc-item" :class="{ 'acc-item--active': activeAccordion === 'usecase' }">
                 <button class="acc-item__head" type="button" @click="toggleAccordion('usecase')">
                   <span>{{ t('user.products.accUseCase') }}</span>
@@ -642,7 +525,6 @@ onBeforeUnmount(() => {
                 </div>
               </div>
 
-              <!-- Mô tả chi tiết -->
               <div v-if="detailDescriptionParagraphs.length" class="acc-item" :class="{ 'acc-item--active': activeAccordion === 'desc' }">
                 <button class="acc-item__head" type="button" @click="toggleAccordion('desc')">
                   <span>{{ t('user.products.accDescription') }}</span>
@@ -650,39 +532,22 @@ onBeforeUnmount(() => {
                 </button>
                 <div class="acc-item__content">
                   <div class="acc-rich-text">
-                    <p v-for="(paragraph, index) in detailDescriptionParagraphs" :key="index">
-                      {{ paragraph }}
-                    </p>
+                    <p v-for="(paragraph, index) in detailDescriptionParagraphs" :key="index">{{ paragraph }}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="prod-actions">
-              <button id="product-detail-inquiry-button" class="btn-inquiry" @click="showInquiry = true">
+              <button class="btn-inquiry" @click="showInquiry = true">
                 <Send :size="16" />
                 <span>{{ t('user.products.btnInquiry') }}</span>
               </button>
-
-              <a
-                v-if="hasPdf"
-                id="product-detail-catalog-link"
-                :href="product.catalog_pdf_url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="btn-catalog"
-              >
+              <a v-if="hasPdf" :href="product.catalog_pdf_url" target="_blank" rel="noopener noreferrer" class="btn-catalog">
                 <Download :size="16" />
                 <span>{{ t('user.products.btnCatalog') }}</span>
               </a>
-
-              <button
-                v-else
-                id="product-detail-catalog-button"
-                type="button"
-                class="btn-catalog btn-catalog--disabled"
-                disabled
-              >
+              <button v-else type="button" class="btn-catalog btn-catalog--disabled" disabled>
                 <Download :size="16" />
                 <span>{{ t('user.products.btnCatalog') }}</span>
               </button>
@@ -691,30 +556,17 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-
       <section v-if="relatedProducts.length" class="prod-related">
         <div class="prod-related__inner">
           <div class="prod-block-heading prod-block-heading--center">
             <span class="prod-block-heading__line" />
             <h2>{{ t('user.products.relatedTitle') }}</h2>
           </div>
-
-          <p class="prod-related__intro">
-            {{ t('user.products.relatedIntro') }}
-          </p>
-
+          <p class="prod-related__intro">{{ t('user.products.relatedIntro') }}</p>
           <div class="prod-related__carousel">
-            <button
-              v-if="showRelatedPagination"
-              type="button"
-              class="prod-related__nav"
-              :disabled="isFirstRelatedPage"
-              aria-label="Trang truoc san pham cung loai"
-              @click="prevRelatedPage"
-            >
+            <button v-if="showRelatedPagination" type="button" class="prod-related__nav" :disabled="isFirstRelatedPage" @click="prevRelatedPage">
               <ChevronLeft :size="18" />
             </button>
-
             <div class="prod-related__grid">
               <article v-for="item in pagedRelatedProducts" :key="item.id" class="rel-card">
                 <router-link :to="`/products/${item.slug}`" class="rel-card__img">
@@ -728,9 +580,7 @@ onBeforeUnmount(() => {
                     <span class="rel-card__badge">{{ item.category_name || product.category_name || t('user.products.sidebarRootDefault') }}</span>
                     <p class="rel-card__sku">{{ item.sku }}</p>
                   </div>
-                  <router-link :to="`/products/${item.slug}`" class="rel-card__name">
-                    {{ item.name }}
-                  </router-link>
+                  <router-link :to="`/products/${item.slug}`" class="rel-card__name">{{ item.name }}</router-link>
                   <div class="rel-card__price-row">
                     <template v-if="getDisplayPrice(item).hasSale">
                       <span class="rel-card__price rel-card__price--sale">{{ formatPrice(getDisplayPrice(item).finalPrice) }}</span>
@@ -745,40 +595,23 @@ onBeforeUnmount(() => {
                 </div>
               </article>
             </div>
-
-            <button
-              v-if="showRelatedPagination"
-              type="button"
-              class="prod-related__nav"
-              :disabled="isLastRelatedPage"
-              aria-label="Trang tiep theo san pham cung loai"
-              @click="nextRelatedPage"
-            >
+            <button v-if="showRelatedPagination" type="button" class="prod-related__nav" :disabled="isLastRelatedPage" @click="nextRelatedPage">
               <ChevronRight :size="18" />
             </button>
           </div>
-
-          <div v-if="showRelatedPagination" class="prod-related__pager">
-            {{ relatedPage + 1 }} / {{ totalRelatedPages }}
-          </div>
+          <div v-if="showRelatedPagination" class="prod-related__pager">{{ relatedPage + 1 }} / {{ totalRelatedPages }}</div>
         </div>
       </section>
     </template>
 
     <Teleport to="body">
       <div v-if="lightboxOpen" class="lightbox" @click.self="closeLightbox">
-        <button class="lightbox__close" :aria-label="t('user.products.lightboxClose')" @click="closeLightbox">
-          <X :size="28" />
-        </button>
-        <button class="lightbox__prev" :aria-label="t('user.products.lightboxPrev')" @click="prevImage">
-          <ChevronLeft :size="32" />
-        </button>
+        <button class="lightbox__close" @click="closeLightbox"><X :size="28" /></button>
+        <button class="lightbox__prev" @click="prevImage"><ChevronLeft :size="32" /></button>
         <div class="lightbox__img-wrap">
-          <img :src="currentMedia?.url" :alt="currentMedia?.alt || product?.name" />
+          <img :src="currentMedia?.url" :alt="currentMedia?.alt" />
         </div>
-        <button class="lightbox__next" :aria-label="t('user.products.lightboxNext')" @click="nextImage">
-          <ChevronRight :size="32" />
-        </button>
+        <button class="lightbox__next" @click="nextImage"><ChevronRight :size="32" /></button>
         <div class="lightbox__counter">{{ activeMediaIndex + 1 }} / {{ mediaItems.length }}</div>
       </div>
     </Teleport>
@@ -820,9 +653,7 @@ onBeforeUnmount(() => {
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .back-btn {
@@ -979,10 +810,6 @@ onBeforeUnmount(() => {
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.08), rgba(15, 23, 42, 0.52));
 }
 
-.prod-info {
-  padding-top: 8px;
-}
-
 .prod-info__family {
   margin: 0 0 10px;
   color: #8a745b;
@@ -1021,18 +848,6 @@ onBeforeUnmount(() => {
   line-height: 1.9;
 }
 
-.prod-section-title {
-  margin: 0 0 14px;
-  color: #111827;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.prod-specs {
-  margin-top: 24px;
-  margin-bottom: 8px;
-}
-
 .prod-specs__list {
   margin: 0;
 }
@@ -1061,7 +876,6 @@ onBeforeUnmount(() => {
   gap: 12px;
   margin-top: 22px;
 }
-
 
 .btn-inquiry,
 .btn-catalog {
@@ -1105,11 +919,11 @@ onBeforeUnmount(() => {
   cursor: not-allowed;
 }
 
-.prod-detail__desc {
-  padding: 54px 0 20px;
+.prod-related {
+  padding: 22px 0 72px;
+  background: linear-gradient(180deg, #fff 0%, #faf7f2 100%);
 }
 
-.prod-detail__desc-inner,
 .prod-related__inner {
   max-width: 1320px;
   margin: 0 auto;
@@ -1138,22 +952,6 @@ onBeforeUnmount(() => {
   color: #15233a;
   font-size: clamp(1.9rem, 2.5vw, 2.5rem);
   font-weight: 700;
-}
-
-.prod-detail__desc-content {
-  max-width: 960px;
-  color: #4b5563;
-  font-size: 16px;
-  line-height: 1.9;
-}
-
-.prod-detail__desc-content p {
-  margin: 0 0 14px;
-}
-
-.prod-related {
-  padding: 22px 0 72px;
-  background: linear-gradient(180deg, #fff 0%, #faf7f2 100%);
 }
 
 .prod-related__intro {
@@ -1205,7 +1003,7 @@ onBeforeUnmount(() => {
 
 .prod-related__grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -1357,7 +1155,6 @@ onBeforeUnmount(() => {
   text-decoration: none;
 }
 
-/* Accordion */
 .prod-accordion {
   margin: 32px 0;
   border-top: 1px solid #e2e8f0;
@@ -1379,7 +1176,6 @@ onBeforeUnmount(() => {
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  transition: color 0.2s ease;
 }
 
 .acc-item__head:hover {
@@ -1413,7 +1209,8 @@ onBeforeUnmount(() => {
   opacity: 1;
 }
 
-.acc-text {
+.acc-text,
+.acc-rich-text p {
   margin: 0;
   color: #475569;
   line-height: 1.7;
@@ -1421,16 +1218,12 @@ onBeforeUnmount(() => {
 }
 
 .acc-rich-text p {
-  margin: 0 0 16px;
-  color: #475569;
-  line-height: 1.7;
-  font-size: 15px;
+  margin-bottom: 16px;
 }
 
 .acc-rich-text p:last-child {
   margin-bottom: 0;
 }
-
 
 .prod-gallery__video-fallback {
   display: inline-flex;
@@ -1494,13 +1287,8 @@ onBeforeUnmount(() => {
   border-radius: 50%;
 }
 
-.lightbox__prev {
-  left: 20px;
-}
-
-.lightbox__next {
-  right: 20px;
-}
+.lightbox__prev { left: 20px; }
+.lightbox__next { right: 20px; }
 
 .lightbox__counter {
   position: fixed;
@@ -1511,107 +1299,60 @@ onBeforeUnmount(() => {
   font-size: 14px;
 }
 
-@media (max-width: 1100px) {
-  .prod-detail__shell {
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
-
-  .prod-gallery {
-    max-width: 100%;
-  }
-
-  .prod-gallery__main {
-    aspect-ratio: 1 / 0.86;
-  }
-}
-
-/* Purchase Styles */
 .prod-price-box {
   margin: 24px 0;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   gap: 14px;
   padding: 20px;
   background: #f8fafc;
   border-radius: 16px;
   border: 1px solid #f1f5f9;
-
-  .price-head {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .price-label {
-    font-size: 14px;
-    color: #64748b;
-    font-weight: 500;
-  }
-
-  .price-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .price-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 28px;
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-
-  .price-badge--sale {
-    background: rgba(220, 38, 38, 0.1);
-    color: #dc2626;
-  }
-
-  .price-badge--original {
-    background: #e2e8f0;
-    color: #475569;
-  }
-
-  .price-stack {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .price-value {
-    font-size: 32px;
-    font-weight: 800;
-    color: #1e293b;
-  }
-
-  .price-value--sale {
-    color: #dc2626;
-  }
-
-  .price-original {
-    color: #94a3b8;
-    font-size: 15px;
-    font-weight: 700;
-    text-decoration: line-through;
-  }
 }
+
+.price-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.price-label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.price-badges {
+  display: flex;
+  gap: 8px;
+}
+
+.price-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.price-badge--sale { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+.price-badge--original { background: #e2e8f0; color: #475569; }
+
+.price-stack {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.price-value { font-size: 32px; font-weight: 800; color: #1e293b; }
+.price-value--sale { color: #dc2626; }
+.price-original { color: #94a3b8; font-size: 15px; text-decoration: line-through; }
 
 .stock-overview {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  width: fit-content;
-  min-height: 38px;
   padding: 8px 12px;
   border-radius: 999px;
   background: rgba(22, 163, 74, 0.12);
@@ -1620,15 +1361,8 @@ onBeforeUnmount(() => {
   font-weight: 700;
 }
 
-.stock-overview--low {
-  background: rgba(217, 119, 6, 0.14);
-  color: #b45309;
-}
-
-.stock-overview--empty {
-  background: rgba(220, 38, 38, 0.12);
-  color: #dc2626;
-}
+.stock-overview--low { background: rgba(217, 119, 6, 0.14); color: #b45309; }
+.stock-overview--empty { background: rgba(220, 38, 38, 0.12); color: #dc2626; }
 
 .prod-purchase-ctrl {
   display: flex;
@@ -1645,272 +1379,76 @@ onBeforeUnmount(() => {
   padding: 6px;
   border-radius: 12px;
   width: fit-content;
-
-  button {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    border: none;
-    background: #fff;
-    color: #1e293b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover:not(:disabled) {
-      background: #e2e8f0;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-
-  input {
-    width: 50px;
-    text-align: center;
-    background: none;
-    border: none;
-    font-size: 16px;
-    font-weight: 700;
-    color: #1e293b;
-
-    &::-webkit-inner-spin-button,
-    &::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-  }
 }
 
-.quantity-picker--disabled {
-  opacity: 0.72;
+.quantity-picker button {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.quantity-picker input {
+  width: 50px;
+  text-align: center;
+  background: none;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .purchase-actions {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
   gap: 12px;
-
-  button {
-    height: 56px;
-    border-radius: 14px;
-    font-size: 16px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-      filter: none;
-    }
-  }
 }
 
-.btn-add-cart {
-  background: #1e293b;
-  color: #fff;
-  border: none;
-
-  &:hover:not(:disabled) {
-    background: #0f172a;
-    transform: translateY(-2px);
-  }
+.purchase-actions button {
+  height: 56px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
 }
 
-.btn-buy-now {
-  background: #d6b074;
-  color: #0c1831;
-  border: none;
-
-  &:hover:not(:disabled) {
-    filter: brightness(1.1);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(214, 176, 116, 0.2);
-  }
-}
-
-.spinner {
-  animation: rotate 1s linear infinite;
-}
+.btn-add-cart { background: #1e293b; color: #fff; border: none; }
+.btn-buy-now { background: #d6b074; color: #0c1831; border: none; }
 
 .cart-success-toast {
   position: fixed;
   top: 92px;
   right: 24px;
   z-index: 1000;
-  max-width: min(320px, calc(100vw - 32px));
   padding: 13px 18px;
   border-radius: 10px;
   background: #16a34a;
   color: #fff;
-  font-size: 14px;
   font-weight: 700;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
 }
 
-.cart-toast-enter-active,
-.cart-toast-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
+.cart-toast-enter-active, .cart-toast-leave-active { transition: all 0.2s ease; }
+.cart-toast-enter-from, .cart-toast-leave-to { opacity: 0; transform: translateY(-10px); }
 
-.cart-toast-enter-from,
-.cart-toast-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
+@keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spinner { animation: rotate 1s linear infinite; }
 
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@media (max-width: 1100px) {
+  .prod-detail__shell { grid-template-columns: 1fr; }
+  .prod-gallery { max-width: 100%; }
 }
 
 @media (max-width: 768px) {
-  .cart-success-toast {
-    top: 76px;
-    right: 16px;
-    left: 16px;
-    max-width: none;
-    text-align: center;
-  }
-
-  .prod-detail__breadcrumb,
-  .prod-detail__desc-inner,
-  .prod-related__inner {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .prod-detail__shell {
-    padding: 18px 16px 28px;
-  }
-
-  .prod-gallery__thumbs {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .prod-specs__row {
-    grid-template-columns: 1fr;
-    gap: 4px;
-    margin-bottom: 14px;
-  }
-
-  .prod-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .btn-inquiry,
-  .btn-catalog {
-    min-height: 56px;
-    font-size: 16px;
-  }
-
-  .purchase-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .prod-related__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .prod-related__carousel {
-    gap: 10px;
-  }
-
-  .prod-related__nav {
-    width: 38px;
-    height: 38px;
-  }
-}
-
-@media (max-width: 560px) {
-  .prod-info__name {
-    font-size: 2.2rem;
-  }
-
-  .prod-gallery__main {
-    aspect-ratio: 1 / 0.95;
-  }
-
-  .prod-gallery__thumbs {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .prod-related__intro {
-    margin-bottom: 20px;
-    font-size: 15px;
-    text-align: left;
-  }
-
-  .prod-related__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .prod-related__carousel {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 8px;
-  }
-
-  .prod-related__nav {
-    width: 34px;
-    height: 34px;
-  }
-
-  .rel-card__body {
-    padding: 10px 10px 12px;
-    gap: 8px;
-  }
-
-  .rel-card__name {
-    font-size: 18px;
-    line-height: 1.3;
-  }
-
-  .rel-card__cta {
-    font-size: 13px;
-  }
-
-  .rel-card__meta {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .rel-card__badge {
-    max-width: 100%;
-  }
-
-  .lightbox__prev,
-  .lightbox__next {
-    top: auto;
-    bottom: 20px;
-    transform: none;
-    width: 42px;
-    height: 42px;
-  }
-
-  .lightbox__prev {
-    left: 18px;
-  }
-
-  .lightbox__next {
-    right: 18px;
-  }
-
-  .lightbox__counter {
-    bottom: 30px;
-  }
+  .purchase-actions { grid-template-columns: 1fr; }
+  .prod-related__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 </style>

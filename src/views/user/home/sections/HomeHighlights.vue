@@ -1,36 +1,36 @@
-﻿<script setup>
+<script setup>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSectionReveal } from '@/views/user/home/composables/useSectionReveal'
 
 const { rootRef, isVisible } = useSectionReveal({ threshold: 0.26 })
+const { t } = useI18n()
 
-const highlights = [
+const highlights = computed(() => [
   {
     id: 'integration',
-    title: 'Integrated Solution',
-    description:
-      'Material, construction workflow, and application guidance are aligned for homes, showrooms, and commercial spaces.',
+    title: t('user.home.highlight1Title'),
+    description: t('user.home.highlight1Desc'),
   },
   {
     id: 'quality',
-    title: 'Reliable Quality',
-    description:
-      'Soft-stone portfolio is curated for visual consistency, durability, and real-world fit for local climate conditions.',
+    title: t('user.home.highlight2Title'),
+    description: t('user.home.highlight2Desc'),
   },
   {
     id: 'support',
-    title: 'Fast Project Support',
-    description:
-      'Quick response for pricing, sample suggestion, and solution recommendation matching project schedule.',
+    title: t('user.home.highlight3Title'),
+    description: t('user.home.highlight3Desc'),
   },
-]
+])
 </script>
 
 <template>
   <section class="home-highlights" ref="rootRef">
     <div class="container shell home-reveal" :class="{ 'is-visible': isVisible }">
       <header class="section-head" data-reveal-item>
-        <p>Brand Promise</p>
-        <h2>Reliable Foundation For Modern Surface Design</h2>
+        <p>{{ t('user.home.highlightsEyebrow') }}</p>
+        <h2>{{ t('user.home.highlightsHeadline') }}</h2>
       </header>
 
       <div class="grid">

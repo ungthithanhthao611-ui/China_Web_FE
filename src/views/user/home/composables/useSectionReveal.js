@@ -1,11 +1,11 @@
-﻿import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 export function useSectionReveal(options = {}) {
   const rootRef = ref(null)
   const isVisible = ref(false)
 
   const {
-    threshold = 0.28,
+    threshold = 0.1,
     rootMargin = '0px 0px -10% 0px',
   } = options
 

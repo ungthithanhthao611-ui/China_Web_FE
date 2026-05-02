@@ -21,7 +21,7 @@ const cartStore = useCartStore()
 const getDisplayPrice = (product) => resolveProductDisplayPrice(product)
 
 const formatPrice = (price) => {
-  if (!price) return t('user.home.contactPrice') || 'Liên hệ báo giá'
+  if (!price) return t('user.home.contactPrice')
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 }
 
@@ -53,7 +53,7 @@ const handleCheckout = () => {
         <div class="cart-header">
           <div class="cart-title">
             <ShoppingBag :size="24" />
-            <h2>{{ t('user.home.cart') || 'Giỏ hàng' }}</h2>
+            <h2>{{ t('user.home.cart') }}</h2>
             <span class="cart-count">({{ cartStore.totalItems }})</span>
           </div>
           <button class="close-btn" @click="emit('close')">
@@ -70,8 +70,8 @@ const handleCheckout = () => {
             <div class="empty-icon">
               <ShoppingBag :size="64" />
             </div>
-            <h3>{{ t('user.home.cartEmpty') || 'Giỏ hàng trống' }}</h3>
-            <p>Hãy chọn những sản phẩm tuyệt vời của chúng tôi</p>
+            <h3>{{ t('user.home.cartEmpty') }}</h3>
+            <p>{{ t('user.home.cartEmptyHint') }}</p>
             <button class="continue-btn" @click="emit('close')">
               {{ t('user.home.continueShopping') }}
             </button>
@@ -88,8 +88,8 @@ const handleCheckout = () => {
                   <div class="item-price-block">
                     <span class="item-price-label">{{ t('user.products.priceLabel') }}</span>
                     <div v-if="getDisplayPrice(item.product).hasSale" class="item-price-badges">
-                      <span class="item-price-badge item-price-badge--sale">Giá khuyến mãi</span>
-                      <span class="item-price-badge item-price-badge--original">Giá gốc</span>
+                      <span class="item-price-badge item-price-badge--sale">{{ t('user.cart.salePrice', 'Giá khuyến mãi') }}</span>
+                      <span class="item-price-badge item-price-badge--original">{{ t('user.cart.originalPrice', 'Giá gốc') }}</span>
                     </div>
                     <p
                       class="item-price"

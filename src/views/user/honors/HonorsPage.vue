@@ -18,10 +18,12 @@ const { locale, t } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
 
-const honorSections = [
-  { id: 'page1', label: 'Top' },
-  { id: 'page2b', label: 'Tổng quan nhà máy' },
-]
+const honorSections = computed(() => [
+  { id: 'page1', label: t('user.capability.navTop') },
+  { id: 'page2b', label: t('user.capability.factoryOverview') },
+  { id: 'page2', label: t('user.capability.factoryGallery') },
+  { id: 'page3', label: t('user.capability.honorsAwards') },
+])
 
 const activeSection = ref('page1')
 const loading = ref(false)
@@ -37,10 +39,10 @@ const hero = ref({
   is_active: true,
 })
 const factoryOverview = ref({
-  title: 'Tổng quan nhà máy',
+  title: t('user.capability.factoryOverview'),
   factory_name: '',
   factory_address: '',
-  factory_location: 'Location',
+  factory_location: t('user.capability.factoryLocation'),
   description: '',
   production_technology: '',
   machinery_process: '',
@@ -118,23 +120,23 @@ const isInquiryFormValid = computed(() =>
 )
 const overviewHighlights = computed(() => [
   {
-    label: 'TÊN NHÀ MÁY',
+    label: t('user.capability.factoryNameLabel'),
     value: companyName.value,
     icon: Building2,
   },
   {
-    label: 'ĐỊA CHỈ',
+    label: t('user.capability.factoryAddressLabel'),
     value:
       contactInfo.value.address ||
       factoryOverview.value.factory_address ||
-      'Đang cập nhật địa chỉ nhà máy.',
+      t('user.capability.addressUpdating'),
     icon: MapPinned,
   },
   {
-    label: 'CÔNG SUẤT',
+    label: t('user.capability.factoryCapacityLabel'),
     value:
       factoryOverview.value.production_capacity ||
-      'Đang cập nhật công suất thực tế.',
+      t('user.capability.capacityUpdating'),
     icon: Cog,
   },
 ])
@@ -178,13 +180,13 @@ const overviewMetricCards = computed(() => {
     {
       value: '20,000',
       unit: 'm2',
-      label: 'Di?n t?ch nh? m?y',
+      label: t('user.capability.metricArea'),
       icon: Building2,
     },
     {
       value: '500',
       unit: '',
-      label: 'Nh?n s? c? kinh nghi?m',
+      label: t('user.capability.metricStaff'),
       icon: Users,
     },
   ]
@@ -226,24 +228,24 @@ const capabilityNarratives = computed(() =>
   [
     {
       key: 'technology',
-      label: 'Công nghệ sản xuất',
+      label: t('user.capability.techTitle'),
       value:
         factoryOverview.value.production_technology ||
-        'Ứng dụng dây chuyền hiện đại, kiểm soát chất lượng đồng bộ và tối ưu tốc độ hoàn thiện.',
+        t('user.capability.techDesc'),
     },
     {
       key: 'process',
-      label: 'Máy móc & quy trình',
+      label: t('user.capability.processTitle'),
       value:
         factoryOverview.value.machinery_process ||
-        'Quy trình vận hành được chuẩn hóa từ tiếp nhận đơn hàng, sản xuất, nghiệm thu đến bàn giao.',
+        t('user.capability.processDesc'),
     },
     {
       key: 'output',
-      label: 'Năng lực đầu ra',
+      label: t('user.capability.outputTitle'),
       value:
         factoryOverview.value.output_description ||
-        'Đáp ứng linh hoạt các đơn hàng dự án, OEM/ODM và chuỗi cung ứng cho công trình quy mô lớn.',
+        t('user.capability.outputDesc'),
     },
   ],
 )
@@ -328,7 +330,7 @@ function buildFactoryMapEmbed() {
 
 function handleScroll() {
   const scrollCenter = window.scrollY + window.innerHeight * 0.45
-  for (const item of honorSections) {
+  for (const item of honorSections.value) {
     const element = document.getElementById(item.id)
     if (!element) continue
     const top = element.offsetTop
@@ -351,7 +353,7 @@ function scrollToSection(id) {
 async function syncHashSection() {
   await nextTick()
   const hash = route.hash?.replace('#', '')
-  if (hash && honorSections.some((item) => item.id === hash)) {
+  if (hash && honorSections.value.some((item) => item.id === hash)) {
     scrollToSection(hash)
     return
   }
@@ -378,8 +380,8 @@ async function loadHonors() {
     }
 
     if (!Array.isArray(banners) || banners.length === 0) {
-      const heroTitle = payload.hero_banner?.title || payload.hero?.title || 'NĂNG LỰC'
-      const heroDesc = payload.hero_banner?.subtitle || payload.hero?.description || 'Hình ảnh nhà máy, công nghệ sản xuất, công suất thực tế.'
+      const heroTitle = payload.hero_banner?.title || payload.hero?.title || t('user.capability.heroTitle')
+      const heroDesc = payload.hero_banner?.subtitle || payload.hero?.description || t('user.capability.heroSubtitle')
       const heroBg = payload.hero_banner?.background_image_url || payload.hero?.background || ''
       
       if (heroBg) {
@@ -394,31 +396,47 @@ async function loadHonors() {
     }
 
     hero.value = {
-      banners: banners.filter(b => b.is_active).map(b => ({
-        title: b.title,
-        description: b.subtitle || b.description,
-        background: resolveImageUrl(b.background_image_url),
-        mobile_background: resolveImageUrl(b.mobile_background_image_url || b.background_image_url)
-      })),
+      banners: banners.filter(b => b.is_active).map(b => {
+        const rawTitle = b.title || ''
+        const rawDesc = b.subtitle || b.description || ''
+        
+        return {
+          title: rawTitle.toUpperCase() === 'NĂNG LỰC' ? t('user.capability.heroTitle') : rawTitle,
+          description: rawDesc.includes('Hình ảnh nhà máy') ? t('user.capability.heroSubtitle') : rawDesc,
+          background: resolveImageUrl(b.background_image_url),
+          mobile_background: resolveImageUrl(b.mobile_background_image_url || b.background_image_url)
+        }
+      }),
       accent: resolveImageUrl(payload.hero_banner?.seal_image_url || payload.hero?.accent || ''),
       seal_text: payload.hero_banner?.seal_text || payload.hero?.seal_text || '资质',
       is_active: payload.hero_banner?.is_active ?? payload.hero?.is_active ?? true
     }
 
+    let fOverview = payload.factory_overview || {}
     factoryOverview.value = {
       ...factoryOverview.value,
-      ...(payload.factory_overview || {}),
-      stats: Array.isArray(payload.factory_overview?.stats) ? payload.factory_overview.stats : [],
+      ...fOverview,
+      description: fOverview.description?.includes('Nhà máy được đầu tư hiện đại') ? t('user.capability.defaultDesc') : (fOverview.description || ''),
+      production_technology: fOverview.production_technology?.includes('Ứng dụng dây chuyền') ? t('user.capability.techDesc') : (fOverview.production_technology || ''),
+      machinery_process: fOverview.machinery_process?.includes('Quy trình vận hành') ? t('user.capability.processDesc') : (fOverview.machinery_process || ''),
+      output_description: fOverview.output_description?.includes('Đáp ứng linh hoạt') ? t('user.capability.outputDesc') : (fOverview.output_description || ''),
+      stats: Array.isArray(fOverview.stats) ? fOverview.stats : [],
     }
     factoryGallery.value = Array.isArray(payload.factory_gallery) ? payload.factory_gallery : []
     productionCapabilities.value = Array.isArray(payload.production_capabilities) ? payload.production_capabilities : []
     certificateItems.value = Array.isArray(payload.certificates) ? payload.certificates : []
     corporateItems.value = (payload.sections?.corporate_honors || []).length
       ? payload.sections.corporate_honors
-      : certificateItems.value.filter((item) => String(item.category || '').toLowerCase().includes('corporate'))
+      : certificateItems.value.filter((item) => {
+          const cat = String(item.category || '').toLowerCase()
+          return cat.includes('corporate') || cat.includes('năng lực') || cat.includes('technology')
+        })
     projectItems.value = (payload.sections?.project_honors || []).length
       ? payload.sections.project_honors
-      : certificateItems.value.filter((item) => String(item.category || '').toLowerCase().includes('project'))
+      : certificateItems.value.filter((item) => {
+          const cat = String(item.category || '').toLowerCase()
+          return cat.includes('project') || cat.includes('iso') || cat.includes('ce') || cat.includes('qualification')
+        })
     contactInfo.value = {
       ...contactInfo.value,
       ...(payload.contact_info || {}),
@@ -452,7 +470,7 @@ async function handleInquirySubmit() {
   try {
     await submitInquiry({
       ...inquiryForm.value,
-      subject: inquiryForm.value.subject.trim() || 'Liên hệ từ trang Năng lực',
+      subject: inquiryForm.value.subject.trim() || t('user.capability.formSubject'),
       source_page: 'honors',
     })
     inquiryForm.value = {
@@ -466,7 +484,7 @@ async function handleInquirySubmit() {
     inquiryStatus.value = 'success'
   } catch (error) {
     inquiryStatus.value = 'error'
-    inquiryError.value = error?.message || 'Gửi thất bại. Vui lòng thử lại.'
+    inquiryError.value = error?.message || t('user.capability.formError')
   }
 }
 
@@ -530,7 +548,7 @@ onBeforeUnmount(() => {
             <img
               v-if="overviewDisplayImage"
               :src="resolveImageUrl(overviewDisplayImage)"
-              :alt="factoryOverview.factory_name || 'Nhà máy sản xuất'"
+              :alt="factoryOverview.factory_name || t('user.capability.heroSubtitle')"
             />
             <div v-else class="capability-overview__placeholder">
               <span>{{ companyName.slice(0, 1) }}</span>
@@ -542,8 +560,8 @@ onBeforeUnmount(() => {
                   <MapPin :size="20" />
                 </div>
                 <div>
-                  <span>Vị trí nhà máy</span>
-                  <strong>{{ contactInfo.address || factoryOverview.factory_address || 'Địa chỉ đang cập nhật' }}</strong>
+                  <span>{{ t('user.capability.factoryLocation') }}</span>
+                  <strong>{{ contactInfo.address || factoryOverview.factory_address || t('user.capability.addressUpdating') }}</strong>
                 </div>
               </div>
 
@@ -556,7 +574,7 @@ onBeforeUnmount(() => {
                 <div class="capability-overview__footer-map-icon">
                   <MapPinned :size="18" />
                 </div>
-                <span>Xem trên bản đồ</span>
+                <span>{{ t('user.capability.viewMap') }}</span>
               </a>
             </div>
           </div>
@@ -573,7 +591,7 @@ onBeforeUnmount(() => {
             >
               <img
                 :src="item._preview_url || resolveImageUrl(item.image_url)"
-                :alt="item.title || ('Hình ảnh nhà máy ' + (index + 1))"
+                :alt="item.title || (t('user.capability.factoryGallery') + ' ' + (index + 1))"
               />
             </button>
           </div>
@@ -581,13 +599,13 @@ onBeforeUnmount(() => {
 
         <div class="capability-overview__content capability-overview__content--refined">
           <header class="capability-heading capability-heading--dark-text capability-heading--overview-refined">
-            <span class="eyebrow">NĂNG LỰC NHÀ MÁY</span>
+            <span class="eyebrow">{{ t('user.capability.eyebrow') }}</span>
             <span class="capability-heading__accent"></span>
             <h2>{{ factoryOverview.title || t('user.home.about') }}</h2>
             <p>
               {{
                 factoryOverview.description ||
-                'Nhà máy được đầu tư hiện đại với dây chuyền công nghệ tiên tiến, đáp ứng tiêu chuẩn chất lượng quốc tế.'
+                t('user.capability.defaultDesc')
               }}
             </p>
           </header>
@@ -629,21 +647,30 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </section>
+    
+    <HonorsQualificationList
+      :items="factoryGallery"
+      :image-resolver="resolveImageUrl"
+    />
+
+    <HonorsAwardsTabs
+      :corporate-items="corporateItems"
+      :project-items="projectItems"
+      :image-resolver="resolveImageUrl"
+    />
 
 
 
 
-    <div v-if="loading" class="loading-mask">{{ t('user.home.loading') }}</div>
+    <div v-if="loading" class="loading-mask">{{ t('user.capability.loading') || t('user.home.loading') }}</div>
   </main>
 </template>
 
 <style scoped>
 .honors-page {
   position: relative;
-  background:
-    radial-gradient(circle at top, rgba(183, 132, 74, 0.16), transparent 26%),
-    linear-gradient(180deg, #120c07 0%, #1d130a 28%, #120c07 100%);
-  color: #fff;
+  background: #ffffff;
+  color: #111827;
   overflow: clip;
 }
 
@@ -691,7 +718,7 @@ onBeforeUnmount(() => {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.42);
+  background: rgba(15, 23, 42, 0.2);
   transition: all 0.25s ease;
 }
 
@@ -700,7 +727,7 @@ onBeforeUnmount(() => {
   width: 12px;
   height: 12px;
   background: #df0019;
-  box-shadow: 0 0 0 5px rgba(223, 0, 25, 0.14);
+  box-shadow: 0 0 0 5px rgba(223, 0, 25, 0.08);
 }
 
 .loading-mask {
@@ -748,9 +775,7 @@ onBeforeUnmount(() => {
 }
 
 .capability-section--dark {
-  background:
-    linear-gradient(180deg, rgba(24, 16, 10, 0.98), rgba(53, 36, 20, 0.98)),
-    radial-gradient(circle at top left, rgba(214, 168, 97, 0.18), transparent 30%);
+  background: #f8fafc;
 }
 
 .capability-stage {
@@ -803,7 +828,7 @@ onBeforeUnmount(() => {
 .capability-section--dark .capability-heading h2,
 .capability-section--dark .capability-heading p,
 .capability-section--dark .capability-heading .eyebrow {
-  color: rgba(255, 255, 255, 0.92);
+  color: #1a1a1a;
 }
 
 .capability-heading p {
@@ -1222,13 +1247,11 @@ onBeforeUnmount(() => {
   gap: 18px;
   padding: 24px;
   border-radius: 30px;
-  border: 1px solid rgba(228, 190, 135, 0.16);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05)),
-    radial-gradient(circle at top right, rgba(214, 168, 97, 0.16), transparent 30%);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #ffffff;
   box-shadow:
-    0 26px 56px rgba(4, 4, 6, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 12px 34px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .capability-feature-card__index {
@@ -1251,7 +1274,7 @@ onBeforeUnmount(() => {
 
 .capability-feature-card h3 {
   margin: 0 0 12px;
-  color: #fff4e0;
+  color: #0f172a;
   font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
   font-size: 26px;
   line-height: 1.18;
@@ -1259,7 +1282,7 @@ onBeforeUnmount(() => {
 
 .capability-feature-card p {
   margin: 0;
-  color: rgba(255, 245, 230, 0.78);
+  color: #475569;
   line-height: 1.75;
 }
 
@@ -1306,11 +1329,11 @@ onBeforeUnmount(() => {
 .certificate-card {
   overflow: hidden;
   border-radius: 28px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-  border: 1px solid rgba(214, 168, 97, 0.14);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow:
-    0 20px 48px rgba(8, 5, 3, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 12px 34px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .certificate-card__visual {
@@ -1351,7 +1374,7 @@ onBeforeUnmount(() => {
 
 .certificate-card__content h3 {
   margin: 0;
-  color: #fff0d8;
+  color: #0f172a;
   font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
   font-size: 22px;
   line-height: 1.3;
@@ -1359,7 +1382,7 @@ onBeforeUnmount(() => {
 
 .certificate-card__content p {
   margin: 0;
-  color: rgba(255, 235, 208, 0.7);
+  color: #475569;
   line-height: 1.7;
 }
 
@@ -1467,13 +1490,11 @@ onBeforeUnmount(() => {
 
 .contact-panel__content {
   padding: 30px;
-  background:
-    linear-gradient(180deg, rgba(25, 18, 12, 0.98), rgba(42, 29, 19, 0.98)),
-    radial-gradient(circle at top right, rgba(170, 112, 57, 0.18), transparent 32%);
-  border: 1px solid rgba(214, 168, 97, 0.14);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow:
-    0 28px 70px rgba(8, 5, 3, 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 28px 70px rgba(15, 23, 42, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .contact-info-grid {
@@ -1488,8 +1509,8 @@ onBeforeUnmount(() => {
   gap: 10px;
   padding: 18px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(214, 168, 97, 0.14);
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .contact-info-card span {
@@ -1501,7 +1522,7 @@ onBeforeUnmount(() => {
 }
 
 .contact-info-card strong {
-  color: rgba(255, 245, 230, 0.92);
+  color: #1e293b;
   font-size: 16px;
   line-height: 1.55;
 }
@@ -1517,7 +1538,7 @@ onBeforeUnmount(() => {
 }
 
 .capability-form label > span {
-  color: rgba(255, 242, 223, 0.92);
+  color: #1e293b;
   font-size: 13px;
   font-weight: 800;
 }
@@ -1531,11 +1552,11 @@ onBeforeUnmount(() => {
 .capability-form input,
 .capability-form textarea {
   width: 100%;
-  border: 1px solid rgba(214, 168, 97, 0.14);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 18px;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff0d8;
+  background: #f8fafc;
+  color: #1e293b;
   font: inherit;
   transition:
     transform 0.25s ease,
@@ -1545,7 +1566,7 @@ onBeforeUnmount(() => {
 
 .capability-form input::placeholder,
 .capability-form textarea::placeholder {
-  color: rgba(255, 229, 192, 0.36);
+  color: #94a3b8;
 }
 
 .capability-form input:focus,
@@ -1576,7 +1597,7 @@ onBeforeUnmount(() => {
 
 .capability-form__footer p {
   margin: 0;
-  color: rgba(255, 235, 208, 0.68);
+  color: #475569;
   line-height: 1.7;
 }
 
@@ -1623,7 +1644,7 @@ onBeforeUnmount(() => {
 
 .capability-form__success p {
   margin: 0;
-  color: rgba(255, 235, 208, 0.68);
+  color: #475569;
 }
 
 .empty-state {
@@ -1631,9 +1652,9 @@ onBeforeUnmount(() => {
   place-items: center;
   min-height: 180px;
   border-radius: 28px;
-  border: 1px dashed rgba(214, 168, 97, 0.22);
-  color: rgba(255, 235, 208, 0.64);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(15, 23, 42, 0.14);
+  color: #64748b;
+  background: rgba(15, 23, 42, 0.02);
 }
 
 .empty-state--dark {

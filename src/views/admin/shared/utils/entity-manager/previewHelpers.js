@@ -10,9 +10,10 @@ import {
 export function createEntityManagerPreviewHelpers({
   apiOrigin,
   entityKey,
-  getRelationOptions,
   getRecords,
+  getRelationOptions,
   getMediaOptions,
+  t,
 }) {
   const resolveMediaUrl = (url) => {
     if (!url) return "";
@@ -119,7 +120,7 @@ export function createEntityManagerPreviewHelpers({
     return {
       badge: record?.section_type || "section",
       title: title || anchor || `Section #${record?.id || ""}`,
-      summary: pageLabel ? `Thuộc page: ${pageLabel}` : `Page ID: ${pageId || "-"}`,
+      summary: pageLabel ? `${t('admin.preview.belongs_to_page')}: ${pageLabel}` : `Page ID: ${pageId || "-"}`,
       meta: [
         anchor ? `anchor: ${anchor}` : "",
         record?.sort_order !== null && record?.sort_order !== undefined
@@ -127,7 +128,7 @@ export function createEntityManagerPreviewHelpers({
           : "",
       ].filter(Boolean),
       href: previewHref,
-      linkLabel: previewHref ? "Mở section public" : "",
+      linkLabel: previewHref ? t('admin.preview.open_public_section') : "",
     };
   };
 
@@ -148,7 +149,7 @@ export function createEntityManagerPreviewHelpers({
       badge: blockType || "block",
       title: displayBlockLabel || blockKey || `Block #${record?.id || ""}`,
       summary: pageLabel
-        ? `Block này đang cấp dữ liệu cho page: ${pageLabel}`
+        ? `${t('admin.preview.block_feeds_page')}: ${pageLabel}`
         : `entity_type: ${entityType || "-"} · entity_id: ${entityId || "-"}`,
       meta: [
         blockKey ? `key: ${blockKey}` : "",
@@ -158,7 +159,7 @@ export function createEntityManagerPreviewHelpers({
           : "",
       ].filter(Boolean),
       href: previewTarget.href,
-      linkLabel: previewTarget.href ? "Mở block public" : "",
+      linkLabel: previewTarget.href ? t('admin.preview.open_public_block') : "",
     };
   };
 
@@ -192,7 +193,7 @@ export function createEntityManagerPreviewHelpers({
     return {
       badge: "item",
       title: displayItemTitle || itemKey || `Item #${record?.id || ""}`,
-      summary: blockLabel ? `Thuộc block: ${blockLabel}` : `Block ID: ${blockId || "-"}`,
+      summary: blockLabel ? `${t('admin.preview.belongs_to_block')}: ${blockLabel}` : `Block ID: ${blockId || "-"}`,
       meta: [
         itemKey ? `key: ${itemKey}` : "",
         previewTarget.targetLabel,
@@ -203,7 +204,7 @@ export function createEntityManagerPreviewHelpers({
           : "",
       ].filter(Boolean),
       href: previewTarget.href,
-      linkLabel: previewTarget.href ? "Mở item trên public" : "",
+      linkLabel: previewTarget.href ? t('admin.preview.open_public_item') : "",
     };
   };
 
@@ -445,11 +446,11 @@ export function createEntityManagerPreviewHelpers({
     if (entityKey.value === "content_block_items") return contentBlockItemPreview(record);
     if (entityKey.value === "inquiry_submissions") {
       return {
-        badge: "Phản hồi",
-        title: record.admin_response ? "Đã trả lời" : "Chưa trả lời",
+        badge: t('admin.preview.response_badge'),
+        title: record.admin_response ? t('admin.preview.replied') : t('admin.preview.not_replied'),
         summary: record.admin_response
-          ? `Nội dung: ${record.admin_response}`
-          : "Yêu cầu này chưa có nội dung phản hồi nội bộ.",
+          ? `${t('admin.preview.content_label')}: ${record.admin_response}`
+          : t('admin.preview.inquiry_no_response_yet'),
       };
     }
     return null;
@@ -477,7 +478,7 @@ export function createEntityManagerPreviewHelpers({
         : "Thiếu item key";
     }
     if (entityKey.value === "inquiry_submissions") {
-      return record?.admin_response ? "Đã phản hồi khách hàng" : "Yêu cầu mới chưa xử lý";
+      return record?.admin_response ? t('admin.preview.responded_to_customer') : t('admin.preview.new_inquiry_unprocessed');
     }
     return "";
   };

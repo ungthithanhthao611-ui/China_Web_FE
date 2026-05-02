@@ -6,6 +6,8 @@ import 'swiper/css'
 import 'swiper/css/pagination'
 import 'swiper/css/effect-fade'
 
+import { useI18n } from 'vue-i18n'
+
 defineProps({
   hero: {
     type: Object,
@@ -14,6 +16,8 @@ defineProps({
 })
 
 const emit = defineEmits(['go-section'])
+
+const { t } = useI18n()
 
 const swiperModules = [Autoplay, Pagination, EffectFade]
 </script>
@@ -56,10 +60,10 @@ const swiperModules = [Autoplay, Pagination, EffectFade]
 
               <div class="hero-actions">
                 <button type="button" class="hero-btn hero-btn--primary" @click="emit('go-section', 'page2')">
-                  Khám phá nhà máy
+                  {{ t('user.capability.exploreFactory') || 'Khám phá nhà máy' }}
                 </button>
                 <button type="button" class="hero-btn hero-btn--ghost" @click="emit('go-section', 'page3')">
-                  Xem chứng nhận
+                  {{ t('user.capability.viewCertificates') || 'Xem chứng nhận' }}
                 </button>
               </div>
             </div>
@@ -69,9 +73,9 @@ const swiperModules = [Autoplay, Pagination, EffectFade]
     </Swiper>
 
     <div class="hero-tabs">
-      <button type="button" @click="emit('go-section', 'page2')">Hình ảnh nhà máy</button>
-      <button type="button" @click="emit('go-section', 'page2c')">Công nghệ sản xuất</button>
-      <button type="button" @click="emit('go-section', 'page3')">Chứng nhận & Năng lực</button>
+      <button type="button" @click="emit('go-section', 'page2')">{{ t('user.capability.factoryGallery') }}</button>
+      <button type="button" @click="emit('go-section', 'page3')">{{ t('user.capability.techTitle') }}</button>
+      <button type="button" @click="emit('go-section', 'page3')">{{ t('user.capability.honorsAwards') }}</button>
     </div>
   </section>
 </template>

@@ -1,4 +1,7 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 defineProps({
   uploading: {
     type: Boolean,
@@ -25,16 +28,16 @@ const emit = defineEmits([
 <template>
   <div class="upload-panel">
     <div class="upload-panel__intro">
-      <p class="eyebrow">Khu vực media</p>
-      <h3>Tải tài nguyên media</h3>
+      <p class="eyebrow">{{ $t('admin.media.eyebrow') }}</p>
+      <h3>{{ $t('admin.media.title') }}</h3>
       <p class="description">
-        Thêm tệp mới vào thư viện media với quy trình xuất bản gọn gàng và metadata sẵn sàng để sử dụng.
+        {{ $t('admin.media.description') }}
       </p>
     </div>
 
     <div class="upload-row upload-row--standalone">
       <label class="upload-field upload-field--file">
-        <span>Tệp nguồn</span>
+        <span>{{ $t('admin.media.source_file') }}</span>
         <input
           type="file"
           accept="image/*,video/*,application/pdf"
@@ -43,34 +46,34 @@ const emit = defineEmits([
       </label>
 
       <label class="upload-field">
-        <span>Tiêu đề media</span>
+        <span>{{ $t('admin.media.media_title') }}</span>
         <input
           :value="uploadTitle"
           type="text"
-          placeholder="Tiêu đề media"
+          :placeholder="$t('admin.media.media_title')"
           @input="emit('update:uploadTitle', $event.target.value)"
         />
       </label>
 
       <label class="upload-field">
-        <span>Văn bản thay thế</span>
+        <span>{{ $t('admin.media.alt_text') }}</span>
         <input
           :value="uploadAltText"
           type="text"
-          placeholder="Văn bản thay thế"
+          :placeholder="$t('admin.media.alt_text')"
           @input="emit('update:uploadAltText', $event.target.value)"
         />
       </label>
 
       <div class="upload-field upload-field--action">
-        <span>Xuất bản</span>
+        <span>{{ $t('admin.media.publish') }}</span>
         <button
           type="button"
           class="btn btn-primary"
           :disabled="uploading"
           @click="emit('upload')"
         >
-          {{ uploading ? "Đang tải lên..." : "Tải lên" }}
+          {{ uploading ? $t('admin.media.uploading') : $t('admin.media.upload') }}
         </button>
       </div>
     </div>

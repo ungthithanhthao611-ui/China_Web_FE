@@ -1,5 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 import { env } from '@/shared/config/env'
 import CoreConfirmDialog from '@/views/admin/shared/components/CoreConfirmDialog.vue'
@@ -174,10 +177,10 @@ const imageUploadStates = reactive({})
 const confirmDialog = reactive({
   visible: false,
   tone: 'primary',
-  eyebrow: 'Xác nhận thao tác',
-  title: 'Bạn có chắc chắn muốn tiếp tục?',
+  eyebrow: t('admin.capability.settings.common.confirm_save'),
+  title: t('admin.capability.settings.common.confirm_message'),
   message: '',
-  confirmText: 'Xác nhận',
+  confirmText: t('admin.common.confirm'),
 })
 let confirmDialogResolver = null
 
@@ -266,10 +269,10 @@ function closeConfirmDialog(result = false) {
 function askForConfirmation(options = {}) {
   const {
     tone = 'primary',
-    eyebrow = 'Xác nhận thao tác',
-    title = 'Bạn có chắc chắn muốn tiếp tục?',
-    message = 'Thao tác sẽ được thực thi ngay sau khi bạn xác nhận.',
-    confirmText = 'Xác nhận',
+    eyebrow = t('admin.capability.settings.common.confirm_save'),
+    title = t('admin.capability.settings.common.confirm_message'),
+    message = '',
+    confirmText = t('admin.common.confirm'),
   } = options
 
   if (typeof confirmDialogResolver === 'function') {
@@ -1510,21 +1513,21 @@ const summaryCards = computed(() => {
   return [
     {
       key: 'gallery',
-      label: 'Ảnh gallery đang dùng',
+      label: t('admin.capability.settings.sections.factory_gallery'),
       value: activeGallery,
-      hint: 'Hiển thị ở tab Hình ảnh nhà máy',
+      hint: t('admin.capability.settings.hero.banners_hint'),
     },
     {
       key: 'production',
-      label: 'Thẻ năng lực sản xuất',
+      label: t('admin.capability.settings.sections.production_capabilities'),
       value: activeCapabilities,
-      hint: 'Render ở section công nghệ & năng lực',
+      hint: t('admin.capability.settings.cards.description'),
     },
     {
       key: 'stats',
-      label: 'Chỉ số tổng quan',
+      label: t('admin.capability.settings.factory.stats_title'),
       value: activeStats,
-      hint: 'Render thành cụm stat trong overview',
+      hint: t('admin.capability.settings.factory.stats_hint'),
     },
   ]
 })
@@ -1601,12 +1604,12 @@ function sectionCompletion(sectionKey) {
 function sectionStatusMeta(sectionKey) {
   const state = sectionCompletion(sectionKey)
   if (state === 'complete') {
-    return { label: 'Đã sẵn sàng', tone: 'success' }
+    return { label: t('admin.about.toolbar.complete'), tone: 'success' }
   }
   if (state === 'partial') {
-    return { label: 'Đang bổ sung', tone: 'warning' }
+    return { label: t('admin.about.toolbar.partial'), tone: 'warning' }
   }
-  return { label: 'Chưa có dữ liệu', tone: 'muted' }
+  return { label: t('admin.about.toolbar.missing_content'), tone: 'muted' }
 }
 
 function firstNonEmptyGalleryImage() {
@@ -1633,10 +1636,10 @@ function previewImageForSection(sectionKey) {
 
 function previewCaptionForSection(sectionKey) {
   if (sectionKey === 'hero') {
-    return normalizeText(form.hero_banners[0]?.title) || 'Hero slider'
+    return normalizeText(form.hero_banners[0]?.title) || t('admin.capability.settings.sections.hero_section')
   }
   if (sectionKey === 'overview') {
-    return normalizeText(form.factory_name) || 'Factory overview'
+    return normalizeText(form.factory_name) || t('admin.capability.settings.sections.factory_overview')
   }
   if (sectionKey === 'stats') {
     return `${summaryCards.value.find((item) => item.key === 'stats')?.value || 0} stats`
@@ -1649,18 +1652,18 @@ function previewCaptionForSection(sectionKey) {
 
 function previewMetricForSection(sectionKey) {
   if (sectionKey === 'hero') {
-    return form.capability_hero_is_active ? 'Hero bật' : 'Hero tắt'
+    return form.capability_hero_is_active ? t('admin.capability.settings.common.status_active') : t('admin.capability.settings.common.status_inactive')
   }
   if (sectionKey === 'overview') {
-    return normalizeText(form.factory_address) || 'Chưa có địa chỉ'
+    return normalizeText(form.factory_address) || t('admin.common.no_data')
   }
   if (sectionKey === 'stats') {
-    return `${summaryCards.value.find((item) => item.key === 'stats')?.value || 0} chỉ số`
+    return `${summaryCards.value.find((item) => item.key === 'stats')?.value || 0} ${t('admin.capability.settings.factory.stats_title').toLowerCase()}`
   }
   if (sectionKey === 'hero') {
     return `${form.hero_banners.length} banner`
   }
-  return `${summaryCards.value.find((item) => item.key === 'gallery')?.value || 0} ảnh hoạt động`
+  return `${summaryCards.value.find((item) => item.key === 'gallery')?.value || 0} ${t('admin.capability.settings.sections.factory_gallery').toLowerCase()}`
 }
 
 function isListSection(sectionKey) {
@@ -1680,10 +1683,10 @@ function listSectionEditingCount(sectionKey) {
 }
 
 function listSectionAddLabel(sectionKey) {
-  if (sectionKey === 'hero') return 'Thêm banner'
-  if (sectionKey === 'stats') return 'Thêm chỉ số'
-  if (sectionKey === 'production') return 'Thêm card'
-  return 'Thêm item'
+  if (sectionKey === 'hero') return t('admin.capability.settings.hero.add_banner')
+  if (sectionKey === 'stats') return t('admin.capability.settings.factory.add_stat')
+  if (sectionKey === 'production') return t('admin.capability.settings.cards.add_card')
+  return t('admin.common.create')
 }
 
 async function addListItemFromSection(sectionKey) {
@@ -1704,51 +1707,47 @@ async function addListItemFromSection(sectionKey) {
 const capabilitySections = computed(() => [
   {
     key: 'hero',
-    eyebrow: 'Page 1 Hero',
-    title: 'Banner trượt (Slider)',
-    description:
-      'Quản lý danh sách các slide banner đầu trang. Mỗi slide có ảnh riêng, tiêu đề và mô tả riêng.',
-    previewLabel: 'Xem ngoài web',
+    eyebrow: t('admin.capability.settings.sections.hero_section'),
+    title: t('admin.capability.settings.hero.banners_title'),
+    description: t('admin.capability.settings.hero.banners_hint'),
+    previewLabel: t('admin.common.view_public'),
     previewPath: '/honors#page1',
     stats: [
       `${form.hero_banners.length} banner`,
-      `${form.hero_banners.filter(b => b.is_active).length} đang bật`,
-      `${form.capability_hero_is_active ? 'Hero đang bật' : 'Hero đang tắt'}`,
+      `${form.hero_banners.filter(b => b.is_active).length} ${t('admin.capability.settings.common.status_active')}`,
+      `${form.capability_hero_is_active ? t('admin.capability.settings.common.status_active') : t('admin.capability.settings.common.status_inactive')}`,
     ],
   },
   {
     key: 'overview',
-    eyebrow: 'Page 2 Tổng quan',
-    title: 'Tổng quan nhà máy',
-    description:
-      'Nơi nhập tên nhà máy, địa chỉ, mô tả tổng quan, công nghệ, quy trình cùng 1 ảnh lớn và nhiều ảnh nhỏ cho block overview.',
-    previewLabel: 'Xem ngoài web',
+    eyebrow: t('admin.capability.settings.sections.factory_overview'),
+    title: t('admin.capability.settings.factory.title'),
+    description: t('admin.capability.settings.factory.description'),
+    previewLabel: t('admin.common.view_public'),
     previewPath: '/honors#page2b',
     stats: [
-      normalizeText(form.factory_name) || 'Chưa có tên nhà máy',
-      normalizeText(form.factory_address) || 'Chưa có địa chỉ nhà máy',
-      (firstNonEmptyGalleryImage() || normalizeText(form.factory_main_image_url)) ? 'Có ảnh overview' : 'Thiếu ảnh overview',
+      normalizeText(form.factory_name) || t('admin.common.no_data'),
+      normalizeText(form.factory_address) || t('admin.common.no_data'),
+      (firstNonEmptyGalleryImage() || normalizeText(form.factory_main_image_url)) ? t('admin.capability.settings.common.with_media') : t('admin.capability.settings.common.without_media'),
     ],
   },
   {
     key: 'stats',
-    eyebrow: 'Page 2 Stats',
-    title: 'Thống kê nổi bật',
-    description:
-      'Các chỉ số ngắn hiển thị cạnh phần tổng quan như diện tích và công suất nổi bật của nhà máy.',
-    previewLabel: 'Xem ngoài web',
+    eyebrow: t('admin.capability.settings.factory.stats_title'),
+    title: t('admin.capability.settings.factory.stats_title'),
+    description: t('admin.capability.settings.factory.stats_hint'),
+    previewLabel: t('admin.common.view_public'),
     previewPath: '/honors#page2b',
-    stats: [`${summaryCards.value.find((item) => item.key === 'stats')?.value || 0} chỉ số hợp lệ`],
+    stats: [`${summaryCards.value.find((item) => item.key === 'stats')?.value || 0} ${t('admin.capability.settings.factory.stats_title').toLowerCase()}`],
   },
   {
     key: 'production',
-    eyebrow: 'Page 3 Công nghệ',
-    title: 'Năng lực sản xuất',
-    description:
-      'Quản lý các card mô tả dây chuyền, máy móc, công suất hoặc thế mạnh sản xuất hiển thị ở phần capability.',
-    previewLabel: 'Xem ngoài web',
+    eyebrow: t('admin.capability.settings.sections.production_capabilities'),
+    title: t('admin.capability.settings.sections.production_capabilities'),
+    description: t('admin.capability.settings.cards.description'),
+    previewLabel: t('admin.common.view_public'),
     previewPath: '/honors#page2c',
-    stats: [`${summaryCards.value.find((item) => item.key === 'production')?.value || 0} card đang hoạt động`],
+    stats: [`${summaryCards.value.find((item) => item.key === 'production')?.value || 0} card`],
   },
 ])
 
@@ -1769,9 +1768,9 @@ watch(
       <!-- 1. Header & Stats Combined -->
       <header class="intro-card">
         <div class="intro-copy">
-          <p class="intro-eyebrow">CAPABILITY ADMIN</p>
-          <h2>Quản lý cấu hình trang Năng lực</h2>
-          <p>Hỗ trợ quản lý ảnh 2 chế độ: tải file hoặc import từ URI, có preview realtime trước khi lưu.</p>
+          <p class="intro-eyebrow">{{ $t('admin.capability.items.eyebrow') }}</p>
+          <h2>{{ $t('admin.capability.settings.title') }}</h2>
+          <p>{{ $t('admin.capability.settings.description') }}</p>
         </div>
 
         <div class="intro-actions">
@@ -1781,7 +1780,7 @@ watch(
             :disabled="loading || saving"
             @click="loadCapabilitySettings"
           >
-            Tải lại dữ liệu
+            {{ $t('admin.about.toolbar.reset') }}
           </button>
           <button
             type="button"
@@ -1789,7 +1788,7 @@ watch(
             :disabled="loading || saving"
             @click="saveCapabilitySettings"
           >
-            {{ saving ? 'Đang lưu...' : 'Lưu toàn bộ cấu hình' }}
+            {{ saving ? $t('admin.capability.settings.common.saving') : $t('admin.capability.settings.common.save_all') }}
           </button>
         </div>
       </header>
@@ -1808,7 +1807,7 @@ watch(
 
       <!-- 2. List Sections Unified -->
       <div v-if="loading" class="loading-card-clean">
-        <p>Đang tải cấu hình module Năng lực...</p>
+        <p>{{ $t('admin.common.loading') }}</p>
       </div>
 
       <div v-else class="section-list-unified">
@@ -1833,7 +1832,7 @@ watch(
               </div>
 
               <div class="section-card__info">
-                <p class="section-card__eyebrow">{{ section.eyebrow }}</p>
+                <p class="section-card__eyebrow">{{ $t('admin.capability.settings.eyebrow') }}</p>
                 <h2>{{ section.title }}</h2>
                 <div class="section-card__stats">
                   <span
@@ -1860,7 +1859,7 @@ watch(
                 class="btn btn-secondary btn-sm"
                 @click="toggleSection(section.key)"
               >
-                {{ activeSection === section.key ? 'Thu gọn' : 'Chỉnh sửa' }}
+                {{ activeSection === section.key ? $t('admin.about.section.collapse') : $t('admin.about.section.edit') }}
               </button>
             </div>
           </header>
@@ -1869,11 +1868,11 @@ watch(
           <template v-if="section.key === 'hero'">
             <div class="editor-head">
               <div>
-                <p class="editor-eyebrow">Hero Slider</p>
-                <h4>Danh sách Banner trượt</h4>
+                <p class="editor-eyebrow">{{ $t('admin.capability.settings.hero.banners_title') }}</p>
+                <h4>Slideshow</h4>
               </div>
               <button type="button" class="btn btn-inline" @click="addHeroBanner">
-                + Thêm Banner
+                + {{ $t('admin.capability.settings.hero.add_banner') }}
               </button>
             </div>
 
@@ -1900,10 +1899,10 @@ watch(
                   </div>
                   <div class="editor-item__actions">
                     <button type="button" class="btn btn-secondary-inline" @click="editListItem('banners', item, index)">
-                      Sửa
+                      {{ $t('admin.common.edit') }}
                     </button>
                     <button type="button" class="btn btn-danger-inline" @click="removeHeroBanner(index)">
-                      Xóa
+                      {{ $t('admin.common.delete') }}
                     </button>
                   </div>
                 </div>
@@ -1914,15 +1913,15 @@ watch(
           <template v-else-if="section.key === 'overview'">
             <div class="editor-head">
               <div>
-                <p class="editor-eyebrow">Factory Overview</p>
-                <h4>Tổng quan nhà máy</h4>
+                <p class="editor-eyebrow">{{ $t('admin.capability.settings.sections.factory_overview') }}</p>
+                <h4>{{ $t('admin.capability.settings.factory.title') }}</h4>
               </div>
               <span class="editor-hint">Mô tả quy mô, vị trí, công nghệ và ảnh chính của nhà máy.</span>
             </div>
 
             <div class="field-grid field-grid--two">
               <label class="field">
-                <span>Tiêu đề section</span>
+                <span>{{ $t('admin.capability.settings.factory.title') }}</span>
                 <input
                   v-model="form.capability_factory_overview_title"
                   type="text"
@@ -1930,24 +1929,24 @@ watch(
                 />
               </label>
               <label class="field">
-                <span>Tên nhà máy</span>
+                <span>{{ $t('admin.capability.settings.factory.name') }}</span>
                 <input v-model="form.factory_name" type="text" placeholder="China Factory" />
               </label>
             </div>
 
             <div class="field-grid field-grid--two">
               <label class="field">
-                <span>Địa chỉ nhà máy</span>
+                <span>{{ $t('admin.capability.settings.factory.address') }}</span>
                 <input v-model="form.factory_address" type="text" placeholder="Địa chỉ nhà máy" />
               </label>
               <label class="field">
-                <span>Nhãn vị trí</span>
+                <span>{{ $t('admin.capability.settings.factory.location_label') }}</span>
                 <input v-model="form.factory_location" type="text" placeholder="Location" />
               </label>
             </div>
 
             <label class="field">
-              <span>Mô tả tổng quan</span>
+              <span>{{ $t('admin.capability.settings.factory.description') }}</span>
               <textarea
                 v-model="form.factory_overview_description"
                 rows="4"
@@ -1957,7 +1956,7 @@ watch(
 
             <div class="field-grid field-grid--two">
               <label class="field">
-                <span>Công nghệ sản xuất</span>
+                <span>{{ $t('admin.capability.settings.factory.technology') }}</span>
                 <textarea
                   v-model="form.factory_technology"
                   rows="4"
@@ -1965,7 +1964,7 @@ watch(
                 />
               </label>
               <label class="field">
-                <span>Máy móc / quy trình</span>
+                <span>{{ $t('admin.capability.settings.factory.machinery') }}</span>
                 <textarea
                   v-model="form.machinery_process"
                   rows="4"
@@ -1976,7 +1975,7 @@ watch(
 
             <div class="field-grid field-grid--two">
               <label class="field">
-                <span>Công suất</span>
+                <span>{{ $t('admin.capability.settings.factory.capacity') }}</span>
                 <textarea
                   v-model="form.factory_capacity"
                   rows="3"
@@ -1984,7 +1983,7 @@ watch(
                 />
               </label>
               <label class="field">
-                <span>Mô tả đầu ra</span>
+                <span>{{ $t('admin.capability.settings.factory.output') }}</span>
                 <textarea
                   v-model="form.factory_output_description"
                   rows="3"
@@ -2205,10 +2204,10 @@ watch(
             <div class="editor-head">
               <div>
                 <p class="editor-eyebrow">Factory Stats</p>
-                <h4>Thống kê nổi bật</h4>
+                <h4>{{ $t('admin.capability.settings.factory.stats_title') }}</h4>
               </div>
               <button type="button" class="btn btn-inline" @click="addFactoryStat">
-                + Thêm chỉ số
+                + {{ $t('admin.common.add') }}
               </button>
             </div>
 
@@ -2229,7 +2228,7 @@ watch(
                       class="btn btn-secondary-inline"
                       @click="editListItem('stats', item, index)"
                     >
-                      Sửa
+                      {{ $t('admin.common.edit') }}
                     </button>
                     <button
                       v-if="isEditingListItem('stats', item, index)"
@@ -2248,7 +2247,7 @@ watch(
                       Hủy
                     </button>
                     <button type="button" class="btn btn-danger-inline" @click="removeFactoryStat(index)">
-                      Xóa
+                      {{ $t('admin.common.delete') }}
                     </button>
                   </div>
                 </div>
@@ -2282,10 +2281,10 @@ watch(
             <div class="editor-head">
               <div>
                 <p class="editor-eyebrow">Production Cards</p>
-                <h4>Năng lực sản xuất</h4>
+                <h4>{{ $t('admin.capability.settings.sections.production_capabilities') }}</h4>
               </div>
               <button type="button" class="btn btn-inline" @click="addCapabilityCard">
-                + Thêm card
+                + {{ $t('admin.capability.settings.cards.add_new') }}
               </button>
             </div>
 
@@ -2306,7 +2305,7 @@ watch(
                       class="btn btn-secondary-inline"
                       @click="editListItem('production', item, index)"
                     >
-                      Sửa
+                      {{ $t('admin.common.edit') }}
                     </button>
                     <button
                       v-if="isEditingListItem('production', item, index)"
@@ -2325,7 +2324,7 @@ watch(
                       Hủy
                     </button>
                     <button type="button" class="btn btn-danger-inline" @click="removeCapabilityCard(index)">
-                      Xóa
+                      {{ $t('admin.common.delete') }}
                     </button>
                   </div>
                 </div>
@@ -2387,13 +2386,13 @@ watch(
 
           <div class="editor-footer">
             <div class="editor-footer__status">
-              <span v-if="lastLoadedAt">Cập nhật: {{ lastLoadedAt }}</span>
-              <span v-else>Chưa có dữ liệu</span>
+              <span v-if="lastLoadedAt">{{ $t('admin.about.toolbar.last_updated') }}: {{ lastLoadedAt }}</span>
+              <span v-else>{{ $t('admin.common.no_data') }}</span>
             </div>
 
             <div class="editor-footer__actions">
               <button type="button" class="btn btn-soft btn-sm" @click="openSection('')">
-                Thu gọn
+                {{ $t('admin.about.section.collapse') }}
               </button>
               <button
                 type="button"
@@ -2401,7 +2400,7 @@ watch(
                 :disabled="loading || saving"
                 @click="saveCapabilitySection(section.key)"
               >
-                {{ saving ? 'Đang lưu...' : 'Lưu section' }}
+                {{ saving ? $t('admin.capability.settings.common.saving') : $t('admin.about.section.save') }}
               </button>
             </div>
           </div>
@@ -2422,11 +2421,11 @@ watch(
             <template v-if="itemModal.type === 'stats' && itemModal.item">
               <div class="field-grid">
                 <label class="field">
-                  <span>Nhãn chỉ số</span>
+                  <span>{{ $t('admin.capability.settings.factory.location_label') }}</span>
                   <input v-model="itemModal.item.label" type="text" placeholder="Ví dụ: Diện tích" />
                 </label>
                 <label class="field">
-                  <span>Giá trị</span>
+                  <span>{{ $t('admin.capability.settings.factory.capacity') }}</span>
                   <input v-model="itemModal.item.value" type="text" placeholder="Ví dụ: 50.000 m2" />
                 </label>
               </div>
@@ -2456,7 +2455,7 @@ watch(
             <template v-else-if="itemModal.type === 'gallery' && itemModal.item">
               <div class="field-grid">
                 <label class="field">
-                  <span>Tiêu đề ảnh</span>
+                  <span>{{ $t('admin.capability.categories.table.name') }}</span>
                   <input v-model="itemModal.item.title" type="text" placeholder="Khu vực sản xuất" />
                 </label>
                 <label class="field">
