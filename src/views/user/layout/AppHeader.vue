@@ -1650,6 +1650,17 @@ onBeforeUnmount(() => {
     flex-wrap: nowrap;
     overflow: hidden;
   }
+
+  .language-trigger__current,
+  .language-trigger svg {
+    display: none;
+  }
+
+  .language-trigger {
+    padding: 0 10px;
+    min-width: 42px;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 767px) {
