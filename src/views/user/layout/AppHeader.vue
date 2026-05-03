@@ -1734,9 +1734,9 @@ onBeforeUnmount(() => {
 .user-auth-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-left: 12px;
-  padding-left: 12px;
+  gap: 8px;
+  margin-left: 6px;
+  padding-left: 8px;
   border-left: 1px solid rgba(214, 176, 116, 0.2);
 }
 
