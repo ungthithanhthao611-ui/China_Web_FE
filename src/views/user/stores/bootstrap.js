@@ -51,12 +51,27 @@ export const useBootstrapStore = defineStore('bootstrap', {
       this.loading = true
       this.error = null
 
-      this._inFlight = Promise.all([
-        getHealth(),
-        getBootstrap({ language_code: localStorage.getItem('user-locale') || env.languageCode }),
-      ])
-        .then(([health, bootstrap]) => {
-          this.health = health
+      // Đọc từ bộ nhớ máy khách (Cache) để hiện web ngay lập tức trong < 1s
+      if (!this.initialized) {
+        try {
+          const cached = localStorage.getItem('cached-bootstrap')
+          if (cached) {
+            const bootstrap = JSON.parse(cached)
+            this.language = bootstrap.language || null
+            this.menus = bootstrap.menus || {}
+            this.settings = bootstrap.settings || []
+            this.heroBanners = bootstrap.hero_banners || []
+            this.rawBootstrap = bootstrap
+            // Vẫn để initialized = false để UI biết là đang nạp bản mới nhất trong nền
+          }
+        } catch (e) {}
+      }
+
+      // Chiến thuật: Nạp thẳng Bootstrap, bỏ qua Health Check để nhanh hơn 1s
+      this._inFlight = getBootstrap({ 
+        language_code: localStorage.getItem('user-locale') || env.languageCode 
+      })
+        .then((bootstrap) => {
           this.language = bootstrap.language || null
           this.menus = bootstrap.menus || {}
           this.settings = bootstrap.settings || []
@@ -65,7 +80,13 @@ export const useBootstrapStore = defineStore('bootstrap', {
           this.initialized = true
           this.initializedAt = new Date().toISOString()
           this.menusRevision = latestMenusRevision || Date.now()
-          return { health, bootstrap }
+          
+          // Lưu vào cache để lần sau vào là hiện ngay lập tức
+          try {
+            localStorage.setItem('cached-bootstrap', JSON.stringify(bootstrap))
+          } catch (e) {}
+
+          return { bootstrap }
         })
         .catch((error) => {
           // ── Graceful degradation: khi BE offline, FE vẫn render với fallback data ──
