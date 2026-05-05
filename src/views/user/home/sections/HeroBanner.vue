@@ -124,8 +124,9 @@ function clampBannerFocus(value) {
 const slides = computed(() => {
   const banners = bootstrapStore.heroBanners || []
 
+  // Trả về mảng rỗng nếu chưa có dữ liệu từ DB để tránh hiện ảnh cũ
   if (!banners.length) {
-    return defaultSlides.value
+    return []
   }
 
   return banners.map((banner, index) => {
@@ -231,7 +232,7 @@ defineExpose({ goToSlide })
 </script>
 
 <template>
-  <section class="hero-banner">
+  <section v-if="slides.length" class="hero-banner">
     <swiper
       :modules="modules"
       :slides-per-view="1"
@@ -303,10 +304,12 @@ defineExpose({ goToSlide })
       <span class="hero-scroll__arrow"></span>
     </button>
   </section>
+  <div v-else class="hero-banner-placeholder"></div>
 </template>
 
 <style scoped>
-.hero-banner {
+.hero-banner,
+.hero-banner-placeholder {
   position: relative;
   height: 100svh;
   min-height: min(720px, 100svh);
