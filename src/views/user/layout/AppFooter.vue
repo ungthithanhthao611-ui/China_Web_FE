@@ -92,6 +92,20 @@ const toAddressLines = (value, fallbackLines) => {
     .filter(Boolean)
 }
 
+const compactAddressLines = (value, fallbackLines = []) => {
+  const parts = toAddressLines(value, fallbackLines)
+
+  if (parts.length <= 2) {
+    return parts
+  }
+
+  if (parts.length === 3) {
+    return [`${parts[0]}, ${parts[1]}`, parts[2]]
+  }
+
+  return [parts.slice(0, -1).join(', '), parts.at(-1)]
+}
+
 const headerMenuItems = computed(() =>
   normalizeMenuItems(
     findMenuItems(bootstrapStore.menus, ['header', 'main', 'primary', 'nav', 'navigation', 'top'])
@@ -192,7 +206,7 @@ const contactItems = computed(() => {
       href: addressUrl,
       external: true,
       icon: 'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/72384eda-85c5-448d-91bb-451ba699887a.png',
-      lines: toAddressLines(address.value, fallbackAddressLines),
+      lines: compactAddressLines(address.value, fallbackAddressLines),
     },
     {
       id: 'phone',
@@ -517,9 +531,10 @@ const getLinkProps = (item) => toLinkProps(item)
 }
 
 .foot_contact {
-  gap: 6px;
+  display: grid;
+  gap: 8px;
   margin-top: 16px;
-  max-width: 218px;
+  max-width: 320px;
 }
 
 .foot_contact__item {
@@ -532,6 +547,7 @@ const getLinkProps = (item) => toLinkProps(item)
   line-height: 1.55;
   transition: color 0.24s ease;
 }
+
 
 .foot_contact__item:hover {
   color: rgba(255, 255, 255, 0.9);
@@ -551,7 +567,9 @@ const getLinkProps = (item) => toLinkProps(item)
 .foot_contact__text--stacked {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
+
 
 .foot_nav {
   display: grid;
