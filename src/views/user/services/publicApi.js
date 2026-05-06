@@ -92,6 +92,10 @@ export function getBootstrap(query = {}) {
   return fetchJson('/public/bootstrap', { query: withLanguage(query) })
 }
 
+export function getHomeBootstrap(query = {}) {
+  return fetchJson('/public/home-bootstrap', { query: withLanguage(query) })
+}
+
 export function getBanners({ bannerType, ...query } = {}) {
   return fetchWithLanguageFallback(
     '/public/banners',

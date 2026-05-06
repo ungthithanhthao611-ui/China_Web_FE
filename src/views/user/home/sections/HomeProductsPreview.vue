@@ -1,15 +1,15 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { env } from '@/shared/config/env'
+import { useHomeBootstrap } from '@/views/user/home/composables/useHomeBootstrap'
 import { useSectionReveal } from '@/views/user/home/composables/useSectionReveal'
-import { listProducts } from '@/views/user/services/productsApi'
 
-const loading = ref(true)
 const items = ref([])
 const { locale, t } = useI18n({ useScope: 'global' })
 const { rootRef, isVisible } = useSectionReveal({ threshold: 0.1 })
+const { data: homeBootstrap, loading, ensureLoaded } = useHomeBootstrap()
 const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
 
 function resolveAssetUrl(url) {
@@ -33,67 +33,57 @@ function resolveProductImage(product) {
   return resolveAssetUrl(gallery[0]?.url || '')
 }
 
-async function loadProducts() {
-  loading.value = true
-  try {
-    const payload = await listProducts({ skip: 0, limit: 4 })
-    const rows = Array.isArray(payload?.items) ? payload.items : []
-    items.value = rows.map((row) => {
-      let category = row.category_name
-      let name = row.name
+function syncProducts() {
+  const rows = Array.isArray(homeBootstrap.value?.products?.items) ? homeBootstrap.value.products.items : []
+  items.value = rows.map((row) => {
+    let category = row.category_name
+    let name = row.name
 
-      if (locale.value !== 'vi') {
-        // Category mapping
-        const nCat = normalizeText(category).toUpperCase()
-        if (nCat.includes('VAN DA')) category = t('user.products.catStone') || 'Stone Texture'
-        else if (nCat.includes('VAN VAI')) category = t('user.products.catFabric') || 'Fabric Texture'
-        else if (nCat.includes('3D')) category = t('user.products.cat3D') || '3D Texture'
-        else if (nCat.includes('XI MANG')) category = t('user.products.catCement') || 'Cement Texture'
-        else if (nCat.includes('GACH THE')) category = t('user.products.catBrick') || 'Brick Texture'
-        else if (nCat.includes('LINH HOAT')) category = t('user.products.catFlexible') || 'Flexible Cladding'
-        
-        // Robust Product name mapping
-        const n = normalizeText(name)
-        let prefix = ''
-        if (n.includes('da phien')) prefix = locale.value === 'en' ? 'Slate' : '石板'
-        else if (n.includes('da travertine')) prefix = locale.value === 'en' ? 'Travertine' : '洞石'
-        else if (n.includes('da xe ranh')) prefix = locale.value === 'en' ? 'Grooved Stone' : '开槽石材'
-        else if (n.includes('da van song')) prefix = locale.value === 'en' ? 'Wave Stone' : '波浪纹石材'
-        else if (n.includes('da nuoc chay')) prefix = locale.value === 'en' ? 'Water Flow Stone' : '流水石材'
-        else if (n.includes('da dacit')) prefix = locale.value === 'en' ? 'Dacite Stone' : '安山岩'
-        else if (n.includes('da ') || n.startsWith('da ')) prefix = locale.value === 'en' ? 'Stone' : '石材'
-        else if (n.includes('dat nen')) prefix = locale.value === 'en' ? 'Earth Texture' : '地表纹理'
-        else if (n.includes('dan tre')) prefix = locale.value === 'en' ? 'Bamboo Woven' : '竹编纹理'
-        else if (n.includes('van vai')) prefix = locale.value === 'en' ? 'Fabric Texture' : '织物纹理'
-        else if (n.includes('van soi')) prefix = locale.value === 'en' ? 'Fiber Texture' : '纤维纹理'
-        else if (n.includes('be tong')) prefix = locale.value === 'en' ? 'Concrete' : '混凝土'
+    if (locale.value !== 'vi') {
+      const nCat = normalizeText(category).toUpperCase()
+      if (nCat.includes('VAN DA')) category = t('user.products.catStone') || 'Stone Texture'
+      else if (nCat.includes('VAN VAI')) category = t('user.products.catFabric') || 'Fabric Texture'
+      else if (nCat.includes('3D')) category = t('user.products.cat3D') || '3D Texture'
+      else if (nCat.includes('XI MANG')) category = t('user.products.catCement') || 'Cement Texture'
+      else if (nCat.includes('GACH THE')) category = t('user.products.catBrick') || 'Brick Texture'
+      else if (nCat.includes('LINH HOAT')) category = t('user.products.catFlexible') || 'Flexible Cladding'
 
-        if (prefix) {
-          if (n.includes('3d')) name = prefix + ' 3D'
-          else name = prefix
-        } else if (/[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i.test(name)) {
-          name = normalizeText(name).toUpperCase()
-        }
+      const n = normalizeText(name)
+      let prefix = ''
+      if (n.includes('da phien')) prefix = locale.value === 'en' ? 'Slate' : '石板'
+      else if (n.includes('da travertine')) prefix = locale.value === 'en' ? 'Travertine' : '洞石'
+      else if (n.includes('da xe ranh')) prefix = locale.value === 'en' ? 'Grooved Stone' : '开槽石材'
+      else if (n.includes('da van song')) prefix = locale.value === 'en' ? 'Wave Stone' : '波浪纹石材'
+      else if (n.includes('da nuoc chay')) prefix = locale.value === 'en' ? 'Water Flow Stone' : '流水石材'
+      else if (n.includes('da dacit')) prefix = locale.value === 'en' ? 'Dacite Stone' : '安山岩'
+      else if (n.includes('da ') || n.startsWith('da ')) prefix = locale.value === 'en' ? 'Stone' : '石材'
+      else if (n.includes('dat nen')) prefix = locale.value === 'en' ? 'Earth Texture' : '地表纹理'
+      else if (n.includes('dan tre')) prefix = locale.value === 'en' ? 'Bamboo Woven' : '竹编纹理'
+      else if (n.includes('van vai')) prefix = locale.value === 'en' ? 'Fabric Texture' : '织物纹理'
+      else if (n.includes('van soi')) prefix = locale.value === 'en' ? 'Fiber Texture' : '纤维纹理'
+      else if (n.includes('be tong')) prefix = locale.value === 'en' ? 'Concrete' : '混凝土'
+
+      if (prefix) {
+        if (n.includes('3d')) name = prefix + ' 3D'
+        else name = prefix
+      } else if (/[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i.test(name)) {
+        name = normalizeText(name).toUpperCase()
       }
-      
-      return {
-        id: row.id,
-        name: name,
-        slug: row.slug,
-        category: category,
-        summary: locale.value === 'vi' ? (row.short_desc || '') : t('user.home.productDescriptionFallback'),
-        image: resolveProductImage(row),
-      }
-    })
-  } catch {
-    items.value = []
-  } finally {
-    loading.value = false
-  }
+    }
+
+    return {
+      id: row.id,
+      name,
+      slug: row.slug,
+      category,
+      summary: locale.value === 'vi' ? (row.short_desc || '') : t('user.home.productDescriptionFallback'),
+      image: resolveProductImage(row),
+    }
+  })
 }
 
-watch(locale, loadProducts)
-onMounted(loadProducts)
+watch([homeBootstrap, locale], syncProducts, { immediate: true })
+ensureLoaded().catch(() => {})
 </script>
 
 <template>

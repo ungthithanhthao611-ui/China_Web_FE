@@ -1,16 +1,16 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { MapPin, ArrowRight } from 'lucide-vue-next'
 
 import { env } from '@/shared/config/env'
+import { useHomeBootstrap } from '@/views/user/home/composables/useHomeBootstrap'
 import { useSectionReveal } from '@/views/user/home/composables/useSectionReveal'
-import { getProjects } from '@/views/user/services/publicApi'
 
-const loading = ref(true)
 const items = ref([])
 const { locale, t } = useI18n({ useScope: 'global' })
 const { rootRef, isVisible } = useSectionReveal({ threshold: 0.24 })
+const { data: homeBootstrap, loading, ensureLoaded } = useHomeBootstrap()
 const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
 
 function resolveAssetUrl(url) {
@@ -29,28 +29,20 @@ function resolveProjectImage(project) {
   )
 }
 
-async function loadProjects() {
-  loading.value = true
-  try {
-    const payload = await getProjects({ skip: 0, limit: 4 })
-    const rows = Array.isArray(payload?.items) ? payload.items : []
-    items.value = rows.map((row, idx) => ({
-      id: row.id,
-      title: locale.value === 'vi' ? row.title : (t('user.home.projects') + ' ' + (idx + 1)),
-      slug: row.slug,
-      summary: locale.value === 'vi' ? (row.summary || '') : t('user.home.projectDescriptionFallback'),
-      location: row.location || '',
-      image: resolveProjectImage(row),
-    }))
-  } catch {
-    items.value = []
-  } finally {
-    loading.value = false
-  }
+function syncProjects() {
+  const rows = Array.isArray(homeBootstrap.value?.projects?.items) ? homeBootstrap.value.projects.items : []
+  items.value = rows.map((row, idx) => ({
+    id: row.id,
+    title: locale.value === 'vi' ? row.title : (t('user.home.projects') + ' ' + (idx + 1)),
+    slug: row.slug,
+    summary: locale.value === 'vi' ? (row.summary || '') : t('user.home.projectDescriptionFallback'),
+    location: row.location || '',
+    image: resolveProjectImage(row),
+  }))
 }
 
-watch(locale, loadProjects)
-onMounted(loadProjects)
+watch([homeBootstrap, locale], syncProjects, { immediate: true })
+ensureLoaded().catch(() => {})
 </script>
 
 <template>

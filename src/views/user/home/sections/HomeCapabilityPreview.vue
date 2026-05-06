@@ -1,18 +1,19 @@
 <script setup>
 import { Building2, Cog, MapPin, MapPinned, Users } from 'lucide-vue-next'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { env } from '@/shared/config/env'
+import { useHomeBootstrap } from '@/views/user/home/composables/useHomeBootstrap'
 import { useSectionReveal } from '@/views/user/home/composables/useSectionReveal'
-import { getHonorsPageData } from '@/views/user/services/honorsApi'
 
 const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
-const loading = ref(true)
-const payload = ref(null)
 const activeOverviewImage = ref('')
 const { rootRef, isVisible } = useSectionReveal({ threshold: 0.22 })
 const { locale, t } = useI18n({ useScope: 'global' })
+const { data: homeBootstrap, loading, ensureLoaded } = useHomeBootstrap()
+
+const payload = computed(() => homeBootstrap.value?.honors || null)
 
 function resolveImageUrl(url) {
   const normalized = String(url || '').trim()
@@ -26,22 +27,22 @@ const factoryOverview = computed(() => {
   const isVi = locale.value === 'vi'
 
   const translateFactoryName = (name) => {
-    if (isVi || !name) return name;
-    if (name.includes('China Factory') || name.includes('Nhà máy Trung Quốc')) return t('user.home.factoryNameValue');
-    return name;
-  };
+    if (isVi || !name) return name
+    if (name.includes('China Factory') || name.includes('Nhà máy Trung Quốc')) return t('user.home.factoryNameValue')
+    return name
+  }
 
   const translateFactoryAddress = (address) => {
-    if (isVi || !address) return address;
-    if (address.includes('52 Ấp Đồng Chinh')) return t('user.home.factoryAddressValue');
-    return address;
-  };
+    if (isVi || !address) return address
+    if (address.includes('52 Ấp Đồng Chinh')) return t('user.home.factoryAddressValue')
+    return address
+  }
 
   const translateFactoryCapacity = (capacity) => {
-    if (isVi || !capacity) return capacity;
-    if (capacity.toLowerCase().includes('đang cập nhật') || capacity.toLowerCase().includes('being updated')) return t('user.home.factoryCapacityValue');
-    return capacity;
-  };
+    if (isVi || !capacity) return capacity
+    if (capacity.toLowerCase().includes('đang cập nhật') || capacity.toLowerCase().includes('being updated')) return t('user.home.factoryCapacityValue')
+    return capacity
+  }
 
   return {
     title: t('user.home.factoryOverviewTitle') || raw.title,
@@ -151,10 +152,10 @@ const overviewMetricCards = computed(() => {
     const unitMatch = rawValue.match(/(m²|m2|sqm|%)/i)
 
     const translateMetricLabel = (label) => {
-      if (locale.value === 'vi' || !label) return label;
-      if (label.includes('Diện tích')) return t('user.home.factoryArea');
-      if (label.includes('Công suất')) return t('user.home.annualCapacity');
-      return label;
+      if (locale.value === 'vi' || !label) return label
+      if (label.includes('Diện tích')) return t('user.home.factoryArea')
+      if (label.includes('Công suất')) return t('user.home.annualCapacity')
+      return label
     }
 
     if (!rawValue) return fallbackCard
@@ -188,18 +189,7 @@ watch(
   { immediate: true },
 )
 
-async function loadData() {
-  loading.value = true
-  try {
-    payload.value = await getHonorsPageData()
-  } catch {
-    payload.value = null
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(loadData)
+ensureLoaded().catch(() => {})
 </script>
 
 <template>
