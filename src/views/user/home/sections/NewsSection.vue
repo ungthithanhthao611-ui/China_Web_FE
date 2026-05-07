@@ -413,7 +413,7 @@ onMounted(fetchNews)
     padding: 80px 0;
   }
   .section-title {
-    font-size: 48px;
+    font-size: 28px;
   }
   .news-item {
     grid-template-columns: 1fr;

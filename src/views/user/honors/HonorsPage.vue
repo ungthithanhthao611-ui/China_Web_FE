@@ -361,6 +361,24 @@ async function syncHashSection() {
 }
 
 async function loadHonors() {
+  const CACHE_KEY = `cached_honors_page_${locale.value}`
+  
+  // Try cache first
+  try {
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      const parsed = JSON.parse(cached)
+      // Populate refs from cache for instant UI
+      hero.value = parsed.hero
+      factoryOverview.value = parsed.factoryOverview
+      factoryGallery.value = parsed.factoryGallery
+      certificateItems.value = parsed.certificateItems
+      corporateItems.value = parsed.corporateItems
+      projectItems.value = parsed.projectItems
+      contactInfo.value = parsed.contactInfo
+    }
+  } catch (e) {}
+
   loading.value = true
   try {
     const contactsPayload = await getContacts()
@@ -456,6 +474,17 @@ async function loadHonors() {
       contactInfo.value.contact_name = primaryContact.value.name
     }
     contactInfo.value.map_embed = buildFactoryMapEmbed()
+
+    // Persist to cache
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      hero: hero.value,
+      factoryOverview: factoryOverview.value,
+      factoryGallery: factoryGallery.value,
+      certificateItems: certificateItems.value,
+      corporateItems: corporateItems.value,
+      projectItems: projectItems.value,
+      contactInfo: contactInfo.value,
+    }))
   } finally {
     loading.value = false
   }

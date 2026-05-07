@@ -172,18 +172,42 @@ const paginatedProducts = computed(() => {
 const hasVideoUrl = (product) => Boolean(String(product?.video_url || '').trim())
 
 async function fetchCategoryTree() {
+  const CACHE_KEY = `cached_prod_categories_${locale.value}`
+  
+  // Try cache first
+  try {
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      categoryTree.value = JSON.parse(cached)
+    }
+  } catch (e) {}
+
   loadingCategories.value = true
   try {
     const res = await listProductCategories()
-    categoryTree.value = res.items || []
+    const items = res.items || []
+    categoryTree.value = items
+    localStorage.setItem(CACHE_KEY, JSON.stringify(items))
   } catch {
-    categoryTree.value = []
+    if (!categoryTree.value.length) {
+      categoryTree.value = []
+    }
   } finally {
     loadingCategories.value = false
   }
 }
 
 async function fetchProducts() {
+  const CACHE_KEY = `cached_all_products_${locale.value}`
+  
+  // Try cache first
+  try {
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      products.value = JSON.parse(cached)
+    }
+  } catch (e) {}
+
   loadingProducts.value = true
   try {
     const res = await listProducts({
@@ -191,9 +215,13 @@ async function fetchProducts() {
       skip: 0,
       limit: 100,
     })
-    products.value = res.items || []
+    const items = res.items || []
+    products.value = items
+    localStorage.setItem(CACHE_KEY, JSON.stringify(items))
   } catch {
-    products.value = []
+    if (!products.value.length) {
+      products.value = []
+    }
   } finally {
     loadingProducts.value = false
   }

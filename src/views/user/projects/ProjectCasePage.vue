@@ -18,14 +18,28 @@ const heroImage = computed(() => {
 })
 
 async function loadProjects() {
+  const CACHE_KEY = `cached_projects_list_${locale.value}`
+  
+  // Try cache first
+  try {
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      projects.value = JSON.parse(cached)
+    }
+  } catch (e) {}
+
   loading.value = true
   error.value = null
   try {
     const res = await getProjects({ limit: 50 })
-    projects.value = res?.items || []
+    const items = res?.items || []
+    projects.value = items
+    localStorage.setItem(CACHE_KEY, JSON.stringify(items))
   } catch (err) {
-    error.value = err?.message || t('user.projects.errorLoading')
-    projects.value = []
+    if (!projects.value.length) {
+      error.value = err?.message || t('user.projects.errorLoading')
+      projects.value = []
+    }
   } finally {
     loading.value = false
   }

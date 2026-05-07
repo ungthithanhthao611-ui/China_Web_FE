@@ -393,7 +393,7 @@ p {
 @media (max-width: 767px) {
   .hero {
     min-height: auto;
-    padding: 82px 0 170px;
+    padding: 100px 0 170px;
   }
 
   .hero::after {

@@ -82,20 +82,43 @@ async function fetchBanner() {
 }
 
 async function fetchPage() {
+  const CACHE_KEY = `cached_news_page_${currentPage.value}_${locale.value}`
+  
+  // Try cache first
+  try {
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      const parsed = JSON.parse(cached)
+      items.value = parsed.items
+      total.value = parsed.total
+    }
+  } catch (e) {}
+
   loading.value = true;
   error.value = null;
 
   try {
     const skip = (currentPage.value - 1) * pageSize;
     const res = await getNewsList({ skip, limit: pageSize });
-    items.value = Array.isArray(res?.items)
+    const newItems = Array.isArray(res?.items)
       ? res.items.map(normalizeNewsItem)
       : [];
-    total.value = Number(res?.total || 0);
+    const newTotal = Number(res?.total || 0);
+    
+    items.value = newItems;
+    total.value = newTotal;
+
+    // Persist to cache
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      items: newItems,
+      total: newTotal
+    }))
   } catch (err) {
-    error.value = err?.message || t('user.news.errorLoadFailed')
-    items.value = [];
-    total.value = 0;
+    if (!items.value.length) {
+      error.value = err?.message || t('user.news.errorLoadFailed')
+      items.value = [];
+      total.value = 0;
+    }
   } finally {
     loading.value = false;
   }

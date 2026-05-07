@@ -289,6 +289,7 @@ onUnmounted(() => {
   scroll-snap-stop: always;
 
   @media (max-width: 992px) {
+    height: auto;
     min-height: auto;
   }
 }
