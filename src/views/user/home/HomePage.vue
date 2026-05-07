@@ -9,9 +9,9 @@ import AppFooter from '@/views/user/layout/AppFooter.vue'
 import { uiState } from '@/shared/utils/uiState'
 import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 
-const HomeAboutQuick = defineAsyncComponent(() => import('./sections/HomeAboutQuick.vue'))
+import HomeAboutQuick from './sections/HomeAboutQuick.vue'
+import HomeProductsPreview from './sections/HomeProductsPreview.vue'
 const HomeCapabilityPreview = defineAsyncComponent(() => import('./sections/HomeCapabilityPreview.vue'))
-const HomeProductsPreview = defineAsyncComponent(() => import('./sections/HomeProductsPreview.vue'))
 const HomeProjectsPreview = defineAsyncComponent(() => import('./sections/HomeProjectsPreview.vue'))
 const NewsSection = defineAsyncComponent(() => import('./sections/NewsSection.vue'))
 
@@ -149,6 +149,10 @@ onMounted(() => {
       updateActiveSectionFromScroll()
     }, 160)
   }
+
+  // Optimize API: Pre-fetch home data for all sections
+  const { ensureLoaded } = useHomeBootstrap()
+  ensureLoaded().catch(() => {})
 
   window.addEventListener('hashchange', handleHashChange)
 })
@@ -292,7 +296,7 @@ onUnmounted(() => {
 #ctn1 { background: #000; }
 #ctn2 { background: #f0f7ff; } /* Light Blue */
 #ctn4 { background: #fdfaf6; } /* Light Cream */
-#ctn5 { background: #f0fff4; } /* Light Green */
+#ctn5 { background: #fdfdfb; } /* Match HomeProjectsPreview background */
 #ctn6 { background: #fdfdfb; } /* Match Project section Ivory */
 
 .section-inner {

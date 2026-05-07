@@ -129,11 +129,26 @@ const mobileDropdownChildren = (item) => {
 }
 
 async function loadProductCategories() {
+  const CACHE_KEY = `cached_categories_${locale.value}`
+  
+  // Try to load from cache first for instant UI
+  try {
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      productCategories.value = JSON.parse(cached)
+    }
+  } catch (e) {}
+
   try {
     const res = await listProductCategories()
-    productCategories.value = normalizeProductCategoryTree(res.items || [])
+    const normalized = normalizeProductCategoryTree(res.items || [])
+    productCategories.value = normalized
+    // Persist to cache
+    localStorage.setItem(CACHE_KEY, JSON.stringify(normalized))
   } catch {
-    productCategories.value = []
+    if (!productCategories.value.length) {
+      productCategories.value = []
+    }
   }
 }
 

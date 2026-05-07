@@ -136,7 +136,7 @@ ensureLoaded().catch(() => {})
 <style scoped>
 .home-projects {
   padding: 100px 0;
-  background: #fdfdfb;
+  background: transparent;
   position: relative;
   overflow: hidden;
 }
@@ -316,6 +316,10 @@ ensureLoaded().catch(() => {})
   border-radius: 12px;
   overflow: hidden;
   background: #f2f2f2;
+
+  @media (max-width: 768px) {
+    aspect-ratio: 16 / 10;
+  }
 }
 
 .card-visual img {
@@ -490,7 +494,10 @@ ensureLoaded().catch(() => {})
 
 @media (max-width: 768px) {
   .home-projects {
-    padding: 64px 0;
+    padding: 48px 0;
+  }
+  .section-head {
+    margin-bottom: 32px;
   }
   .section-title {
     font-size: 24px;

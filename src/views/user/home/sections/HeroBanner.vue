@@ -151,9 +151,16 @@ const sourceBanners = computed(() => {
 const slides = computed(() => {
   const banners = sourceBanners.value
 
-  // Trả về mảng rỗng nếu chưa có dữ liệu từ DB để tránh hiện ảnh cũ
+  // Use default slides if no API data yet
   if (!banners.length) {
-    return []
+    return defaultSlides.value.map((slide, index) => ({
+      ...slide,
+      poster: slide.src,
+      hasCopy: true,
+      focusX: 50,
+      focusY: 50,
+      fallback: slide
+    }))
   }
 
   return banners.map((banner, index) => {
@@ -310,12 +317,7 @@ defineExpose({ goToSlide })
       </swiper-slide>
     </swiper>
 
-    <!-- Fallback background while API is connecting -->
-    <div v-else class="hero-media hero-media--placeholder">
-      <div class="hero-loading-copy">Đang tải banner...</div>
-      <div class="overlay"></div>
-      <div class="overlay overlay--grain"></div>
-    </div>
+
 
     <div class="hero-copy-shell">
       <div v-if="slides.length && currentSlide.hasCopy" class="hero-copy">

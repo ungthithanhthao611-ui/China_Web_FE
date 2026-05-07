@@ -10,8 +10,8 @@ import { NAVIGATION_MENUS_SYNC_KEY } from '@/shared/utils/navigationSync'
 import { uiState } from '@/shared/utils/uiState'
 import { useI18n } from 'vue-i18n'
 
-const MIN_SPLASH_MS = 450
-const MAX_SPLASH_MS = 2500
+const MIN_SPLASH_MS = 200
+const MAX_SPLASH_MS = 1500
 
 const { locale } = useI18n({ useScope: 'global' })
 const route = useRoute()
@@ -90,7 +90,7 @@ watch(
     <transition name="app-splash">
       <div v-if="shouldShowSplash" class="app-splash" role="status" aria-live="polite">
         <div class="app-splash__content">
-          <img class="app-splash__logo" :src="logoImage" alt="Thiên Đồng Việt Nam" />
+          <img class="app-splash__logo" :src="logoImage" alt="Thiên Đồng Việt Nam" loading="eager" fetchpriority="high" />
           <div class="app-splash__bar">
             <span></span>
           </div>
