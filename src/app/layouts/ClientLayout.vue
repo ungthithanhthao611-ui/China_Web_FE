@@ -16,6 +16,12 @@ const MAX_SPLASH_MS = 1500
 const { locale } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const bootstrapStore = useBootstrapStore()
+
+// Tất cả route /about/* dùng chung 1 key → tránh remount AboutPage khi chuyển sub-route
+const routeComponentKey = computed(() => {
+  if (route.path.startsWith('/about')) return '/about'
+  return route.path
+})
 const isSplashVisible = ref(true)
 const splashStartedAt = Date.now()
 let splashTimerId = null
@@ -104,7 +110,7 @@ watch(
     <main class="main-content">
       <router-view v-slot="{ Component }">
         <transition name="fade">
-          <component :is="Component" :key="route.fullPath" />
+          <component :is="Component" :key="routeComponentKey" />
         </transition>
       </router-view>
     </main>

@@ -7,43 +7,11 @@ const clientRoutes = [
   {
     path: 'about',
     redirect: '/about/company-introduction',
-    children: [
-      {
-        path: 'company-introduction',
-        name: 'CompanyIntroduction',
-        component: () => import('@/views/user/about/AboutPage.vue'),
-      },
-      {
-        path: 'chairman-speech',
-        name: 'ChairmanSpeech',
-        component: () => import('@/views/user/about/AboutPage.vue'),
-      },
-      {
-        path: 'organization-chart',
-        name: 'OrganizationChart',
-        component: () => import('@/views/user/about/AboutPage.vue'),
-      },
-      {
-        path: 'corporate-culture',
-        name: 'CorporateCulture',
-        component: () => import('@/views/user/about/AboutPage.vue'),
-      },
-      {
-        path: 'development-course',
-        name: 'DevelopmentCourse',
-        component: () => import('@/views/user/about/AboutPage.vue'),
-      },
-      {
-        path: 'leadership-care',
-        name: 'LeadershipCare',
-        component: () => import('@/views/user/about/AboutPage.vue'),
-      },
-      {
-        path: 'cooperative-partner',
-        name: 'CooperativePartner',
-        component: () => import('@/views/user/about/AboutPage.vue'),
-      },
-    ],
+  },
+  {
+    path: 'about/:section',
+    name: 'About',
+    component: () => import('@/views/user/about/AboutPage.vue'),
   },
   {
     path: 'honors',

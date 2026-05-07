@@ -20,6 +20,7 @@ import {
   Menu,
   MessageSquare,
   Package,
+  PencilLine,
   Search,
   Settings,
   ShoppingBag,
@@ -31,6 +32,7 @@ import {
   Video,
   Globe,
   Languages,
+  TriangleAlert,
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { LOCALE_STORAGE_KEY } from '@/i18n'
@@ -58,7 +60,6 @@ import AdminSiteSettings from '@/admin/pages/AdminSiteSettings.vue'
 import MediaAssetsManager from '@/views/admin/features/system/pages/MediaAssetsManager.vue'
 import OrdersManager from '@/views/admin/features/system/pages/OrdersManager.vue'
 import UsersManager from '@/views/admin/features/system/pages/UsersManager.vue'
-import AdminUsersManager from '@/views/admin/features/system/pages/AdminUsersManager.vue'
 
 
 import HonorsManager from '@/views/admin/features/honors/pages/HonorsManager.vue'
@@ -71,10 +72,18 @@ const router = useRouter()
 const route = useRoute()
 const { t, locale } = useI18n()
 
-const availableSectionKeys = ['dashboard', 'navigation', ...Object.keys(ADMIN_SECTION_INDEX).filter((key) => key !== 'dashboard' && key !== 'navigation')]
+const availableSectionKeys = [
+  'dashboard',
+  'navigation',
+  'admin_profile',
+  ...Object.keys(ADMIN_SECTION_INDEX).filter(
+    (key) => key !== 'dashboard' && key !== 'navigation',
+  ),
+]
 const LEGACY_SECTION_REDIRECTS = {
   project_products: 'projects',
   entity_media: 'projects',
+  admin_users: 'users',
 }
 
 const adminSidebarGroups = ADMIN_SECTION_GROUPS
@@ -103,10 +112,18 @@ const KPI_ICONS = {
 
 const QUICK_STAT_ICONS = {
   out_of_stock: Box,
+  low_stock: TriangleAlert,
   new_customers: Users,
   posts: FileText,
-  videos: Video
+  videos: Video,
 }
+
+const PRODUCT_QUANTITY_ICONS = {
+  low_stock_products: TriangleAlert,
+  out_of_stock_products: Box,
+}
+
+const LOW_STOCK_FALLBACK_THRESHOLD = 10
 
 const STATUS_MAP = {
   pending_confirmation: 'Chờ xác nhận',
@@ -185,6 +202,12 @@ const toast = reactive({
 let toastTimerId = null
 let isDashboardAlive = true
 let dashboardSummaryRequestId = 0
+const inventoryPanel = reactive({
+  lowStockThreshold: LOW_STOCK_FALLBACK_THRESHOLD,
+  lowStockProducts: [],
+  outOfStockProducts: [],
+  activeTab: 'low_stock_products',
+})
 
 const isLangOpen = ref(false)
 const supportedLanguages = [
@@ -256,7 +279,7 @@ const currentBreadcrumb = computed(() => {
   const config = ADMIN_SECTION_INDEX[activeSection.value]
   return config?.label || activeSection.value
 })
-const userLabel = computed(() => currentUser.value?.full_name || currentUser.value?.username || 'Admin Admin')
+const userLabel = computed(() => currentUser.value?.full_name || currentUser.value?.username || 'Quản trị viên')
 const userRole = computed(() => {
   const role = String(currentUser.value?.role || '').toLowerCase()
   return role === 'admin' || !role ? t('admin.common.admin_profile') : role
@@ -275,6 +298,36 @@ const pieChartStyle = computed(() => {
   }
   return { background: `conic-gradient(${stops.join(', ')})` }
 })
+
+const lowStockProductsCount = computed(() => inventoryPanel.lowStockProducts.length)
+const outOfStockProductsCount = computed(() => inventoryPanel.outOfStockProducts.length)
+
+const productQuantityStats = computed(() => [
+  {
+    key: 'low_stock_products',
+    value: lowStockProductsCount.value,
+    tone: 'warning',
+    icon: PRODUCT_QUANTITY_ICONS.low_stock_products,
+  },
+  {
+    key: 'out_of_stock_products',
+    value: outOfStockProductsCount.value,
+    tone: 'danger',
+    icon: PRODUCT_QUANTITY_ICONS.out_of_stock_products,
+  },
+])
+
+const activeInventoryProducts = computed(() => (
+  inventoryPanel.activeTab === 'out_of_stock_products'
+    ? inventoryPanel.outOfStockProducts
+    : inventoryPanel.lowStockProducts
+))
+
+const activeInventoryTitle = computed(() => (
+  inventoryPanel.activeTab === 'out_of_stock_products'
+    ? t('admin.dashboard.out_of_stock_products')
+    : t('admin.dashboard.low_stock_products')
+))
 
 function setSuccess(message) {
   showToast('success', message)
@@ -376,6 +429,27 @@ async function loadDashboardStats() {
       topProducts.value = dashboardStats.topProducts || []
       orderStats.value = dashboardStats.orderStats || []
       quickStats.value = (dashboardStats.quickStats || []).map(stat => ({ ...stat, icon: QUICK_STAT_ICONS[stat.key] || Box }))
+      inventoryPanel.lowStockThreshold = Number(dashboardStats.inventory?.lowStockThreshold || LOW_STOCK_FALLBACK_THRESHOLD)
+      inventoryPanel.lowStockProducts = Array.isArray(dashboardStats.inventory?.lowStockProducts)
+        ? dashboardStats.inventory.lowStockProducts
+        : []
+      inventoryPanel.outOfStockProducts = Array.isArray(dashboardStats.inventory?.outOfStockProducts)
+        ? dashboardStats.inventory.outOfStockProducts
+        : []
+      if (
+        inventoryPanel.activeTab === 'out_of_stock_products'
+        && inventoryPanel.outOfStockProducts.length === 0
+        && inventoryPanel.lowStockProducts.length > 0
+      ) {
+        inventoryPanel.activeTab = 'low_stock_products'
+      }
+      if (
+        inventoryPanel.activeTab === 'low_stock_products'
+        && inventoryPanel.lowStockProducts.length === 0
+        && inventoryPanel.outOfStockProducts.length > 0
+      ) {
+        inventoryPanel.activeTab = 'out_of_stock_products'
+      }
     }
   } catch (err) {
     console.error('[Dashboard Stats Error]', err)
@@ -633,11 +707,15 @@ onBeforeUnmount(() => {
             </button>
             <transition name="dropdown">
               <div v-if="isProfileOpen" class="profile-dropdown shadow-xl">
-                <button type="button" class="profile-item profile-info" @click="handleSectionChange('admin_profile'); isProfileOpen = false">
-
+                <button
+                  type="button"
+                  class="profile-item profile-info"
+                  @click="handleSectionChange('admin_profile'); isProfileOpen = false"
+                >
+                  <PencilLine :size="16" />
                   <div class="profile-info-text">
-                    <strong>{{ userLabel }}</strong>
-                    <span>{{ currentUser?.email || 'Chưa cập nhật email' }}</span>
+                    <strong>{{ $t('admin.sidebar.admin_profile') }}</strong>
+                    <span>{{ currentUser?.email || 'Cập nhật tên, email, số điện thoại và ảnh đại diện' }}</span>
                   </div>
                 </button>
                 <div class="dropdown-divider"></div>
@@ -782,16 +860,60 @@ onBeforeUnmount(() => {
 
           <section class="dashboard-card quick-stat-card">
             <div class="card-header">
-              <h2>{{ $t('admin.dashboard.quick_stats') }}</h2>
+              <div>
+                <h2>{{ $t('admin.dashboard.product_quantity_stats') }}</h2>
+                <p class="inventory-card-subtitle">
+                  {{ $t('admin.dashboard.low_stock_threshold_note', { count: inventoryPanel.lowStockThreshold }) }}
+                </p>
+              </div>
             </div>
             <div class="quick-stat-list">
-              <article v-for="stat in quickStats" :key="stat.key" class="quick-stat-row" :class="`quick-stat-row--${stat.tone}`">
+              <button
+                v-for="stat in productQuantityStats"
+                :key="stat.key"
+                type="button"
+                class="quick-stat-row quick-stat-button"
+                :class="[
+                  `quick-stat-row--${stat.tone}`,
+                  { 'quick-stat-button--active': inventoryPanel.activeTab === stat.key },
+                ]"
+                @click="inventoryPanel.activeTab = stat.key"
+              >
                 <span>
                   <component :is="stat.icon" :size="18" />
                 </span>
                 <p>{{ $t(`admin.dashboard.${stat.key}`) }}</p>
                 <strong>{{ stat.value }}</strong>
-              </article>
+              </button>
+            </div>
+            <div class="inventory-detail-panel">
+              <div class="inventory-detail-panel__head">
+                <strong>{{ activeInventoryTitle }}</strong>
+                <span>{{ activeInventoryProducts.length }} {{ $t('admin.dashboard.items') }}</span>
+              </div>
+              <div v-if="!activeInventoryProducts.length" class="empty-state inventory-empty-state">
+                <p>{{ $t('admin.dashboard.no_inventory_products') }}</p>
+              </div>
+              <div v-else class="inventory-product-list">
+                <article
+                  v-for="product in activeInventoryProducts"
+                  :key="`${inventoryPanel.activeTab}-${product.id}`"
+                  class="inventory-product-row"
+                >
+                  <div class="product-thumb inventory-product-row__thumb">
+                    <img v-if="product.image_url" :src="product.image_url" :alt="product.name" />
+                    <div v-else class="product-thumb-placeholder"><Package :size="16" stroke-width="1.5" /></div>
+                  </div>
+                  <div class="inventory-product-row__content">
+                    <strong>{{ product.name }}</strong>
+                    <p>Mã SP: {{ product.sku }}</p>
+                  </div>
+                  <div class="inventory-product-row__stock" :class="`inventory-product-row__stock--${inventoryPanel.activeTab}`">
+                    <span>Tồn kho</span>
+                    <strong>{{ product.stock_quantity }}</strong>
+                  </div>
+                </article>
+              </div>
             </div>
           </section>
         </div>
@@ -939,14 +1061,6 @@ onBeforeUnmount(() => {
         @clear-notify="clearMessages"
       />
 
-      <AdminUsersManager
-        v-else-if="activeSection === 'admin_users'"
-        :token="token"
-        :active="true"
-        @notify-success="setSuccess"
-        @notify-error="setError"
-        @clear-notify="clearMessages"
-      />
 
       <AdminProfilePage
         v-else-if="activeSection === 'admin_profile'"
@@ -1810,9 +1924,8 @@ button:disabled {
   margin-top: 4px;
   font-size: 12px;
   color: #64748b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.45;
 }
 
 .dropdown-divider {
@@ -1841,12 +1954,16 @@ button:disabled {
   color: #ef4444;
 }
 
+.profile-item:hover {
+  background: rgba(59, 130, 246, 0.06);
+}
+
 .profile-item.logout-btn:hover {
   background: #fef2f2;
 }
 
 .profile-info:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(59, 130, 246, 0.08);
 }
 
 .dashboard-panel {
@@ -2282,6 +2399,152 @@ button:disabled {
 
 .quick-stat-row--blue strong {
   color: #2563eb;
+}
+
+.quick-stat-row--warning span {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.quick-stat-row--warning strong {
+  color: #d97706;
+}
+
+.quick-stat-button {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 14px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+}
+
+.quick-stat-button:hover {
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.quick-stat-button--active {
+  border-color: rgba(37, 99, 235, 0.18);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.inventory-card-subtitle {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.inventory-detail-panel {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.inventory-detail-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.inventory-detail-panel__head strong {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.inventory-detail-panel__head span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.inventory-empty-state {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+}
+
+.inventory-product-list {
+  display: grid;
+  gap: 12px;
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.inventory-product-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.inventory-product-row__thumb {
+  width: 56px;
+  height: 56px;
+}
+
+.inventory-product-row__content {
+  min-width: 0;
+}
+
+.inventory-product-row__content strong {
+  display: block;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.inventory-product-row__content p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.inventory-product-row__stock {
+  min-width: 84px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.inventory-product-row__stock span {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.inventory-product-row__stock strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.inventory-product-row__stock--low_stock_products {
+  background: #fff7ed;
+}
+
+.inventory-product-row__stock--low_stock_products strong {
+  color: #d97706;
+}
+
+.inventory-product-row__stock--out_of_stock_products {
+  background: #fef2f2;
+}
+
+.inventory-product-row__stock--out_of_stock_products strong {
+  color: #ef4444;
 }
 
 .lang-switcher {

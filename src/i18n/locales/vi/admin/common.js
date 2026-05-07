@@ -23,7 +23,7 @@ export default {
   success: 'Thành công',
   error: 'Lỗi',
   confirm_delete: 'Bạn có chắc chắn muốn xóa bản ghi này?',
-  admin_profile: 'Hồ sơ quản trị',
+  admin_profile: 'Hồ sơ cá nhân',
   brand_kicker: '',
   brand_name: 'Admin',
   notifications: 'Thông báo',

@@ -1102,7 +1102,7 @@ export const ADMIN_SECTION_GROUPS = [
       { key: 'navigation', label: 'admin.sidebar.navigation' },
       { key: 'site_settings', label: 'admin.sidebar.site_settings' },
       { key: 'banners', label: 'admin.sidebar.banners' },
-      { key: 'admin_users', label: 'admin.sidebar.accounts' },
+      { key: 'users', label: 'admin.sidebar.accounts' },
     ],
 
   },
@@ -1145,10 +1145,7 @@ export const ADMIN_SECTION_GROUPS = [
   },
   {
     title: 'admin.sidebar.orders_customers',
-    items: [
-      { key: 'orders', label: 'admin.sidebar.orders' },
-      { key: 'users', label: 'admin.sidebar.users' },
-    ],
+    items: [{ key: 'orders', label: 'admin.sidebar.orders' }],
   },
 ]
 

@@ -1,10 +1,10 @@
 /**
- * useEntityManager â€” Composable chá»©a TOÃ€N Bá»˜ logic Ä‘á»™ng cÆ¡ quáº£n lÃ½ entity.
- * ÄÆ°á»£c gá»i tá»« AdminCoreManager.vue hoáº·c báº¥t ká»³ domain wrapper nÃ o.
+ * useEntityManager — Composable chứa TOÀN BỘ logic động cơ quản lý entity.
+ * Được gọi từ AdminCoreManager.vue hoặc bất kỳ domain wrapper nào.
  *
  * @param {Object} props - reactive props (token, entityKey, active)
- * @param {Function} emit - emit function tá»« defineEmits
- * @returns {Object} - táº¥t cáº£ state, computed, functions cáº§n cho template
+ * @param {Function} emit - emit function từ defineEmits
+ * @returns {Object} - tất cả state, computed, functions cần cho template
  */
 import {
   computed,
@@ -45,10 +45,10 @@ const ENTITY_KEY_ALIASES = Object.freeze({
 })
 
 const FALLBACK_ENTITY_CONFIG = Object.freeze({
-  label: 'Báº£n ghi',
-  eyebrow: 'MÃ´-Ä‘un quáº£n trá»‹',
+  label: 'Bản ghi',
+  eyebrow: 'Mô-đun quản trị',
   description:
-    'Cáº¥u hÃ¬nh module chÆ°a sáºµn sÃ ng. Vui lÃ²ng kiá»ƒm tra entity-key hoáº·c cáº¥u hÃ¬nh ENTITY_MANAGER_CONFIGS.',
+    'Cấu hình module chưa sẵn sàng. Vui lòng kiểm tra entity-key hoặc cấu hình ENTITY_MANAGER_CONFIGS.',
   titleField: 'id',
   table: ['id'],
   fields: [],
@@ -167,7 +167,7 @@ export function useEntityManager(props, emit) {
   const hasProductStockFilter = computed(() => resolvedEntityKey.value === 'products')
   const productStockFilterOptions = computed(() => [
     { value: 'in_stock', label: t('admin.common.in_stock') },
-    { value: 'low_stock', label: `${t('admin.common.low_stock')} (â‰¤ 5)` },
+    { value: 'low_stock', label: `${t('admin.common.low_stock')} (≤ 5)` },
     { value: 'out_of_stock', label: t('admin.common.out_of_stock') },
   ])
   const hasMediaFields = computed(() => {
@@ -352,10 +352,10 @@ export function useEntityManager(props, emit) {
 
   const selectedMediaLabel = (field) => {
     const primaryLabel = previewHelpers.selectedMediaLabel(form, field)
-    if (primaryLabel !== 'ChÆ°a chá»n media') return primaryLabel
+    if (primaryLabel !== 'Chưa chọn media') return primaryLabel
     if (props.entityKey === 'content_block_items' && field === 'image_id') {
       return String(form.__legacy_image_url || '').trim()
-        ? 'áº¢nh cÅ© (metadata)'
+        ? 'Ảnh cũ (metadata)'
         : primaryLabel
     }
     return primaryLabel
@@ -481,10 +481,10 @@ export function useEntityManager(props, emit) {
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   function closeActionConfirmDialog(confirmed = false) {
     actionConfirmDialog.visible = false
-    actionConfirmDialog.eyebrow = 'XÃ¡c nháº­n thao tÃ¡c'
+    actionConfirmDialog.eyebrow = 'Xác nhận thao tác'
     actionConfirmDialog.title = ''
     actionConfirmDialog.message = ''
-    actionConfirmDialog.confirmText = 'XÃ¡c nháº­n'
+    actionConfirmDialog.confirmText = 'Xác nhận'
     actionConfirmDialog.tone = 'primary'
     if (actionConfirmResolver) {
       const resolve = actionConfirmResolver
@@ -494,7 +494,7 @@ export function useEntityManager(props, emit) {
   }
 
   function openActionConfirmDialog({
-    eyebrow = 'XÃ¡c nháº­n thao tÃ¡c',
+    eyebrow = 'Xác nhận thao tác',
     title,
     message,
     confirmText,
@@ -527,19 +527,19 @@ export function useEntityManager(props, emit) {
     const label = entityLabelForAction(record)
     if (action === 'update') {
       return openActionConfirmDialog({
-        eyebrow: 'Cáº­p nháº­t báº£n ghi',
-        title: `Cáº­p nháº­t ${label}?`,
-        message: 'XÃ¡c nháº­n Ä‘á»ƒ lÆ°u cÃ¡c thÃ´ng tin Ä‘Ã£ chá»‰nh sá»­a.',
-        confirmText: 'XÃ¡c nháº­n cáº­p nháº­t',
+        eyebrow: 'Cập nhật bản ghi',
+        title: `Cập nhật ${label}?`,
+        message: 'Xác nhận để lưu các thông tin đã chỉnh sửa.',
+        confirmText: 'Xác nhận cập nhật',
         tone: 'primary',
       })
     }
     if (action === 'delete') {
       return openActionConfirmDialog({
-        eyebrow: 'XÃ³a báº£n ghi',
-        title: `XÃ³a ${label}?`,
-        message: 'HÃ nh Ä‘á»™ng nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.',
-        confirmText: 'XÃ¡c nháº­n xÃ³a',
+        eyebrow: 'Xóa bản ghi',
+        title: `Xóa ${label}?`,
+        message: 'Hành động này không thể hoàn tác.',
+        confirmText: 'Xác nhận xóa',
         tone: 'danger',
       })
     }
@@ -551,30 +551,30 @@ export function useEntityManager(props, emit) {
     if (isBannerEntity.value) {
       if (action === 'create')
         return name
-          ? `ÄÃ£ táº¡o banner má»›i thÃ nh cÃ´ng: "${name}".`
-          : 'ÄÃ£ táº¡o banner má»›i thÃ nh cÃ´ng.'
+          ? `Đã tạo banner mới thành công: "${name}".`
+          : 'Đã tạo banner mới thành công.'
       if (action === 'update')
         return name
-          ? `ÄÃ£ cáº­p nháº­t banner thÃ nh cÃ´ng: "${name}".`
-          : 'ÄÃ£ cáº­p nháº­t banner thÃ nh cÃ´ng.'
+          ? `Đã cập nhật banner thành công: "${name}".`
+          : 'Đã cập nhật banner thành công.'
       if (action === 'delete')
         return name
-          ? `ÄÃ£ xÃ³a banner thÃ nh cÃ´ng: "${name}".`
-          : 'ÄÃ£ xÃ³a banner thÃ nh cÃ´ng.'
+          ? `Đã xóa banner thành công: "${name}".`
+          : 'Đã xóa banner thành công.'
     }
-    const label = String(config.value?.label || 'báº£n ghi').trim()
-    if (action === 'create') return `ÄÃ£ táº¡o ${label.toLowerCase()} thÃ nh cÃ´ng.`
+    const label = String(config.value?.label || 'bản ghi').trim()
+    if (action === 'create') return `Đã tạo ${label.toLowerCase()} thành công.`
     if (action === 'update') {
       return name
-        ? `ÄÃ£ cáº­p nháº­t ${label.toLowerCase()} thÃ nh cÃ´ng: "${name}".`
-        : `ÄÃ£ cáº­p nháº­t ${label.toLowerCase()} thÃ nh cÃ´ng.`
+        ? `Đã cập nhật ${label.toLowerCase()} thành công: "${name}".`
+        : `Đã cập nhật ${label.toLowerCase()} thành công.`
     }
     if (action === 'delete') {
       return name
-        ? `ÄÃ£ xÃ³a ${label.toLowerCase()} thÃ nh cÃ´ng: "${name}".`
-        : `ÄÃ£ xÃ³a ${label.toLowerCase()} thÃ nh cÃ´ng.`
+        ? `Đã xóa ${label.toLowerCase()} thành công: "${name}".`
+        : `Đã xóa ${label.toLowerCase()} thành công.`
     }
-    return 'Thao tÃ¡c Ä‘Ã£ hoÃ n táº¥t thÃ nh cÃ´ng.'
+    return 'Thao tác đã hoàn tất thành công.'
   }
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -804,7 +804,7 @@ export function useEntityManager(props, emit) {
         requestKey !== entityRequestKey()
       )
         return
-      notifyError(error.message || 'KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u liÃªn káº¿t.')
+      notifyError(error.message || 'Không thể tải dữ liệu liên kết.')
     }
   }
 
@@ -856,7 +856,7 @@ export function useEntityManager(props, emit) {
         return
       mediaOptions.value = []
       notifyError(
-        error.message || 'KhÃ´ng thá»ƒ táº£i danh sÃ¡ch phÆ°Æ¡ng tiá»‡n (media).',
+        error.message || 'Không thể tải danh sách phương tiện (media).',
       )
     }
   }
@@ -921,7 +921,7 @@ export function useEntityManager(props, emit) {
         return
       records.value = []
       totalRecords.value = 0
-      notifyError(error.message || 'KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u ná»™i dung.')
+      notifyError(error.message || 'Không thể tải dữ liệu nội dung.')
     } finally {
       if (
         isComponentAlive &&
@@ -1059,7 +1059,7 @@ export function useEntityManager(props, emit) {
         closeForm()
       }
     } catch (error) {
-      const errorMsg = error.message || 'KhÃ´ng thá»ƒ lÆ°u báº£n ghi.'
+      const errorMsg = error.message || 'Không thể lưu bản ghi.'
       formErrors.value = [errorMsg]
       notifyError(errorMsg)
       if (
@@ -1086,7 +1086,7 @@ export function useEntityManager(props, emit) {
       notifySuccess(actionSuccessMessage('delete', record))
       await loadRecords()
     } catch (error) {
-      notifyError(error.message || 'KhÃ´ng thá»ƒ xÃ³a báº£n ghi.')
+      notifyError(error.message || 'Không thể xóa bản ghi.')
     } finally {
       deletingId.value = null
     }
@@ -1102,9 +1102,9 @@ export function useEntityManager(props, emit) {
         token,
       )
       Object.assign(form, response)
-      notifySuccess('ÄÃ£ tá»± Ä‘á»™ng dá»‹ch cÃ¡c trÆ°á»ng vÄƒn báº£n. Vui lÃ²ng kiá»ƒm tra láº¡i trÆ°á»›c khi lÆ°u.')
+      notifySuccess('Đã tự động dịch các trường văn bản. Vui lòng kiểm tra lại trước khi lưu.')
     } catch (error) {
-      notifyError(error.message || 'Lá»—i khi tá»± Ä‘á»™ng dá»‹ch.')
+      notifyError(error.message || 'Lỗi khi tự động dịch.')
     } finally {
       saving.value = false
     }
@@ -1129,7 +1129,7 @@ export function useEntityManager(props, emit) {
   async function uploadVideoFile() {
     const token = normalizedToken()
     if (!token || !videoUploadFile.value) {
-      notifyError('Vui lÃ²ng chá»n tá»‡p video cáº§n táº£i lÃªn trÆ°á»›c.')
+      notifyError('Vui lòng chọn tệp video cần tải lên trước.')
       return
     }
     const allowedTypes = [
@@ -1144,7 +1144,7 @@ export function useEntityManager(props, emit) {
       !allowedTypes.some((type) => file.type === type) &&
       !/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(file.name)
     ) {
-      notifyError('Invalid video file type. Allowed: MP4, WebM, OGG, MOV.')
+      notifyError('Định dạng video không hợp lệ. Hỗ trợ: MP4, WebM, OGG, MOV.')
       return
     }
     videoUploading.value = true
@@ -1168,14 +1168,14 @@ export function useEntityManager(props, emit) {
       videoUploadFile.value = null
       if (videoFileInputRef.value) videoFileInputRef.value.value = ''
       if (media.storage_backend === 'cloudinary')
-        notifySuccess(`ÄÃ£ táº£i video #${media.id} lÃªn Cloudinary thÃ nh cÃ´ng.`)
+        notifySuccess(`Đã tải video #${media.id} lên Cloudinary thành công.`)
       else if (media.fallback_reason)
         notifySuccess(
-          `ÄÃ£ táº£i video #${media.id} lÃªn mÃ¡y chá»§ local. Cloudinary bá»‹ bá» qua: ${media.fallback_reason}`,
+          `Đã tải video #${media.id} lên máy chủ local. Cloudinary bị bỏ qua: ${media.fallback_reason}`,
         )
-      else notifySuccess(`ÄÃ£ táº£i video #${media.id} lÃªn há»‡ thá»‘ng thÃ nh cÃ´ng.`)
+      else notifySuccess(`Đã tải video #${media.id} lên hệ thống thành công.`)
     } catch (error) {
-      notifyError(error.message || 'KhÃ´ng thá»ƒ táº£i video lÃªn.')
+      notifyError(error.message || 'Không thể tải video lên.')
     } finally {
       videoUploading.value = false
     }
@@ -1184,7 +1184,7 @@ export function useEntityManager(props, emit) {
   async function uploadMedia() {
     const token = normalizedToken()
     if (!token || !uploadFile.value) {
-      notifyError('Vui lÃ²ng chá»n tá»‡p cáº§n táº£i lÃªn trÆ°á»›c.')
+      notifyError('Vui lòng chọn tệp cần tải lên trước.')
       return
     }
     uploading.value = true
@@ -1232,15 +1232,15 @@ export function useEntityManager(props, emit) {
       uploadTitle.value = ''
       uploadAltText.value = ''
       if (media.storage_backend === 'cloudinary')
-        notifySuccess(`ÄÃ£ táº£i áº£nh #${media.id} lÃªn Cloudinary thÃ nh cÃ´ng.`)
+        notifySuccess(`Đã tải ảnh #${media.id} lên Cloudinary thành công.`)
       else if (media.fallback_reason)
         notifySuccess(
-          `ÄÃ£ táº£i áº£nh #${media.id} lÃªn mÃ¡y chá»§ local. Cloudinary bá»‹ bá» qua: ${media.fallback_reason}`,
+          `Đã tải ảnh #${media.id} lên máy chủ local. Cloudinary bị bỏ qua: ${media.fallback_reason}`,
         )
       else
-        notifySuccess(`ÄÃ£ táº£i áº£nh #${media.id} lÃªn há»‡ thá»‘ng thÃ nh cÃ´ng.`)
+        notifySuccess(`Đã tải ảnh #${media.id} lên hệ thống thành công.`)
     } catch (error) {
-      notifyError(error.message || 'KhÃ´ng thá»ƒ táº£i tá»‡p media lÃªn.')
+      notifyError(error.message || 'Không thể tải tệp media lên.')
     } finally {
       uploading.value = false
     }
@@ -1296,11 +1296,11 @@ export function useEntityManager(props, emit) {
       await loadMediaOptions()
       notifySuccess(
         total > 1
-          ? `ÄÃ£ táº£i ${total} áº£nh lÃªn thÃ nh cÃ´ng â†’ ${fieldLabel(field)}`
-          : `ÄÃ£ táº£i áº£nh lÃªn thÃ nh cÃ´ng â†’ ${fieldLabel(field)}`,
+          ? `Đã tải ${total} ảnh lên thành công → ${fieldLabel(field)}`
+          : `Đã tải ảnh lên thành công → ${fieldLabel(field)}`,
       )
     } catch (error) {
-      notifyError(error.message || 'Táº£i tá»‡p lÃªn tháº¥t báº¡i.')
+      notifyError(error.message || 'Tải tệp lên thất bại.')
     } finally {
       productInlineUploading.value = ''
       galleryUploadProgress.value = ''
@@ -1349,7 +1349,7 @@ export function useEntityManager(props, emit) {
       resetEntityState()
       if (!hasValidEntityConfig.value && resolvedEntityKey.value) {
         notifyError(
-          `Module "${resolvedEntityKey.value}" chÆ°a cÃ³ cáº¥u hÃ¬nh quáº£n trá»‹ há»£p lá»‡. Vui lÃ²ng kiá»ƒm tra entity-key cá»§a wrapper hoáº·c ENTITY_MANAGER_CONFIGS.`,
+          `Module "${resolvedEntityKey.value}" chưa có cấu hình quản trị hợp lệ. Vui lòng kiểm tra entity-key của wrapper hoặc ENTITY_MANAGER_CONFIGS.`,
         )
       }
       if (props.active && normalizedToken()) await refreshAll()

@@ -440,34 +440,8 @@ const scrollToSection = (id, smooth = true) => {
   }, 800);
 };
 
-const handleWheel = (e) => {
-  if (window.innerWidth <= 992 || isScrolling.value || isSyncingByClick.value) return;
-  
-  const delta = e.deltaY;
-  if (Math.abs(delta) < 30) return;
-
-  const currentIndex = filteredSectionMeta.value.findIndex(s => s.id === activeSection.value);
-  
-  if (delta > 0) {
-    if (currentIndex < filteredSectionMeta.value.length - 1) {
-      e.preventDefault();
-      isScrolling.value = true;
-      const nextId = filteredSectionMeta.value[currentIndex + 1].id;
-      scrollToSection(nextId);
-    }
-  } else {
-    if (currentIndex > 0) {
-      e.preventDefault();
-      isScrolling.value = true;
-      const prevId = filteredSectionMeta.value[currentIndex - 1].id;
-      scrollToSection(prevId);
-    }
-  }
-
-  setTimeout(() => {
-    isScrolling.value = false;
-  }, 800);
-};
+// Xóa handleWheel vì CSS scroll-snap đã lo việc này
+const handleWheel = () => {};
 
 const resetInnerScrollers = (id) => {
   if (id === "page2" && introScroller.value) {
@@ -480,10 +454,14 @@ const resetInnerScrollers = (id) => {
 };
 
 const navigateToSection = async (meta) => {
-  await router.push({ path: meta.route, hash: meta.hash });
-  await nextTick();
+  // Chỉ scroll + thay hash, KHÔNG đổi path để tránh remount
   resetInnerScrollers(meta.id);
   scrollToSection(meta.id, true);
+  // Sync URL im lặng (chỉ hash + path cho SEO/bookmark)
+  syncingRouteFromSection.value = true;
+  await router.replace({ path: meta.route, hash: meta.hash });
+  await nextTick();
+  syncingRouteFromSection.value = false;
 };
 
 let syncTimeout = null;
@@ -497,10 +475,12 @@ const syncActiveSectionToRoute = (id) => {
   
   syncTimeout = setTimeout(() => {
     syncingRouteFromSection.value = true;
+    // Dùng replace im lặng — layout đã bảo vệ bằng aboutRouteKey nên không remount
     router.replace({ path: matched.route, hash: matched.hash }).finally(() => {
+      // Delay lâu hơn để đảm bảo watcher route.fullPath không phản ứng
       setTimeout(() => {
         syncingRouteFromSection.value = false;
-      }, 100);
+      }, 400);
     });
   }, 300);
 };
@@ -520,6 +500,9 @@ watch(activeSection, (id) => {
   }
   syncActiveSectionToRoute(id);
 });
+// Chỉ phản ứng khi path thực sự đổi (ví dụ: user navigate trực tiếp bằng URL)
+// KHÔNG phản ứng khi chỉ hash thay đổi do cuộn trang
+let lastSyncedPath = '';
 watch(
   () => route.fullPath,
   () => {
@@ -527,6 +510,14 @@ watch(
       return;
     }
 
+    // Lần đầu (initial) hoặc user thực sự gõ URL mới
+    const currentBase = route.path;
+    if (lastSyncedPath && lastSyncedPath.startsWith('/about') && currentBase.startsWith('/about')) {
+      // Đang ở about, chỉ hash đổi → không cần re-scroll
+      // Trừ khi hash thay đổi bởi external navigation (ví dụ từ header menu)
+      if (!route.hash) return;
+    }
+    lastSyncedPath = currentBase;
     syncRouteToScroll();
   },
   { immediate: true }
@@ -541,7 +532,7 @@ watch(aboutView, async (val) => {
   }
 });
 
-watch(locale, refresh);
+// watch(locale, refresh) — KHÔNG CẦN vì useAboutPage composable đã tự watch locale
 
 onMounted(async () => {
   await nextTick();

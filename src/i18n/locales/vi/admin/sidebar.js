@@ -22,8 +22,8 @@ export default {
   users: 'Khách hàng',
   reviews: 'Đánh giá',
   site_settings: 'Cài đặt website',
-  accounts: 'Tài khoản quản trị',
-  admin_profile: 'Hồ sơ của tôi',
+  accounts: 'Quản lý tài khoản',
+  admin_profile: 'Hồ sơ cá nhân',
   activity_logs: 'Nhật ký hoạt động',
 }
 
