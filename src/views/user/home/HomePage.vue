@@ -11,6 +11,7 @@ import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 
 import HomeAboutQuick from './sections/HomeAboutQuick.vue'
 import HomeProductsPreview from './sections/HomeProductsPreview.vue'
+import { useHomeBootstrap } from '@/views/user/home/composables/useHomeBootstrap'
 const HomeCapabilityPreview = defineAsyncComponent(() => import('./sections/HomeCapabilityPreview.vue'))
 const HomeProjectsPreview = defineAsyncComponent(() => import('./sections/HomeProjectsPreview.vue'))
 const NewsSection = defineAsyncComponent(() => import('./sections/NewsSection.vue'))

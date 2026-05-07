@@ -46,8 +46,9 @@ function setStoredCache(lang, data) {
 }
 
 function getCurrentLanguageCode() {
+  if (!i18n || !i18n.global) return 'vi'
   const locale = i18n.global.locale
-  return typeof locale === 'string' ? locale : locale.value
+  return typeof locale === 'string' ? locale : (locale?.value || 'vi')
 }
 
 function normalizePayload(payload) {
