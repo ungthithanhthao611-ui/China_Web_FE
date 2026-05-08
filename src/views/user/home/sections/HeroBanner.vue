@@ -22,71 +22,19 @@ const emit = defineEmits(['scroll-next', 'slide-change'])
 
 const API_ORIGIN = env.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
 const bootstrapStore = useBootstrapStore()
-const { t, locale } = useI18n({ useScope: 'global' })
+const { locale } = useI18n({ useScope: 'global' })
 const modules = [Autoplay, EffectFade]
 const activeSlide = ref(0)
 const swiperRef = ref(null)
 const videoRefs = ref([])
-const fallbackApiBanners = ref([])
-const isFetchingFallbackBanners = ref(false)
+const latestApiBanners = ref([])
+const isFetchingLatestBanners = ref(false)
 
 const defaultSlides = computed(() => [
   {
     type: 'image',
-    src: '/images/5b410cd6-2314-4dd5-bf3c-0a947c63008f.png',
-    alt: t('user.home.brandPrimary') + ' ' + t('user.home.brandSecondary'),
-    eyebrow: t('user.home.brandPrimary') + ' ' + t('user.home.brandSecondary'),
-    title: t('user.home.heroTitle'),
-    subtitle: t('user.home.heroSubtitle'),
-    body: t('user.home.aboutDescription1'),
-    buttonText: t('user.home.viewMore'),
-    link: '/business-areas#ctn1',
-  },
-
-  {
-    type: 'image',
-    src: '/images/banner/banner3.jpg',
-    alt: t('user.home.brandPrimary') + ' ' + t('user.home.brandSecondary'),
-    eyebrow: t('user.home.overview'),
-    title: locale.value === 'vi' ? 'Không Gian Doanh Nghiệp Bền Vững' : (locale.value === 'zh' ? '可持续企业空间' : 'Sustainable Corporate Space'),
-    subtitle: locale.value === 'vi' ? 'Nơi làm việc đẳng cấp được tạo hình cho thương hiệu, công năng và tốc độ.' : (locale.value === 'zh' ? '为品牌、功能和效率打造的顶级办公场所' : 'Premium workplaces shaped for brand, function, and speed.'),
-    body: t('user.home.aboutDescription2'),
-    buttonText: t('user.home.viewMore'),
-    link: '/about/company-introduction#page1',
-  },
-  {
-    type: 'image',
-    src: '/images/banner/banner4.jpg',
-    alt: t('user.home.brandPrimary') + ' ' + t('user.home.brandSecondary'),
-    eyebrow: t('user.home.capability'),
-    title: locale.value === 'vi' ? 'Năng Lực Được Chứng Nhận Trong Các Lĩnh Vực Then Chốt' : (locale.value === 'zh' ? '关键领域的认证能力' : 'Certified Capability In Key Areas'),
-    subtitle: locale.value === 'vi' ? 'Xây dựng trên sự tuân thủ, chất lượng thực thi và kinh nghiệm quy mô quốc gia.' : (locale.value === 'zh' ? '基于合规性、执行质量和国家级经验。' : 'Built on compliance, execution quality, and national-scale experience.'),
-    body: t('user.home.certifications'),
-    buttonText: t('user.home.viewMore'),
-    link: '/honors',
-  },
-  {
-    type: 'image',
-    src: '/images/banner/banner5.jpg',
-    alt: t('user.home.brandPrimary') + ' ' + t('user.home.brandSecondary'),
-    eyebrow: t('user.home.news'),
-    title: t('user.home.newsTitle'),
-    subtitle: t('user.home.newsSubtitle'),
-    body: locale.value === 'vi' ? 'Theo dõi các mốc quan trọng của dự án, sự phát triển của công ty và các thông báo ngành từ THIÊN ĐỒNG VIỆT NAM.' : (locale.value === 'zh' ? '关注越南天同的项目里程碑、公司发展和行业公告。' : 'Follow project milestones, company developments, and industry announcements from THIEN DONG VIET NAM.'),
-    buttonText: t('user.home.viewMore'),
-    link: '/news',
-  },
-  {
-    type: 'video',
-    src: '/images/banner/vd.banner6.mp4',
-    poster: '/images/banner/banner5.jpg',
-    alt: t('user.home.brandPrimary') + ' ' + t('user.home.brandSecondary'),
-    eyebrow: t('user.about.videoLabel'),
-    title: locale.value === 'vi' ? 'Xem Các Tác Phẩm Đặc Sắc Chuyển Động' : (locale.value === 'zh' ? '观看精彩作品展示' : 'Watch Featured Works In Motion'),
-    subtitle: locale.value === 'vi' ? 'Câu chuyện dự án, cảnh quay hiện trường và trình chiếu hình ảnh cao cấp.' : (locale.value === 'zh' ? '项目故事、现场拍摄和顶级视觉呈现。' : 'Project stories, field footage, and premium visual showcases.'),
-    body: t('user.home.projectSubtitle'),
-    buttonText: t('user.home.viewMore'),
-    link: '/video',
+    src: '/images/bannenr.png',
+    alt: 'Hero banner fallback',
   },
 ])
 
@@ -124,28 +72,32 @@ function clampBannerFocus(value) {
   return Math.min(100, Math.max(0, numeric))
 }
 
-async function fetchFallbackHeroBanners() {
-  if (isFetchingFallbackBanners.value || fallbackApiBanners.value.length || bootstrapStore.heroBanners?.length) {
+async function refreshHeroBanners() {
+  if (isFetchingLatestBanners.value) {
     return
   }
 
-  isFetchingFallbackBanners.value = true
+  isFetchingLatestBanners.value = true
 
   try {
     const payload = await getBanners({ bannerType: 'hero' })
-    fallbackApiBanners.value = Array.isArray(payload) ? payload : payload?.items || []
+    latestApiBanners.value = Array.isArray(payload) ? payload : payload?.items || []
   } catch (error) {
     if (import.meta.env.DEV) {
-      console.warn('[hero-banner] Failed to fetch hero banners fallback', error)
+      console.warn('[hero-banner] Failed to refresh hero banners', error)
     }
   } finally {
-    isFetchingFallbackBanners.value = false
+    isFetchingLatestBanners.value = false
   }
 }
 
 const sourceBanners = computed(() => {
+  if (latestApiBanners.value.length) {
+    return latestApiBanners.value
+  }
+
   const bootstrapBanners = bootstrapStore.heroBanners || []
-  return bootstrapBanners.length ? bootstrapBanners : fallbackApiBanners.value
+  return bootstrapBanners
 })
 
 const slides = computed(() => {
@@ -168,7 +120,7 @@ const slides = computed(() => {
     const mediaUrl = resolveAssetUrl(banner.image?.url || fallbackSlide.src || '')
     const isVideo = banner.image?.url ? isVideoAsset(banner) : fallbackSlide.type === 'video'
     const posterUrl = isVideo
-      ? resolveAssetUrl(banner.image?.thumbnail_url || banner.image?.poster || '') || cloudinaryVideoPoster(mediaUrl) || ''
+      ? resolveAssetUrl(banner.image?.thumbnail_url || banner.image?.poster || '') || cloudinaryVideoPoster(mediaUrl) || fallbackSlide.src || ''
       : mediaUrl
 
     return {
@@ -176,19 +128,6 @@ const slides = computed(() => {
       src: mediaUrl,
       poster: isVideo ? posterUrl : mediaUrl,
       alt: banner.image?.alt_text || banner.title || fallbackSlide.alt || `China Decor banner ${index + 1}`,
-      eyebrow: String(banner.eyebrow || '').trim(),
-      title: String(banner.title || '').trim(),
-      subtitle: String(banner.subtitle || '').trim(),
-      body: String(banner.body || '').trim(),
-      link: banner.link || '',
-      buttonText: String(banner.button_text || '').trim(),
-      hasCopy: Boolean(
-        String(banner.eyebrow || '').trim()
-        || String(banner.title || '').trim()
-        || String(banner.subtitle || '').trim()
-        || String(banner.body || '').trim()
-        || (String(banner.button_text || '').trim() && String(banner.link || '').trim())
-      ),
       focusX: clampBannerFocus(banner.focus_x),
       focusY: clampBannerFocus(banner.focus_y),
       fallback: fallbackSlide,
@@ -196,7 +135,9 @@ const slides = computed(() => {
   })
 })
 
-const currentSlide = computed(() => slides.value[activeSlide.value] || slides.value[0] || defaultSlides.value[0])
+const slideIndicators = computed(() =>
+  slides.value.map((_, index) => String(index + 1).padStart(2, '0'))
+)
 
 const setVideoRef = (element, index) => {
   if (!element) return
@@ -244,21 +185,6 @@ const goToSlide = (index) => {
   swiperRef.value.slideTo(index)
 }
 
-const goToNextSection = () => {
-  emit('scroll-next')
-}
-
-const isExternalLink = (link) => /^https?:\/\//i.test(String(link || '').trim())
-const bannerLinkProps = (link) => (isExternalLink(link) ? { href: link, target: '_blank', rel: 'noreferrer noopener' } : { to: link })
-
-watch(
-  () => bootstrapStore.heroBanners,
-  (banners) => {
-    if (!banners?.length) fetchFallbackHeroBanners()
-  },
-  { immediate: true }
-)
-
 watch(
   slides,
   () => {
@@ -270,7 +196,14 @@ watch(
   { deep: true }
 )
 
-onMounted(fetchFallbackHeroBanners)
+watch(
+  () => locale.value,
+  () => {
+    refreshHeroBanners()
+  }
+)
+
+onMounted(refreshHeroBanners)
 
 defineExpose({ goToSlide })
 </script>
@@ -316,25 +249,20 @@ defineExpose({ goToSlide })
         <div class="overlay overlay--grain"></div>
       </swiper-slide>
     </swiper>
-
-
-
-    <div class="hero-copy-shell">
-      <div v-if="slides.length && currentSlide.hasCopy" class="hero-copy">
-        <h1 class="hero-copy__brand">THIÊN ĐỒNG</h1>
-        <p v-if="currentSlide.subtitle" class="hero-copy__subtitle">{{ currentSlide.subtitle }}</p>
-        <p v-if="currentSlide.body" class="hero-copy__body">{{ currentSlide.body }}</p>
-        <component
-          :is="isExternalLink(currentSlide.link) ? 'a' : 'router-link'"
-          v-if="currentSlide.link"
-          class="hero-copy__cta"
-          v-bind="bannerLinkProps(currentSlide.link)"
-        >
-          {{ currentSlide.buttonText || t('user.home.viewMore') }}
-        </component>
-      </div>
+    <div v-if="slideIndicators.length" class="hero-indicators" aria-label="Hero banner slide indicators">
+      <button
+        v-for="(indicator, index) in slideIndicators"
+        :key="indicator"
+        type="button"
+        class="hero-indicator"
+        :class="{ 'hero-indicator--active': index === activeSlide }"
+        :aria-label="`Đi tới banner ${indicator}`"
+        @click="goToSlide(index)"
+      >
+        <span class="hero-indicator__number">{{ indicator }}</span>
+        <span class="hero-indicator__dot"></span>
+      </button>
     </div>
-
   </section>
 </template>
 
@@ -346,9 +274,7 @@ defineExpose({ goToSlide })
   min-height: min(720px, 100svh);
   width: 100%;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 75%, rgba(30, 101, 255, 0.38), rgba(7, 17, 33, 0) 34%),
-    linear-gradient(180deg, #030b18 0%, #030a17 60%, #020713 100%);
+  background: #050b14;
 }
 
 .hero-swiper {
@@ -368,22 +294,8 @@ defineExpose({ goToSlide })
 .hero-media img,
 .hero-media video {
   object-fit: cover;
+  object-position: center;
   transition: transform 7s linear, filter 0.5s ease;
-}
-
-.hero-loading-copy {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 3;
-  transform: translate(-50%, -50%);
-  padding: 10px 16px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #243044;
-  font-size: 14px;
-  font-weight: 700;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
 }
 
 :deep(.swiper-slide-active) .hero-media img,
@@ -394,242 +306,85 @@ defineExpose({ goToSlide })
 .overlay {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   background:
     linear-gradient(180deg, rgba(2, 10, 23, 0.28) 0%, rgba(2, 10, 23, 0.08) 18%, rgba(2, 10, 23, 0.2) 60%, rgba(2, 10, 23, 0.4) 100%),
-    radial-gradient(circle at 50% 100%, rgba(57, 149, 255, 0.45), rgba(57, 149, 255, 0) 27%);
+    radial-gradient(circle at 50% 100%, rgba(57, 149, 255, 0.28), rgba(57, 149, 255, 0) 27%);
 }
 
 .overlay--grain {
   background:
-    radial-gradient(circle at 15% 22%, rgba(255, 255, 255, 0.12) 0, rgba(255, 255, 255, 0) 1px),
-    radial-gradient(circle at 75% 32%, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0) 1px),
-    radial-gradient(circle at 62% 72%, rgba(0, 170, 255, 0.28) 0, rgba(0, 170, 255, 0) 5px),
-    radial-gradient(circle at 22% 82%, rgba(0, 170, 255, 0.22) 0, rgba(0, 170, 255, 0) 4px);
+    radial-gradient(circle at 15% 22%, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0) 1px),
+    radial-gradient(circle at 75% 32%, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0) 1px),
+    radial-gradient(circle at 62% 72%, rgba(0, 170, 255, 0.18) 0, rgba(0, 170, 255, 0) 5px),
+    radial-gradient(circle at 22% 82%, rgba(0, 170, 255, 0.14) 0, rgba(0, 170, 255, 0) 4px);
   background-size: 180px 180px, 220px 220px, auto, auto;
   mix-blend-mode: screen;
-  opacity: 0.7;
+  opacity: 0.42;
 }
 
-.hero-copy-shell {
+.hero-indicators {
   position: absolute;
-  inset: 0;
-  z-index: 3;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  padding: clamp(96px, 12vh, 140px) clamp(40px, 6vw, 120px) clamp(80px, 12vh, 140px);
-  pointer-events: none;
-}
-
-.hero-copy {
-  display: grid;
-  gap: 16px;
-  max-width: 680px;
-  color: #f4f7fb;
-  pointer-events: auto;
-}
-
-.hero-copy__eyebrow,
-.hero-copy__crest {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.24em;
-}
-
-.hero-copy__eyebrow {
-  color: rgba(255, 219, 179, 0.75);
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.hero-copy__crest {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-  color: rgba(232, 89, 101, 0.82);
-  font-size: 10px;
-  font-weight: 500;
-}
-
-.hero-copy h1,
-.hero-copy__brand {
-  margin: 0;
-  font-size: clamp(28px, 3.5vw, 48px);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #fff;
-  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.hero-copy__subtitle,
-.hero-copy__body {
-  margin: 0;
-}
-
-.hero-copy__subtitle {
-  max-width: 48ch;
-  color: rgba(246, 248, 252, 0.8);
-  font-size: clamp(14px, 1.1vw, 17px);
-  font-weight: 400;
-  line-height: 1.5;
-}
-
-.hero-copy__body {
-  max-width: 62ch;
-  color: rgba(231, 237, 245, 0.65);
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.6;
-}
-
-.hero-copy__cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: fit-content;
-  min-height: 40px;
-  padding: 0 18px;
-  border-radius: 999px;
-  background: rgba(225, 0, 18, 0.9);
-  color: #fff7f7;
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  box-shadow: 0 12px 24px rgba(225, 0, 18, 0.2);
-  transition: transform 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
-}
-
-.hero-copy__cta:hover {
-  transform: translateY(-2px);
-  background: #ff1f32;
-  box-shadow: 0 20px 40px rgba(225, 0, 18, 0.3);
-}
-
-.hero-scroll {
-  position: absolute;
-  right: 78px;
-  bottom: 66px;
+  top: 50%;
+  right: clamp(12px, 2vw, 28px);
   z-index: 4;
-  width: 58px;
-  height: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transform: translateY(-50%);
+}
+
+.hero-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0;
   border: 0;
   background: transparent;
+  color: rgba(255, 244, 230, 0.55);
   cursor: pointer;
+  transition: color 0.24s ease, transform 0.24s ease;
 }
 
-.hero-scroll__dot {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  transform: translateX(-50%);
-  background: #e10012;
-  box-shadow: 0 12px 30px rgba(225, 0, 18, 0.3);
+.hero-indicator:hover {
+  color: rgba(255, 244, 230, 0.9);
+  transform: translateX(-2px);
 }
 
-.hero-scroll__line {
-  position: absolute;
-  top: 29px;
-  left: 50%;
-  width: 1px;
-  height: 52px;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.9);
+.hero-indicator--active {
+  color: #ff3b30;
 }
 
-.hero-scroll__arrow {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  width: 12px;
-  height: 12px;
-  border-right: 1px solid rgba(255, 255, 255, 0.9);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.9);
-  transform: translateX(-50%) rotate(45deg);
+.hero-indicator__number {
+  min-width: 24px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.08em;
 }
 
-@media (max-width: 1200px) {
-  .hero-copy-shell {
-    padding: 132px 76px 104px;
-  }
-}
-
-@media (max-width: 992px) {
-  .hero-banner {
-    min-height: 100svh;
-  }
-
-  .hero-copy-shell {
-    padding: 132px 32px 96px;
-    align-items: flex-end;
-  }
-
-  .hero-copy h1 {
-    max-width: 100%;
-  }
+.hero-indicator__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
 @media (max-width: 768px) {
-  .hero-banner {
-    min-height: 100svh;
+  .hero-indicators {
+    right: 10px;
+    gap: 6px;
   }
 
-  .hero-copy-shell {
-    padding: 96px 20px 54px;
-    align-items: flex-end;
-  }
-
-  .hero-copy {
-    gap: 14px;
-    max-width: 100%;
-  }
-
-  .hero-copy__subtitle {
-    font-size: clamp(15px, 4vw, 17px);
-  }
-
-  .hero-copy__body {
-    font-size: 14px;
-    line-height: 1.65;
-  }
-
-  .hero-copy__cta {
-    min-height: 44px;
-    padding: 0 18px;
+  .hero-indicator__number {
     font-size: 12px;
   }
 
-  .hero-scroll {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .hero-copy h1 {
-    max-width: 11ch;
-    font-size: clamp(30px, 9vw, 40px);
-  }
-
-  .hero-copy__eyebrow,
-  .hero-copy__crest {
-    letter-spacing: 0.12em;
-  }
-
-  .hero-copy__body {
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .hero-copy__divider span:nth-child(1) {
-    width: 72px;
+  .hero-indicator__dot {
+    width: 5px;
+    height: 5px;
   }
 }
 </style>
