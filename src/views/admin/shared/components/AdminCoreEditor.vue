@@ -1367,11 +1367,11 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
                 <span>{{ bannerTypeLabel(form.banner_type) }}</span>
                 <strong>{{ bannerOrdinal(form.sort_order || editingRecordId || 1) }}</strong>
               </div>
-              <h4>
+              <h4 v-if="form.show_title && form.title">
                 {{ form.title || bannerDisplayTitle({ ...form, id: editingRecordId || 1 }) }}
               </h4>
-              <p v-if="form.subtitle">{{ form.subtitle }}</p>
-              <small>{{ form.button_text || form.link || "CTA text or link will appear here" }}</small>
+              <p v-if="form.show_subtitle && form.subtitle">{{ form.subtitle }}</p>
+              <small v-if="form.show_body && form.body">{{ form.body }}</small>
             </div>
           </div>
           <div v-if="canAdjustBannerFocus()" class="banner-focus-tools">

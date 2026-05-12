@@ -10,8 +10,11 @@ export default {
     description: 'Quản lý banner, nút CTA, loại, ngôn ngữ và thứ tự hiển thị.',
     fields: {
       title: 'Tiêu đề Banner',
+      show_title: 'Hiển thị Tiêu đề Banner',
       subtitle: 'Phụ đề',
+      show_subtitle: 'Hiển thị Phụ đề',
       body: 'Mô tả',
+      show_body: 'Hiển thị Mô tả',
       image_id: 'Ảnh/Video Banner',
       focus_x: 'Điểm lấy nét X',
       focus_y: 'Điểm lấy nét Y',

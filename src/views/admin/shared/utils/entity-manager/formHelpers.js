@@ -340,7 +340,10 @@ export function createEntityManagerFormHelpers({
     field === "is_active" ||
     field === "is_primary" ||
     field === "is_default" ||
-    field === "is_featured";
+    field === "is_featured" ||
+    field === "show_title" ||
+    field === "show_subtitle" ||
+    field === "show_body";
 
   const relationFetchTargetCount = (entityName) => {
     if (String(entityName || "").trim() === "products") {

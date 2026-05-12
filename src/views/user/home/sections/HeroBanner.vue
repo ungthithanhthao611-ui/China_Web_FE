@@ -29,6 +29,7 @@ const swiperRef = ref(null)
 const videoRefs = ref([])
 const latestApiBanners = ref([])
 const isFetchingLatestBanners = ref(false)
+const mediaMetaBySrc = ref({})
 
 const defaultSlides = computed(() => [
   {
@@ -68,8 +69,89 @@ function isVideoAsset(banner = {}) {
 
 function clampBannerFocus(value) {
   const numeric = Number(value)
-  if (!Number.isFinite(numeric)) return 50
+  if (!Number.isFinite(numeric)) return null
   return Math.min(100, Math.max(0, numeric))
+}
+
+function rememberMediaMeta(src, width, height) {
+  const normalizedSrc = String(src || '').trim()
+  if (!normalizedSrc || !Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return
+  }
+
+  mediaMetaBySrc.value = {
+    ...mediaMetaBySrc.value,
+    [normalizedSrc]: {
+      width,
+      height,
+      ratio: width / height,
+    },
+  }
+}
+
+function handleImageLoad(event, src) {
+  const image = event?.target
+  rememberMediaMeta(src, Number(image?.naturalWidth), Number(image?.naturalHeight))
+}
+
+function handleVideoMetadata(event, src) {
+  const video = event?.target
+  rememberMediaMeta(src, Number(video?.videoWidth), Number(video?.videoHeight))
+}
+
+function resolveSmartFocus(slide) {
+  const explicitX = clampBannerFocus(slide.focusX)
+  const explicitY = clampBannerFocus(slide.focusY)
+
+  if (explicitX !== null && explicitY !== null) {
+    return {
+      x: explicitX,
+      y: explicitY,
+    }
+  }
+
+  const meta = mediaMetaBySrc.value[String(slide.src || '').trim()]
+  const ratio = Number(meta?.ratio)
+
+  if (!Number.isFinite(ratio)) {
+    return {
+      x: explicitX ?? 50,
+      y: explicitY ?? 50,
+    }
+  }
+
+  if (ratio <= 0.82) {
+    return {
+      x: explicitX ?? 58,
+      y: explicitY ?? 46,
+    }
+  }
+
+  if (ratio <= 1.05) {
+    return {
+      x: explicitX ?? 52,
+      y: explicitY ?? 48,
+    }
+  }
+
+  if (ratio >= 1.9) {
+    return {
+      x: explicitX ?? 50,
+      y: explicitY ?? 44,
+    }
+  }
+
+  return {
+    x: explicitX ?? 50,
+    y: explicitY ?? 50,
+  }
+}
+
+function heroMediaStyle(slide) {
+  const focus = resolveSmartFocus(slide)
+  return {
+    objectPosition: `${focus.x}% ${focus.y}%`,
+  }
 }
 
 async function refreshHeroBanners() {
@@ -105,13 +187,12 @@ const slides = computed(() => {
 
   // Use default slides if no API data yet
   if (!banners.length) {
-    return defaultSlides.value.map((slide, index) => ({
+    return defaultSlides.value.map((slide) => ({
       ...slide,
       poster: slide.src,
-      hasCopy: true,
       focusX: 50,
       focusY: 50,
-      fallback: slide
+      fallback: slide,
     }))
   }
 
@@ -123,11 +204,25 @@ const slides = computed(() => {
       ? resolveAssetUrl(banner.image?.thumbnail_url || banner.image?.poster || '') || cloudinaryVideoPoster(mediaUrl) || fallbackSlide.src || ''
       : mediaUrl
 
+    const title = String(banner.title || '').trim()
+    const subtitle = String(banner.subtitle || '').trim()
+    const body = String(banner.body || '').trim()
+    const showTitle = Boolean(banner.show_title && title)
+    const showSubtitle = Boolean(banner.show_subtitle && subtitle)
+    const showBody = Boolean(banner.show_body && body)
+
     return {
       type: isVideo ? 'video' : 'image',
       src: mediaUrl,
       poster: isVideo ? posterUrl : mediaUrl,
-      alt: banner.image?.alt_text || banner.title || fallbackSlide.alt || `China Decor banner ${index + 1}`,
+      alt: banner.image?.alt_text || title || fallbackSlide.alt || `China Decor banner ${index + 1}`,
+      title,
+      subtitle,
+      body,
+      showTitle,
+      showSubtitle,
+      showBody,
+      hasCopy: showTitle || showSubtitle || showBody,
       focusX: clampBannerFocus(banner.focus_x),
       focusY: clampBannerFocus(banner.focus_y),
       fallback: fallbackSlide,
@@ -231,7 +326,8 @@ defineExpose({ goToSlide })
             :alt="slide.alt"
             :loading="index === 0 ? 'eager' : 'lazy'"
             :fetchpriority="index === 0 ? 'high' : 'auto'"
-            :style="{ objectPosition: `${slide.focusX ?? 50}% ${slide.focusY ?? 50}%` }"
+            :style="heroMediaStyle(slide)"
+            @load="handleImageLoad($event, slide.src)"
           />
           <video
             v-else
@@ -242,11 +338,21 @@ defineExpose({ goToSlide })
             playsinline
             preload="metadata"
             loop
+            :style="heroMediaStyle(slide)"
+            @loadedmetadata="handleVideoMetadata($event, slide.src)"
           ></video>
         </div>
 
         <div class="overlay"></div>
         <div class="overlay overlay--grain"></div>
+
+        <div v-if="slide.hasCopy" class="hero-copy-shell">
+          <div class="hero-copy-card">
+            <p v-if="slide.showSubtitle" class="hero-copy-shell__eyebrow">{{ slide.subtitle }}</p>
+            <h2 v-if="slide.showTitle" class="hero-copy-shell__title">{{ slide.title }}</h2>
+            <p v-if="slide.showBody" class="hero-copy-shell__body">{{ slide.body }}</p>
+          </div>
+        </div>
       </swiper-slide>
     </swiper>
     <div v-if="slideIndicators.length" class="hero-indicators" aria-label="Hero banner slide indicators">
@@ -312,7 +418,7 @@ defineExpose({ goToSlide })
     radial-gradient(circle at 50% 100%, rgba(57, 149, 255, 0.28), rgba(57, 149, 255, 0) 27%);
 }
 
-.overlay--grain {
+ .overlay--grain {
   background:
     radial-gradient(circle at 15% 22%, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0) 1px),
     radial-gradient(circle at 75% 32%, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0) 1px),
@@ -321,6 +427,49 @@ defineExpose({ goToSlide })
   background-size: 180px 180px, 220px 220px, auto, auto;
   mix-blend-mode: screen;
   opacity: 0.42;
+}
+
+.hero-copy-shell {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  padding: clamp(24px, 5vw, 72px);
+  pointer-events: none;
+}
+
+.hero-copy-card {
+  max-width: min(720px, calc(100vw - 96px));
+}
+
+.hero-copy-shell__eyebrow {
+  margin: 0 0 12px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: clamp(0.78rem, 1vw, 0.95rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.hero-copy-shell__title {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(2rem, 4.6vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+  text-shadow: 0 16px 40px rgba(0, 0, 0, 0.42);
+}
+
+.hero-copy-shell__body {
+  max-width: 58ch;
+  margin: 16px 0 0;
+  color: rgba(241, 245, 249, 0.92);
+  font-size: clamp(0.98rem, 1.25vw, 1.1rem);
+  line-height: 1.7;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.38);
 }
 
 .hero-indicators {
