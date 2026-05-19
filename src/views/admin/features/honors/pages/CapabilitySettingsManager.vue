@@ -583,6 +583,34 @@ function hasPendingGalleryItemUpload(item, index) {
     && normalizeText(state.sourceUrl) !== normalizeText(item?.image_url)
 }
 
+function uploadModalGalleryImage() {
+  if (!itemModal.item || itemModal.type !== 'gallery') {
+    notifyError('Không tìm thấy dữ liệu ảnh gallery để tải lên.')
+    return false
+  }
+
+  const key = galleryImageUploadKey(itemModal.item, itemModal.index)
+  return submitImageAsset({
+    key,
+    currentValue: itemModal.item.image_url,
+    assetFolder: 'capability/gallery',
+    publicIdBase: normalizeText(itemModal.item.title) || `factory-gallery-${itemModal.index + 1}`,
+    title: normalizeText(itemModal.item.title) || `Hình ảnh nhà máy ${itemModal.index + 1}`,
+    altText: normalizeText(itemModal.item.description) || normalizeText(itemModal.item.title) || `Hình ảnh nhà máy ${itemModal.index + 1}`,
+    onSuccess: (url) => {
+      itemModal.item.image_url = url
+    },
+  })
+}
+
+function hasPendingModalGalleryImageUpload() {
+  if (!itemModal.item || itemModal.type !== 'gallery') {
+    return false
+  }
+
+  return hasPendingGalleryItemUpload(itemModal.item, itemModal.index)
+}
+
 async function flushPendingOverviewUploads() {
   if (hasPendingFieldImageUpload('factory_main_image_url', form.factory_main_image_url)) {
     const uploadedMainImage = await uploadImageForField('factory_main_image_url', {
@@ -935,6 +963,14 @@ async function saveModalItem() {
     const uploaded = await uploadBannerImage()
     if (!uploaded) {
       notifyError('Không thể tải ảnh banner mới lên. Vui lòng kiểm tra lại file hoặc URL ảnh.')
+      return
+    }
+  }
+
+  if (type === 'gallery' && hasPendingModalGalleryImageUpload()) {
+    const uploaded = await uploadModalGalleryImage()
+    if (!uploaded) {
+      notifyError('Không thể tải ảnh gallery mới lên. Vui lòng kiểm tra lại file hoặc URL ảnh.')
       return
     }
   }
@@ -2465,14 +2501,88 @@ watch(
               </div>
               
               <div class="image-manager">
-                 <div class="image-preview-card">
-                   <img v-if="itemModal.item.image_url" :src="resolvePreviewUrl(itemModal.item.image_url)" alt="Preview" />
-                   <div v-else class="image-preview-card__placeholder">Chưa có ảnh</div>
-                 </div>
-                 <div class="field">
-                   <span>URL ảnh</span>
-                   <input v-model="itemModal.item.image_url" type="text" placeholder="https://..." />
-                 </div>
+                <div class="image-manager__head">
+                  <span>Ảnh gallery</span>
+                  <div class="image-mode-switch">
+                    <button
+                      type="button"
+                      class="image-mode-btn"
+                      :class="{ 'image-mode-btn--active': imageUploadMode(galleryImageUploadKey(itemModal.item, itemModal.index)) === 'file' }"
+                      @click="setImageUploadMode(galleryImageUploadKey(itemModal.item, itemModal.index), 'file', itemModal.item.image_url)"
+                    >
+                      Tải file
+                    </button>
+                    <button
+                      type="button"
+                      class="image-mode-btn"
+                      :class="{ 'image-mode-btn--active': imageUploadMode(galleryImageUploadKey(itemModal.item, itemModal.index)) === 'url' }"
+                      @click="setImageUploadMode(galleryImageUploadKey(itemModal.item, itemModal.index), 'url', itemModal.item.image_url)"
+                    >
+                      Import URL
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  class="image-preview-card"
+                  :class="{ 'image-preview-card--empty': !imagePreviewSource(galleryImageUploadKey(itemModal.item, itemModal.index), itemModal.item.image_url) }"
+                >
+                  <img
+                    v-if="imagePreviewSource(galleryImageUploadKey(itemModal.item, itemModal.index), itemModal.item.image_url)"
+                    :src="imagePreviewSource(galleryImageUploadKey(itemModal.item, itemModal.index), itemModal.item.image_url)"
+                    alt="Preview"
+                  />
+                  <div v-else class="image-preview-card__placeholder">Chưa có ảnh</div>
+                </div>
+
+                <div
+                  v-if="imageUploadMode(galleryImageUploadKey(itemModal.item, itemModal.index)) === 'file'"
+                  class="image-control-stack"
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    @change="onSelectImageFile(galleryImageUploadKey(itemModal.item, itemModal.index), $event)"
+                  />
+                </div>
+                <div v-else class="image-control-stack">
+                  <input
+                    :value="imageUploadStateMeta(galleryImageUploadKey(itemModal.item, itemModal.index)).sourceUrl"
+                    type="url"
+                    placeholder="https://..."
+                    @input="onChangeImageUrl(galleryImageUploadKey(itemModal.item, itemModal.index), $event.target.value)"
+                  />
+                </div>
+
+                <input
+                  :value="itemModal.item.image_url"
+                  type="text"
+                  readonly
+                  placeholder="URL ảnh đã gán sẽ hiển thị ở đây"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-inline"
+                  :disabled="imageUploadStateMeta(galleryImageUploadKey(itemModal.item, itemModal.index)).uploading"
+                  @click="uploadModalGalleryImage"
+                >
+                  {{ imageActionLabel(galleryImageUploadKey(itemModal.item, itemModal.index)) }}
+                </button>
+
+                <p class="image-upload-feedback image-upload-feedback--strong">
+                  Bạn có thể bấm tải ngay hoặc bấm <strong>{{ itemModal.isNew ? 'Thêm mới' : 'Lưu thay đổi' }}</strong> để hệ thống tự tải ảnh trước khi lưu.
+                </p>
+
+                <p
+                  v-if="imageUploadStateMeta(galleryImageUploadKey(itemModal.item, itemModal.index)).storageBackend"
+                  class="image-upload-feedback"
+                >
+                  Đích lưu: {{ imageUploadStateMeta(galleryImageUploadKey(itemModal.item, itemModal.index)).storageBackend }}
+                  <span v-if="imageUploadStateMeta(galleryImageUploadKey(itemModal.item, itemModal.index)).fallbackReason">
+                    • Fallback: {{ imageUploadStateMeta(galleryImageUploadKey(itemModal.item, itemModal.index)).fallbackReason }}
+                  </span>
+                </p>
               </div>
 
               <label class="field">

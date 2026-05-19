@@ -330,16 +330,24 @@ onUnmounted(() => {
   background-color: #f9f9f9;
   height: auto;
   min-height: auto;
-  scroll-snap-align: none;
+  scroll-snap-align: start;
   scroll-snap-stop: normal;
+  overflow: visible;
 
   .partner-section {
     padding: 0 !important;
     flex: 0 0 auto;
+    min-height: auto;
+    justify-content: flex-start;
   }
 
   @media (max-width: 992px) {
-    min-height: 100vh;
+    min-height: auto;
+
+    .partner-section {
+      min-height: auto;
+      justify-content: flex-start;
+    }
   }
 }
 
