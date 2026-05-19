@@ -124,6 +124,18 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* ── Typography ─────────────────────────────────────────── */
+.pj-list {
+  --pj-font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--pj-font-sans);
+  color: #1d273a;
+  background: #fff;
+}
+
+.pj-list * {
+  font-family: inherit;
+}
+
 /* ── Hero ──────────────────────────────────────────────── */
 .pj-hero {
   position: relative;
@@ -156,21 +168,23 @@ onMounted(() => {
 }
 
 .pj-hero__title {
-  margin: 0 0 20px;
-  font-family: 'Cormorant Garamond', 'Times New Roman', Georgia, serif;
-  font-size: clamp(2.6rem, 5vw, 4.5rem);
-  font-weight: 600;
-  font-style: italic;
+  margin: 0 0 18px;
+  font-size: clamp(2.45rem, 5vw, 4.35rem);
+  font-weight: 800;
+  font-style: normal;
   color: #fff;
-  letter-spacing: 0.04em;
-  line-height: 1.15;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  text-wrap: balance;
 }
 
 .pj-hero__sub {
   margin: 0;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: clamp(0.95rem, 1.6vw, 1.12rem);
-  line-height: 1.85;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: clamp(0.95rem, 1.35vw, 1.08rem);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.75;
 }
 
 /* ── State (loading / error / empty) ───────────────────── */
@@ -312,9 +326,11 @@ onMounted(() => {
 
 .pj-card__title {
   margin: 0;
-  font-size: clamp(1rem, 1.6vw, 1.25rem);
-  font-weight: 600;
+  font-size: clamp(1rem, 1.45vw, 1.18rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1.35;
+  text-wrap: balance;
 }
 
 /* ── Responsive ────────────────────────────────────────── */

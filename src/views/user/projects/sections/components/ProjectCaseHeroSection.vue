@@ -205,10 +205,11 @@ watch(
 .fnt_36 {
   margin: 0;
   color: #efc893;
-  font-family: var(--case-font-display);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: clamp(34px, 2.7vw, 52px);
-  font-weight: 500;
-  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
   text-transform: uppercase;
 }
 

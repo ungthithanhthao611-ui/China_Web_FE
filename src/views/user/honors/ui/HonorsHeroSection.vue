@@ -59,10 +59,10 @@ const swiperModules = [Autoplay, Pagination, EffectFade]
       </SwiperSlide>
     </Swiper>
 
-    <div class="hero-tabs reveal-item">
-      <button type="button" @click="emit('go-section', 'page2')">{{ t('user.capability.factoryGallery') }}</button>
-      <button type="button" @click="emit('go-section', 'page3')">{{ t('user.capability.techTitle') }}</button>
-      <button type="button" @click="emit('go-section', 'page3')">{{ t('user.capability.honorsAwards') }}</button>
+    <div class="hero-tabs reveal-item" aria-label="Menu năng lực nhà máy">
+      <button type="button" @click="emit('go-section', 'page2b')">Tổng quan nhà máy</button>
+      <button type="button" @click="emit('go-section', 'page2')">Hình ảnh nhà máy</button>
+      <button type="button" @click="emit('go-section', 'page3')">Chứng nhận &amp; Năng lực</button>
     </div>
   </section>
 </template>
@@ -71,10 +71,11 @@ const swiperModules = [Autoplay, Pagination, EffectFade]
 .hero {
   position: relative;
   min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 120px 0 108px;
+  padding: 96px 0 104px;
   overflow: hidden;
 }
 
@@ -126,7 +127,7 @@ const swiperModules = [Autoplay, Pagination, EffectFade]
   content: '';
   position: absolute;
   left: 50%;
-  bottom: 86px;
+  bottom: 78px;
   width: min(1240px, calc(100% - 60px));
   height: 1px;
   transform: translateX(-50%);
@@ -307,44 +308,61 @@ p {
 .hero-tabs {
   position: absolute;
   left: 50%;
-  bottom: 0;
-  width: min(1100px, calc(100% - 48px));
+  right: auto;
+  bottom: clamp(18px, 3.8vh, 34px);
+  width: min(700px, calc(100% - 72px));
   transform: translateX(-50%);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  border-radius: 22px 22px 0 0;
+  grid-template-columns: 0.9fr 0.9fr 1.2fr;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 24px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(226, 232, 240, 0.96);
-  z-index: 2;
-  backdrop-filter: blur(14px);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  z-index: 20;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.16);
 }
 
 .hero-tabs button {
-  min-height: 64px;
+  min-height: 38px;
+  padding: 0 11px;
   border: none;
+  border-radius: 999px;
   background: transparent;
-  color: #0f172a;
-  font-size: 14px;
-  font-weight: 700;
+  color: #172033;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  text-align: center;
+  white-space: normal;
   cursor: pointer;
-  transition: background 0.25s ease, color 0.25s ease;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 .hero-tabs button + button {
-  border-left: 1px solid rgba(226, 232, 240, 0.96);
+  border-left: none;
 }
 
-.hero-tabs button:hover {
-  background: rgba(59, 130, 246, 0.06);
-  color: #0f172a;
+.hero-tabs button:hover,
+.hero-tabs button:focus-visible {
+  background: linear-gradient(135deg, #c99a58, #f0c884);
+  color: #111827;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(120, 82, 43, 0.18);
+  outline: none;
 }
 
 @media (max-width: 1199px) {
   .hero {
-    min-height: auto;
-    padding: 112px 0 128px;
+    min-height: 100svh;
+    padding: 88px 0 96px;
   }
 
   .content {
@@ -385,24 +403,24 @@ p {
   }
 
   .hero-tabs {
-    width: calc(100% - 36px);
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: min(660px, calc(100% - 44px));
+    grid-template-columns: 0.9fr 0.9fr 1.2fr;
+    bottom: clamp(16px, 3.4vh, 28px);
   }
 }
 
 @media (max-width: 767px) {
   .hero {
-    min-height: auto;
-    padding: 100px 0 170px;
+    min-height: 100svh;
+    padding: 78px 0 82px;
   }
 
   .hero::after {
-    bottom: 144px;
+    bottom: 64px;
     width: calc(100% - 20px);
   }
 
-  .content,
-  .hero-tabs {
+  .content {
     width: calc(100% - 20px);
   }
 
@@ -466,31 +484,50 @@ p {
   }
 
   .hero-tabs {
-    grid-template-columns: 1fr;
-    border-radius: 20px 20px 0 0;
+    width: min(460px, calc(100% - 18px));
+    bottom: clamp(14px, 3vh, 24px);
+    display: flex;
+    grid-template-columns: none;
+    justify-content: flex-start;
+    gap: 5px;
+    padding: 5px;
+    border-radius: 16px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .hero-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .hero-tabs button {
-    min-height: 48px;
-    padding: 0 12px;
-    font-size: 12px;
+    flex: 0 0 auto;
+    min-width: clamp(118px, 35vw, 150px);
+    min-height: 34px;
+    padding: 0 8px;
+    font-size: 10px;
   }
 
   .hero-tabs button + button {
     border-left: none;
-    border-top: 1px solid rgba(226, 232, 240, 0.96);
+    border-top: none;
   }
 }
 
 @media (max-width: 479px) {
   .hero {
-    padding: 84px 0 196px;
+    padding: 70px 0 74px;
   }
 
   .content,
-  .hero-tabs,
   .hero::after {
     width: calc(100% - 20px);
+  }
+
+  .hero-tabs {
+    width: calc(100% - 14px);
+    bottom: 12px;
   }
 
   .seal-chip {
@@ -521,18 +558,18 @@ p {
 }
 
 :deep(.swiper-pagination) {
-  bottom: 100px !important;
+  bottom: 82px !important;
 }
 
 @media (max-width: 991px) {
   :deep(.swiper-pagination) {
-    bottom: 130px !important;
+    bottom: 76px !important;
   }
 }
 
 @media (max-width: 767px) {
   :deep(.swiper-pagination) {
-    bottom: 170px !important;
+    bottom: 64px !important;
   }
 }
 
@@ -554,7 +591,19 @@ p {
 }
 
 .hero-tabs.reveal-item {
+  animation: heroTabsReveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   animation-delay: 0.4s;
+}
+
+@keyframes heroTabsReveal {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 .content__copy.reveal-item {

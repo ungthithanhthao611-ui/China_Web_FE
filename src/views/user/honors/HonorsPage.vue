@@ -764,8 +764,8 @@ onBeforeUnmount(() => {
 
 .capability-section {
   position: relative;
-  min-height: 100vh;
-  padding: 84px 0 64px;
+  min-height: 88vh;
+  padding: 56px 0 44px;
   display: flex;
   align-items: center;
 }
@@ -799,14 +799,14 @@ onBeforeUnmount(() => {
 }
 
 .capability-stage {
-  width: min(1320px, calc(100% - 48px));
+  width: min(1120px, calc(100% - 44px));
   margin: 0 auto;
 }
 
 .capability-stage--overview {
   display: grid;
   grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
-  gap: 32px;
+  gap: 24px;
   align-items: center;
 }
 
@@ -817,7 +817,7 @@ onBeforeUnmount(() => {
 }
 
 .capability-heading {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .capability-heading .eyebrow {
@@ -832,8 +832,8 @@ onBeforeUnmount(() => {
 .capability-heading h2 {
   margin: 0;
   font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
-  font-size: clamp(2.35rem, 1.8rem + 1.5vw, 4rem);
-  line-height: 1.05;
+  font-size: clamp(1.8rem, 1.45rem + 1vw, 3rem);
+  line-height: 1.06;
 }
 
 .capability-heading--dark-text .eyebrow {
@@ -854,8 +854,8 @@ onBeforeUnmount(() => {
 .capability-heading p {
   margin: 14px 0 0;
   max-width: 760px;
-  font-size: 15px;
-  line-height: 1.78;
+  font-size: 14px;
+  line-height: 1.68;
 }
 
 .capability-heading--split {
@@ -894,7 +894,7 @@ onBeforeUnmount(() => {
 }
 
 .capability-overview__media--refined {
-  min-height: 500px;
+  min-height: 400px;
 }
 
 .capability-overview__media img,
@@ -969,8 +969,8 @@ onBeforeUnmount(() => {
 .capability-heading--overview-refined h2 {
   color: #0f172a;
   font-family: 'Manrope', 'Segoe UI', Arial, sans-serif;
-  font-size: clamp(2.25rem, 1.9rem + 1vw, 3.2rem);
-  line-height: 1.06;
+  font-size: clamp(1.7rem, 1.5rem + 0.65vw, 2.45rem);
+  line-height: 1.07;
   font-weight: 800;
 }
 
@@ -1008,8 +1008,8 @@ onBeforeUnmount(() => {
 .overview-highlight {
   display: grid;
   gap: 8px;
-  padding: 14px 16px;
-  border-radius: 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
   border: 1px solid rgba(203, 213, 225, 0.9);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
@@ -1017,14 +1017,14 @@ onBeforeUnmount(() => {
 
 .overview-highlight--refined {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
+  grid-template-columns: 46px minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .overview-highlight__icon--refined {
-  width: 44px;
-  height: 44px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -1050,8 +1050,8 @@ onBeforeUnmount(() => {
   display: block;
   margin-top: 4px;
   color: #0b2045;
-  font-size: 15px;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 1.35;
   word-break: break-word;
 }
 
@@ -1071,8 +1071,8 @@ onBeforeUnmount(() => {
 }
 
 .output-card {
-  padding: 18px;
-  border-radius: 20px;
+  padding: 14px;
+  border-radius: 18px;
   text-align: left;
 }
 
@@ -1087,12 +1087,12 @@ onBeforeUnmount(() => {
   grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
-  min-height: 104px;
+  min-height: 84px;
 }
 
 .output-card__icon-badge {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -1110,7 +1110,7 @@ onBeforeUnmount(() => {
   display: block;
   color: #0b2045;
   font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.45rem, 1.2rem + 0.65vw, 1.85rem);
+  font-size: clamp(1.25rem, 1.05rem + 0.5vw, 1.6rem);
   line-height: 1.02;
   white-space: normal;
   word-break: break-word;
@@ -1221,8 +1221,8 @@ onBeforeUnmount(() => {
 
 .capability-story-card {
   position: relative;
-  padding: 22px;
-  border-radius: 26px;
+  padding: 16px;
+  border-radius: 20px;
   border: 1px solid rgba(232, 202, 154, 0.16);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -1264,9 +1264,9 @@ onBeforeUnmount(() => {
   position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 18px;
-  padding: 24px;
-  border-radius: 30px;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 22px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: #ffffff;
   box-shadow:
@@ -1278,9 +1278,9 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 62px;
-  height: 62px;
-  border-radius: 20px;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
   background: linear-gradient(135deg, rgba(214, 168, 97, 0.18), rgba(214, 168, 97, 0.32));
   color: #f6dbb2;
   font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
@@ -1296,7 +1296,7 @@ onBeforeUnmount(() => {
   margin: 0 0 12px;
   color: #0f172a;
   font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
-  font-size: 26px;
+  font-size: 22px;
   line-height: 1.18;
 }
 
@@ -1323,8 +1323,8 @@ onBeforeUnmount(() => {
 }
 
 .certificate-filters button {
-  min-height: 44px;
-  padding: 0 16px;
+  min-height: 38px;
+  padding: 0 14px;
   border-radius: 999px;
   border: 1px solid rgba(214, 168, 97, 0.16);
   background: rgba(255, 255, 255, 0.06);
@@ -1348,7 +1348,7 @@ onBeforeUnmount(() => {
 
 .certificate-card {
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 22px;
   background: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow:
@@ -1389,15 +1389,15 @@ onBeforeUnmount(() => {
 .certificate-card__content {
   display: grid;
   gap: 12px;
-  padding: 20px;
+  padding: 16px;
 }
 
 .certificate-card__content h3 {
   margin: 0;
   color: #0f172a;
   font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
-  font-size: 22px;
-  line-height: 1.3;
+  font-size: 19px;
+  line-height: 1.28;
 }
 
 .certificate-card__content p {
@@ -1439,7 +1439,7 @@ onBeforeUnmount(() => {
 }
 
 .contact-panel__map {
-  min-height: 720px;
+  min-height: 520px;
   border: 1px solid rgba(214, 168, 97, 0.2);
   box-shadow: 0 28px 68px rgba(10, 8, 6, 0.2);
 }
@@ -1509,7 +1509,7 @@ onBeforeUnmount(() => {
 }
 
 .contact-panel__content {
-  padding: 30px;
+  padding: 20px;
   background: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow:
@@ -1527,8 +1527,8 @@ onBeforeUnmount(() => {
 .contact-info-card {
   display: grid;
   gap: 10px;
-  padding: 18px;
-  border-radius: 22px;
+  padding: 14px;
+  border-radius: 18px;
   background: #f8fafc;
   border: 1px solid rgba(15, 23, 42, 0.06);
 }
@@ -1599,7 +1599,7 @@ onBeforeUnmount(() => {
 
 .capability-form textarea {
   resize: vertical;
-  min-height: 128px;
+  min-height: 108px;
 }
 
 .capability-form__error {
@@ -1775,7 +1775,7 @@ onBeforeUnmount(() => {
   }
 
   .capability-overview__media {
-    min-height: 560px;
+    min-height: 420px;
   }
 
   .capability-story-grid,
@@ -1814,7 +1814,7 @@ onBeforeUnmount(() => {
   }
 
   .capability-overview__media {
-    min-height: 460px;
+    min-height: 350px;
   }
 }
 
@@ -1830,7 +1830,7 @@ onBeforeUnmount(() => {
 
   .capability-section {
     min-height: auto;
-    padding: 48px 0 34px;
+    padding: 32px 0 24px;
   }
 
   .capability-section::after {
@@ -1842,19 +1842,19 @@ onBeforeUnmount(() => {
   }
 
   .capability-heading h2 {
-    font-size: clamp(2rem, 1.5rem + 2vw, 2.8rem);
+    font-size: clamp(1.55rem, 1.25rem + 1.35vw, 2.1rem);
   }
 
   .capability-heading p,
   .capability-feature-card p,
   .capability-story-card p,
   .capability-form__footer p {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .capability-overview__media {
-    min-height: 340px;
-    border-radius: 24px;
+    min-height: 260px;
+    border-radius: 18px;
   }
 
   .capability-overview__floating-card {

@@ -287,11 +287,16 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* ── Variables ─────────────────────────────────────────── */
 .pd {
-  --pd-font-serif: 'Cormorant Garamond', 'Times New Roman', Georgia, serif;
+  --pd-font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   min-height: 100vh;
   background: #fff;
+  color: #1d273a;
+  font-family: var(--pd-font-sans);
+}
+
+.pd * {
+  font-family: inherit;
 }
 
 /* ── State (loading / error) ───────────────────────────── */
@@ -381,11 +386,12 @@ onBeforeUnmount(() => {
 
 .pd-hero__title {
   margin: 0;
-  font-family: var(--pd-font-serif);
-  font-size: clamp(2.2rem, 4.5vw, 3.8rem);
-  font-weight: 600;
+  font-size: clamp(2.2rem, 4.4vw, 3.65rem);
+  font-weight: 800;
   color: #fff;
-  line-height: 1.15;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  text-wrap: balance;
 }
 
 /* ── Body section ──────────────────────────────────────── */
@@ -429,10 +435,11 @@ onBeforeUnmount(() => {
 /* ── Main article ──────────────────────────────────────── */
 .pd-section-title {
   margin: 0 0 20px;
-  font-size: clamp(1.5rem, 2.5vw, 2rem);
-  font-weight: 700;
+  font-size: clamp(1.5rem, 2.3vw, 1.95rem);
+  font-weight: 800;
   color: #1d273a;
-  line-height: 1.25;
+  letter-spacing: -0.025em;
+  line-height: 1.22;
 }
 
 .pd-section-title--sub {
@@ -443,6 +450,8 @@ onBeforeUnmount(() => {
 .pd-desc {
   color: #344054;
   font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: -0.005em;
   line-height: 1.9;
   margin-bottom: 12px;
 }

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ChevronLeft, ChevronRight, Play, X } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight, X } from "lucide-vue-next";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import "swiper/css";
 import { Autoplay } from "swiper/modules";
@@ -68,7 +68,6 @@ const leadershipItems = computed(() => aboutView.value?.leadershipItems ?? []);
 const speechPortrait = computed(() => aboutView.value?.chairmanSpeech?.portrait ?? "");
 const heroBannerImage = computed(() => aboutView.value?.hero?.coverImage || "");
 const introImage = computed(() => aboutView.value?.companyIntroduction?.coverImage ?? "");
-const introVideoUrl = computed(() => aboutView.value?.companyIntroduction?.videoUrl ?? "");
 const orgChartImage = computed(() => aboutView.value?.organizationChart?.chartImage ?? "");
 const heroHeadline = computed(() => getValidText(aboutView.value?.hero?.headline, t('user.about.heroHeadline')));
 const heroDescription = computed(() => getValidText(aboutView.value?.hero?.description, t('user.about.heroDescription')));
@@ -83,7 +82,6 @@ const speechMission = computed(() => {
 const introTitle = computed(() => getValidText(aboutView.value?.introSectionTitle || aboutView.value?.companyIntroduction?.title, t('user.about.introTitle')));
 const speechTitle = computed(() => getValidText(aboutView.value?.speechSectionTitle || aboutView.value?.chairmanSpeech?.title, t('user.about.visionTitle')));
 const orgChartTitle = computed(() => getValidText(aboutView.value?.organizationChartSectionTitle || aboutView.value?.organizationChart?.title, t('user.about.orgChartTitle')));
-const videoButtonLabel = computed(() => getValidText(aboutView.value?.companyIntroduction?.videoButtonLabel, t('user.about.videoLabel')));
 const cultureTitle = computed(() => getValidText(aboutView.value?.cultureSection?.title || aboutView.value?.cultureBlocks?.[0]?.title, t('user.about.cultureTitle')));
 const cultureImage = computed(() =>
   resolveImageWithFallback(
@@ -102,7 +100,6 @@ const leadershipTitle = computed(() => getValidText(aboutView.value?.leadershipS
 
 const activeSection = ref("page1");
 const visibleSections = ref(["page1"]);
-const videoOpen = ref(false);
 const chartOpen = ref(false);
 const timelineSwiper = ref(null);
 const timelineAtStart = ref(true);
@@ -701,19 +698,6 @@ onBeforeUnmount(() => {
             <div class="intro-visual visual" data-reveal-item>
               <img class="intro-main" :src="introImage" alt="Company introduction" loading="lazy" />
               <div class="intro-watermark" />
-              <div class="intro-bottom">
-                <button
-                  class="video-trigger"
-                  type="button"
-                  :disabled="!introVideoUrl"
-                  @click="introVideoUrl && (videoOpen = true)"
-                >
-                  <span class="video-icon">
-                    <Play :size="16" fill="currentColor" />
-                  </span>
-                  <span>{{ videoButtonLabel }}</span>
-                </button>
-              </div>
             </div>
 
             <div ref="introScroller" class="intro-copy content" data-reveal-item>
@@ -953,12 +937,6 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-      <div v-if="videoOpen && introVideoUrl" class="about-modal" @click.self="videoOpen = false">
-        <button class="close-button" type="button" @click="videoOpen = false">
-          <X :size="22" />
-        </button>
-        <video controls autoplay playsinline :src="introVideoUrl" />
-      </div>
 
       <div v-if="chartOpen" class="about-modal light" @click.self="chartOpen = false">
         <button class="close-button" type="button" @click="chartOpen = false">
@@ -1449,62 +1427,8 @@ onBeforeUnmount(() => {
   display: none;
 }
 
-.intro-bottom {
-  position: absolute;
-  left: -9%;
-  bottom: 2%;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  z-index: 2;
-}
-
 .intro-decoration {
   display: none;
-}
-
-.video-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #757575;
-  cursor: pointer;
-  box-shadow: none;
-  font-size: 16px;
-  letter-spacing: 0.02em;
-}
-
-.video-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 80px;
-  height: 68px;
-  border-radius: 50%;
-  background: transparent;
-  color: #fff;
-  box-shadow: none;
-  background-image: url("https://en.sinodecor.com/repository/portal-local/ngc202304190002/cms/image/4407f1e1-9209-4baa-9a9b-52e2e8262e37.png");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  position: relative;
-
-  :deep(svg) {
-    width: 12px;
-    height: 12px;
-    position: absolute;
-    top: 59%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #f3c7a2;
-    border-radius: 999px;
-    padding: 10px;
-    box-sizing: content-box;
-  }
 }
 
 .intro-copy,
@@ -2792,7 +2716,6 @@ onBeforeUnmount(() => {
   padding: 30px;
   background: rgba(4, 10, 18, 0.82);
 
-  video,
   .chart-modal-image {
     width: min(100%, 1180px);
     max-height: min(86vh, 920px);
@@ -2867,10 +2790,6 @@ onBeforeUnmount(() => {
     min-height: 520px;
   }
 
-  .intro-bottom {
-    left: 28px;
-    bottom: -20px;
-  }
 
   .intro-copy {
     width: min(100%, 720px);
@@ -3676,22 +3595,6 @@ onBeforeUnmount(() => {
     width: 110px;
   }
 
-  .intro-bottom {
-    position: static;
-    margin-top: 18px;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 14px;
-  }
-
-  .video-trigger {
-    font-size: 15px;
-  }
-
-  .video-icon {
-    width: 52px;
-    height: 52px;
-  }
 
   .speech-layout .split-copy {
     padding-left: 18px;
