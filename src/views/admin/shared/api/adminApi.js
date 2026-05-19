@@ -88,6 +88,7 @@ export function autoTranslateAdminEntityRecord(entityName, recordId, token) {
   return fetchJson(`/admin/${normalizedEntityName}/${recordId}/translate`, {
     method: 'POST',
     headers: withAdminHeaders(token),
+    timeoutMs: 60000,
   })
 }
 
@@ -97,6 +98,7 @@ export function autoTranslateAdminEntityPayload(entityName, payload, token) {
     method: 'POST',
     headers: withAdminHeaders(token),
     body: payload,
+    timeoutMs: 60000,
   })
 }
 

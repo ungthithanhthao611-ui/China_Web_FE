@@ -11,19 +11,11 @@ import {
   Download,
   Play,
   Package,
-  Loader2,
-  ShoppingCart,
-  Zap,
-  Plus,
-  Minus,
 } from 'lucide-vue-next'
 import { uiState } from '@/shared/utils/uiState'
 import { buildDocumentTitle } from '@/shared/utils/pageTitle'
 import { useI18n } from 'vue-i18n'
-import { useCartStore } from '@/views/user/stores/cart'
-import { useAuthStore } from '@/views/user/stores/auth'
 import { getProduct } from '@/views/user/services/productsApi'
-import { resolveProductDisplayPrice, resolveStockQuantity } from '@/views/user/utils/productPricing'
 import InquiryModal from './components/InquiryModal.vue'
 
 const props = defineProps({
@@ -46,85 +38,9 @@ const showInquiry = ref(false)
 const relatedPage = ref(0)
 const viewportWidth = ref(typeof window === 'undefined' ? 1200 : window.innerWidth)
 
-const cartStore = useCartStore()
-const authStore = useAuthStore()
-const quantity = ref(1)
-const isAdding = ref(false)
-const cartNotice = ref('')
-let cartNoticeTimer = null
 
-const stockQuantity = computed(() => resolveStockQuantity(product.value))
-const isOutOfStock = computed(() => stockQuantity.value <= 0)
-const isLowStock = computed(() => stockQuantity.value > 0 && stockQuantity.value <= 5)
-const maxPurchasableQuantity = computed(() => Math.max(1, stockQuantity.value || 1))
-const canPurchase = computed(() => !isOutOfStock.value)
 
-const stockStatusText = computed(() => {
-  if (isOutOfStock.value) return t('user.products.outOfStock')
-  if (isLowStock.value) return t('user.products.lowStock', { count: stockQuantity.value })
-  return t('user.products.inStock', { count: stockQuantity.value })
-})
 
-const showCartNotice = () => {
-  cartNotice.value = t('user.home.cartAddSuccess')
-  if (cartNoticeTimer) {
-    window.clearTimeout(cartNoticeTimer)
-  }
-  cartNoticeTimer = window.setTimeout(() => {
-    cartNotice.value = ''
-    cartNoticeTimer = null
-  }, 2200)
-}
-
-const getDisplayPrice = (productValue) => resolveProductDisplayPrice(productValue)
-
-const formatPrice = (price) => {
-  if (!price) return t('user.home.contactPrice') || 'Liên hệ báo giá'
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
-}
-
-const clampQuantity = () => {
-  const normalizedQuantity = Number(quantity.value)
-  if (!Number.isFinite(normalizedQuantity) || normalizedQuantity < 1) {
-    quantity.value = 1
-    return
-  }
-  quantity.value = Math.min(Math.floor(normalizedQuantity), maxPurchasableQuantity.value)
-}
-
-const handleAddToCart = async () => {
-  if (!canPurchase.value) {
-    alert(t('user.products.outOfStockAlert'))
-    return
-  }
-
-  if (!authStore.isAuthenticated) {
-    alert(t('user.products.loginToCart'))
-    return
-  }
-
-  clampQuantity()
-  isAdding.value = true
-  try {
-    await cartStore.addItem(product.value.id, quantity.value)
-    showCartNotice()
-  } catch (err) {
-    console.error(err)
-  } finally {
-    isAdding.value = false
-  }
-}
-
-const handleBuyNow = async () => {
-  if (!canPurchase.value) {
-    alert(t('user.products.outOfStockAlert'))
-    return
-  }
-  try {
-    await handleAddToCart()
-    router.push('/checkout')
-  } catch (err) {}
-}
 
 const primaryImage = computed(() => {
   const primaryUrl = String(product.value?.image_url || '').trim()
@@ -347,8 +263,6 @@ watch(totalRelatedPages, (pages) => {
   const maxPage = Math.max(0, pages - 1)
   if (relatedPage.value > maxPage) relatedPage.value = maxPage
 }, { immediate: true })
-watch(quantity, clampQuantity)
-watch(stockQuantity, clampQuantity, { immediate: true })
 watch(() => props.slug, fetchProduct)
 watch(locale, fetchProduct)
 
@@ -362,17 +276,11 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateViewportWidth)
-  if (cartNoticeTimer) window.clearTimeout(cartNoticeTimer)
 })
 </script>
 
 <template>
   <div class="prod-detail">
-    <transition name="cart-toast">
-      <div v-if="cartNotice" class="cart-success-toast" role="status" aria-live="polite">
-        {{ cartNotice }}
-      </div>
-    </transition>
 
     <div v-if="loading" class="prod-detail__loading">
       <div class="loading-spinner" />
@@ -454,51 +362,7 @@ onBeforeUnmount(() => {
               {{ product.short_desc || t('user.products.descFallback') }}
             </p>
 
-            <div class="prod-price-box">
-              <div class="price-head">
-                <span class="price-label">{{ t('user.products.priceLabel') }}:</span>
-                <div v-if="getDisplayPrice(product).hasSale" class="price-badges">
-                  <span class="price-badge price-badge--sale">{{ t('user.products.salePrice') }}</span>
-                  <span class="price-badge price-badge--original">{{ t('user.products.originalPrice') }}</span>
-                </div>
-              </div>
-              <div class="price-stack">
-                <span class="price-value" :class="{ 'price-value--sale': getDisplayPrice(product).hasSale }">
-                  {{ formatPrice(getDisplayPrice(product).finalPrice) }}
-                </span>
-                <span v-if="getDisplayPrice(product).hasSale" class="price-original">
-                  {{ formatPrice(getDisplayPrice(product).originalPrice) }}
-                </span>
-              </div>
-              <div class="stock-overview" :class="{ 'stock-overview--empty': isOutOfStock, 'stock-overview--low': isLowStock }">
-                <Package :size="16" />
-                <span>{{ stockStatusText }}</span>
-              </div>
-            </div>
 
-            <div class="prod-purchase-ctrl">
-              <div class="quantity-picker" :class="{ 'quantity-picker--disabled': isOutOfStock }">
-                <button type="button" @click="quantity > 1 && quantity--" :disabled="quantity <= 1 || isOutOfStock">
-                  <Minus :size="16" />
-                </button>
-                <input type="number" v-model.number="quantity" min="1" :max="maxPurchasableQuantity" :disabled="isOutOfStock" />
-                <button type="button" @click="quantity < maxPurchasableQuantity && quantity++" :disabled="quantity >= maxPurchasableQuantity || isOutOfStock">
-                  <Plus :size="16" />
-                </button>
-              </div>
-
-              <div class="purchase-actions">
-                <button class="btn-add-cart" @click="handleAddToCart" :disabled="isAdding || !canPurchase">
-                  <Loader2 v-if="isAdding" class="spinner" :size="18" />
-                  <ShoppingCart v-else :size="18" />
-                  <span>{{ canPurchase ? t('user.products.addToCart') : t('user.products.outOfStock') }}</span>
-                </button>
-                <button class="btn-buy-now" @click="handleBuyNow" :disabled="!canPurchase || isAdding">
-                  <Zap :size="18" fill="currentColor" />
-                  <span>{{ canPurchase ? t('user.products.buyNow') : t('user.products.notPurchasable') }}</span>
-                </button>
-              </div>
-            </div>
 
             <div class="prod-accordion">
               <div v-if="specRows.length" class="acc-item" :class="{ 'acc-item--active': activeAccordion === 'specs' }">
@@ -582,13 +446,6 @@ onBeforeUnmount(() => {
                     <p class="rel-card__sku">{{ item.sku }}</p>
                   </div>
                   <router-link :to="`/products/${item.slug}`" class="rel-card__name">{{ item.name }}</router-link>
-                  <div class="rel-card__price-row">
-                    <template v-if="getDisplayPrice(item).hasSale">
-                      <span class="rel-card__price rel-card__price--sale">{{ formatPrice(getDisplayPrice(item).finalPrice) }}</span>
-                      <span class="rel-card__price-original">{{ formatPrice(getDisplayPrice(item).originalPrice) }}</span>
-                    </template>
-                    <span v-else class="rel-card__price">{{ formatPrice(getDisplayPrice(item).finalPrice) }}</span>
-                  </div>
                   <router-link :to="`/products/${item.slug}`" class="rel-card__cta">
                     {{ t('user.products.relatedViewProduct') }}
                     <ChevronRight :size="16" />
@@ -1129,30 +986,6 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
 }
 
-.rel-card__price-row {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.rel-card__price {
-  color: #0f172a;
-  font-size: 17px;
-  font-weight: 800;
-}
-
-.rel-card__price--sale {
-  color: #dc2626;
-}
-
-.rel-card__price-original {
-  color: #94a3b8;
-  font-size: 12px;
-  font-weight: 700;
-  text-decoration: line-through;
-}
-
 .rel-card__cta {
   display: inline-flex;
   align-items: center;
@@ -1308,130 +1141,6 @@ onBeforeUnmount(() => {
   font-size: 14px;
 }
 
-.prod-price-box {
-  margin: 24px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 20px;
-  background: #f8fafc;
-  border-radius: 16px;
-  border: 1px solid #f1f5f9;
-}
-
-.price-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.price-label {
-  font-size: 14px;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.price-badges {
-  display: flex;
-  gap: 8px;
-}
-
-.price-badge {
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.price-badge--sale { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
-.price-badge--original { background: #e2e8f0; color: #475569; }
-
-.price-stack {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.price-value { font-size: 32px; font-weight: 800; color: #1e293b; }
-.price-value--sale { color: #dc2626; }
-.price-original { color: #94a3b8; font-size: 15px; text-decoration: line-through; }
-
-.stock-overview {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(22, 163, 74, 0.12);
-  color: #166534;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.stock-overview--low { background: rgba(217, 119, 6, 0.14); color: #b45309; }
-.stock-overview--empty { background: rgba(220, 38, 38, 0.12); color: #dc2626; }
-
-.prod-purchase-ctrl {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-bottom: 32px;
-}
-
-.quantity-picker {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: #f1f5f9;
-  padding: 6px;
-  border-radius: 12px;
-  width: fit-content;
-}
-
-.quantity-picker button {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: none;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.quantity-picker input {
-  width: 50px;
-  text-align: center;
-  background: none;
-  border: none;
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.purchase-actions {
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 12px;
-}
-
-.purchase-actions button {
-  height: 56px;
-  border-radius: 14px;
-  font-size: 16px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-}
-
-.btn-add-cart { background: #1e293b; color: #fff; border: none; }
-.btn-buy-now { background: #d6b074; color: #0c1831; border: none; }
-
 .cart-success-toast {
   position: fixed;
   top: 92px;
@@ -1457,7 +1166,7 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
-  .purchase-actions { grid-template-columns: 1fr; }
+
   .prod-related__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 </style>

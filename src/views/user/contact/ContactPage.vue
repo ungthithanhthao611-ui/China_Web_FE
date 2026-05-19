@@ -10,6 +10,7 @@ import {
   normalizeGoogleMapUrl,
   parseCoordinateValue,
 } from '@/shared/utils/maps'
+import { formatPhone, toTelHref } from '@/shared/utils/phone'
 import { uiState } from '@/shared/utils/uiState'
 import { useI18n } from 'vue-i18n'
 import logoImage from '@/assets/logo-cty.png'
@@ -138,8 +139,8 @@ const contactDetails = computed(() => {
     details.push({
       key: 'phone',
       label: t('user.contact.labelPhone'),
-      value: selectedContact.phone,
-      href: `tel:${selectedContact.phone}`,
+      value: formatPhone(selectedContact.phone),
+      href: toTelHref(selectedContact.phone),
       icon: contactIcons.phone,
     })
   }
@@ -425,10 +426,10 @@ onUnmounted(() => {
               <div v-else-if="!hasContactData" class="contact-status-card contact-status-card--contact-info">
                 <div class="contact-status-card__title"><strong>{{ t('user.contact.heroTitle') }}</strong></div>
                 <div class="contact-status-card__row">
-                  <span>SĐT: 0948.929.744</span>
+                  <span>SĐT: 0982 818 273 hoặc 0968 297 104</span>
                 </div>
                 <div class="contact-status-card__row">
-                  <span>Email: thiendongintl@gmail.com</span>
+                  <span>Email: Thiendongvnit@gmail.com</span>
                 </div>
               </div>
 

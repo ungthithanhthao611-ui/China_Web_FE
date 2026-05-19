@@ -78,6 +78,7 @@ export function useEntityManager(props, emit) {
   const totalRecords = ref(0)
   const loading = ref(false)
   const saving = ref(false)
+  const translating = ref(false)
   const deletingId = ref(null)
   const formOpen = ref(false)
   const formMode = ref('create')
@@ -1094,7 +1095,8 @@ export function useEntityManager(props, emit) {
 
   async function autoTranslate() {
     const token = normalizedToken()
-    saving.value = true
+    if (!token || translating.value) return
+    translating.value = true
     try {
       const response = await autoTranslateAdminEntityPayload(
         resolvedEntityKey.value,
@@ -1104,9 +1106,13 @@ export function useEntityManager(props, emit) {
       Object.assign(form, response)
       notifySuccess('Đã tự động dịch các trường văn bản. Vui lòng kiểm tra lại trước khi lưu.')
     } catch (error) {
-      notifyError(error.message || 'Lỗi khi tự động dịch.')
+      const isTimeout = String(error?.message || '').toLowerCase().includes('timed out')
+      const fallback = isTimeout
+        ? 'Dịch tự động quá thời gian chờ. Hãy giảm bớt nội dung hoặc thử lại.'
+        : 'Lỗi khi tự động dịch.'
+      notifyError(error.message || fallback)
     } finally {
-      saving.value = false
+      translating.value = false
     }
   }
 
@@ -1457,6 +1463,7 @@ export function useEntityManager(props, emit) {
     totalRecords,
     loading,
     saving,
+    translating,
     deletingId,
     formOpen,
     formMode,

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { findMenuItems, normalizeMenuItems, toLinkProps } from '@/shared/utils/navigation'
+import { formatPhone, toTelHref } from '@/shared/utils/phone'
 import { uiState } from '@/shared/utils/uiState'
 import logoImage from '@/assets/logo-cty.png'
 
@@ -185,8 +186,8 @@ const companyLogoUrl = computed(() => defaultLogoUrl)
 
 const contactItems = computed(() => {
   const fallbackAddressLines = toAddressLines(t('user.home.addressFull'), [])
-  const fallbackPhone = '0948.929.744'
-  const fallbackEmail = 'thiendongintl@gmail.com'
+  const fallbackPhone = '0982 818 273 / 0968 297 104'
+  const fallbackEmail = 'Thiendongvnit@gmail.com'
 
   const address = computed(() => {
     if (locale.value === 'vi') return readSetting(['company_address', 'address'], '')
@@ -197,7 +198,8 @@ const contactItems = computed(() => {
     ['company_map_url', 'map_url'],
     'https://map.baidu.com/poi/%E8%8D%B7%E5%8D%8E%E6%98%8E%E5%9F%8E%E5%A4%A7%E5%8E%A6-C%E5%BA%A7/@12962304.37,4825324.01,17z?uid=66332e4f3e1ae3326040a9c3&ugc_type=3&ugc_ver=1&device_ratio=1&compat=1&pcevaname=pc4.1&querytype=detailConInfo&da_src=shareurl'
   )
-  const phone = readSetting(['company_phone', 'contact_phone', 'phone'], fallbackPhone)
+  const phoneRaw = readSetting(['company_phone', 'contact_phone', 'phone'], fallbackPhone)
+  const phone = formatPhone(phoneRaw)
   const email = readSetting(['company_email', 'contact_email', 'email'], fallbackEmail)
 
   return [
@@ -210,15 +212,15 @@ const contactItems = computed(() => {
     },
     {
       id: 'phone',
-      href: `tel:${phone}`,
+      href: toTelHref(phoneRaw),
       icon: 'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/31d75566-b8ab-42d0-9b35-630efac0ef74.png',
-      text: `${t('user.home.phoneLabel')}:${phone}`,
+      text: `${t('user.home.phoneLabel')}: ${phone}`,
     },
     {
       id: 'email',
       href: `mailto:${email}`,
       icon: 'https://en.sinodecor.com/repository/repository/portal-local/ngc202304190002/cms/image/63634a49-8e79-496c-801f-36592f0d3431.png',
-      text: `${t('user.home.emailLabel')}:${email}`,
+      text: `${t('user.home.emailLabel')}: ${email}`,
     },
   ]
 })

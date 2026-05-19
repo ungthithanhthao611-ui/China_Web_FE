@@ -5,13 +5,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { ChevronDown, Mail, MapPin, Menu, Phone, Search, X, LogIn, User } from 'lucide-vue-next'
 import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { findMenuItems, normalizeMenuItems, toLinkProps } from '@/shared/utils/navigation'
+import { formatPhone, toTelHref } from '@/shared/utils/phone'
 import { uiState } from '@/shared/utils/uiState'
 import { listProductCategories } from '@/views/user/services/productsApi'
 import { LOCALE_STORAGE_KEY } from '@/i18n'
 import logoImage from '@/assets/logo-cty.png'
 import { useAuthStore } from '@/views/user/stores/auth'
-import { useCartStore } from '@/views/user/stores/cart'
-import { ShoppingCart } from 'lucide-vue-next'
 
 const HEADER_CONTACT_FALLBACK = Object.freeze({
   email: 'Thiendongvnit@gmail.com',
@@ -31,7 +30,6 @@ const route = useRoute()
 const router = useRouter()
 const bootstrapStore = useBootstrapStore()
 const authStore = useAuthStore()
-const cartStore = useCartStore()
 
 const isUserMenuOpen = ref(false)
 const userMenuRef = ref(null)
@@ -43,9 +41,6 @@ const handleLogout = () => {
 
 onMounted(async () => {
   await authStore.initialize()
-  if (authStore.isAuthenticated) {
-    cartStore.initialize()
-  }
 })
 
 const languageOptions = [
@@ -288,12 +283,16 @@ const headerEmail = computed(() =>
   readSetting(['company_email', 'contact_email', 'email'], HEADER_CONTACT_FALLBACK.email),
 )
 const headerPhone = computed(() =>
-  readSetting(['company_phone', 'contact_phone', 'phone'], HEADER_CONTACT_FALLBACK.phone),
+  formatPhone(
+    readSetting(['company_phone', 'contact_phone', 'phone'], HEADER_CONTACT_FALLBACK.phone),
+  ),
 )
 const headerPhoneSecondary = computed(() =>
-  readSetting(
-    ['company_phone_secondary', 'contact_phone_secondary', 'phone_secondary', 'secondary_phone'],
-    HEADER_CONTACT_FALLBACK.phoneSecondary,
+  formatPhone(
+    readSetting(
+      ['company_phone_secondary', 'contact_phone_secondary', 'phone_secondary', 'secondary_phone'],
+      HEADER_CONTACT_FALLBACK.phoneSecondary,
+    ),
   ),
 )
 const headerLocation = computed(() => {
@@ -307,13 +306,8 @@ const headerLocation = computed(() => {
   return fallback
 })
 
-const createTelHref = (value) => {
-  const normalized = String(value || '').replace(/[^\d+]/g, '')
-  return normalized ? `tel:${normalized}` : ''
-}
-
-const phoneHref = computed(() => createTelHref(headerPhone.value))
-const secondaryPhoneHref = computed(() => createTelHref(headerPhoneSecondary.value))
+const phoneHref = computed(() => toTelHref(headerPhone.value))
+const secondaryPhoneHref = computed(() => toTelHref(headerPhoneSecondary.value))
 const emailHref = computed(() => {
   const email = String(headerEmail.value || '').trim()
   return email ? `mailto:${email}` : ''
@@ -626,11 +620,7 @@ onBeforeUnmount(() => {
 
             <!-- User Auth Actions -->
             <div class="user-auth-actions">
-              <!-- Cart Icon -->
-              <router-link to="/cart" class="header-action-btn cart-trigger" :aria-label="t('user.home.cart')">
-                <ShoppingCart :size="22" />
-                <span v-if="cartStore.totalItems > 0" class="cart-badge">{{ cartStore.totalItems }}</span>
-              </router-link>
+
 
               <template v-if="!authStore.isAuthenticated">
                 <router-link to="/login" class="auth-btn auth-btn--login">

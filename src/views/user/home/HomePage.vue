@@ -207,9 +207,9 @@ onUnmounted(() => {
         <HomeProjectsPreview />
       </section>
 
-      <section id="ctn6" class="section-full">
-        <div class="section-inner">
-          <NewsSection :active="activeSection === 5" />
+      <section id="ctn6" class="section-full news-home-section">
+        <div class="section-inner section-inner--news">
+          <NewsSection :active="activeSection === 4" />
         </div>
       </section>
 
@@ -288,10 +288,12 @@ onUnmounted(() => {
   flex-direction: column;
   scroll-snap-align: start;
   scroll-snap-stop: always;
+  overflow: hidden;
 
   @media (max-width: 992px) {
     height: auto;
     min-height: auto;
+    overflow: visible;
   }
 }
 
@@ -307,12 +309,29 @@ onUnmounted(() => {
   flex-direction: column;
   justify-content: center;
   flex: 1;
+  min-height: 0;
+}
+
+.section-inner--news {
+  justify-content: flex-start;
+}
+
+.news-home-section {
+  height: auto;
+  min-height: 100vh;
+  overflow: visible;
+
+  @media (max-width: 992px) {
+    min-height: auto;
+  }
 }
 
 .last-section {
   background-color: #f9f9f9;
   height: auto;
   min-height: auto;
+  scroll-snap-align: none;
+  scroll-snap-stop: normal;
 
   .partner-section {
     padding: 0 !important;

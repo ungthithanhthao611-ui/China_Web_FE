@@ -11,7 +11,6 @@ import {
   Clock3,
   Eye,
   Headset,
-  KeyRound,
   LoaderCircle,
   Mail,
   MapPin,
@@ -32,7 +31,6 @@ import {
 import { useAuthStore } from '@/views/user/stores/auth'
 import { getMyOrders } from '@/views/user/services/ordersApi'
 import {
-  changeMyPassword,
   updateMyProfile,
   uploadMyAvatar,
 } from '@/views/user/services/profileApi'
@@ -56,7 +54,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { t } = useI18n()
 
-const VALID_TABS = ['overview', 'edit', 'security', 'orders']
+const VALID_TABS = ['overview', 'edit', 'orders']
 const ORDER_PAGE_SIZE = 4
 const FALLBACK_TEXT = 'Chưa cập nhật'
 
@@ -67,7 +65,6 @@ const orderErrorMessage = ref('')
 const avatarFailed = ref(false)
 const avatarUploading = ref(false)
 const profileSaving = ref(false)
-const passwordSaving = ref(false)
 const ordersLoading = ref(false)
 
 const activeTab = ref('overview')
@@ -83,16 +80,9 @@ const profileForm = ref({
   address: '',
 })
 
-const passwordForm = ref({
-  current_password: '',
-  new_password: '',
-  confirm_password: '',
-})
-
 const tabs = computed(() => [
   { id: 'overview', label: t('user.profile.overview'), icon: UserCircle2 },
   { id: 'edit', label: t('user.profile.editInfo'), icon: Save },
-  { id: 'security', label: t('user.profile.security'), icon: KeyRound },
   { id: 'orders', label: t('user.profile.orders'), icon: ShoppingBag },
 ])
 
@@ -121,12 +111,6 @@ const supportItems = [
 
 const user = computed(() => authStore.user || null)
 const hasProfile = computed(() => Boolean(user.value?.id || user.value?.email))
-const loginHistory = computed(() =>
-  Array.isArray(user.value?.login_history) ? user.value.login_history : [],
-)
-const loginHistoryCount = computed(() =>
-  Number(user.value?.login_history_count || loginHistory.value.length || 0),
-)
 
 const displayName = computed(() => {
   return (
@@ -331,14 +315,6 @@ function fillProfileForm() {
   }
 }
 
-function resetPasswordForm() {
-  passwordForm.value = {
-    current_password: '',
-    new_password: '',
-    confirm_password: '',
-  }
-}
-
 function isAuthError(error) {
   return [401, 403, 404].includes(Number(error?.status))
 }
@@ -417,28 +393,6 @@ async function handleProfileSubmit() {
       error?.message || 'Không thể cập nhật thông tin cá nhân.'
   } finally {
     profileSaving.value = false
-  }
-}
-
-async function handlePasswordSubmit() {
-  clearMessages()
-
-  if (passwordForm.value.new_password !== passwordForm.value.confirm_password) {
-    pageErrorMessage.value = 'Mật khẩu mới và xác nhận mật khẩu không khớp.'
-    return
-  }
-
-  passwordSaving.value = true
-
-  try {
-    const response = await changeMyPassword(passwordForm.value)
-    successMessage.value = response?.message || 'Đổi mật khẩu thành công.'
-    resetPasswordForm()
-    setActiveTab('overview')
-  } catch (error) {
-    pageErrorMessage.value = error?.message || 'Không thể đổi mật khẩu.'
-  } finally {
-    passwordSaving.value = false
   }
 }
 
@@ -600,34 +554,6 @@ onMounted(loadProfile)
                   </article>
                 </div>
               </section>
-
-              <section class="profile-panel">
-                <div class="profile-panel__header">
-                  <h4>{{ t('user.profile.loginHistory') }}</h4>
-                  <span class="profile-pill">{{ loginHistoryCount }} {{ t('user.profile.records') }}</span>
-                </div>
-
-                <div v-if="loginHistory.length" class="profile-timeline">
-                  <article
-                    v-for="item in loginHistory"
-                    :key="item.id"
-                    class="profile-timeline__item"
-                  >
-                    <div class="profile-timeline__dot"></div>
-                    <div class="profile-timeline__body">
-                      <div class="profile-timeline__row">
-                        <strong>{{ formatDateTime(item.login_at) }}</strong>
-                        <span>{{ cleanText(item.login_method) || 'password' }}</span>
-                      </div>
-                      <p><b>IP:</b> {{ cleanText(item.ip_address) || FALLBACK_TEXT }}</p>
-                      <p><b>User-Agent:</b> {{ cleanText(item.user_agent) || FALLBACK_TEXT }}</p>
-                    </div>
-                  </article>
-                </div>
-                <div v-else class="profile-inline-empty">
-                  <p>Chưa có dữ liệu lịch sử đăng nhập.</p>
-                </div>
-              </section>
             </div>
           </section>
 
@@ -673,48 +599,6 @@ onMounted(loadProfile)
                   <LoaderCircle v-if="profileSaving" :size="16" class="profile-spinner" />
                   <Save v-else :size="16" />
                   <span>{{ profileSaving ? t('user.profile.saving') : t('user.profile.saveChanges') }}</span>
-                </button>
-              </div>
-            </form>
-          </section>
-
-          <section v-else-if="activeTab === 'security'" class="profile-card profile-card--content">
-            <div class="profile-section-head">
-              <div>
-                <p class="profile-section-head__eyebrow">{{ t('user.profile.securityEyebrow') }}</p>
-                <h3>{{ t('user.profile.security') }}</h3>
-              </div>
-            </div>
-
-            <form class="profile-form" @submit.prevent="handlePasswordSubmit">
-              <label class="profile-field profile-field--full">
-                <span>{{ t('user.profile.currentPassword') }}</span>
-                <input v-model="passwordForm.current_password" type="password" required />
-              </label>
-
-              <label class="profile-field">
-                <span>{{ t('user.profile.newPassword') }}</span>
-                <input v-model="passwordForm.new_password" type="password" required />
-              </label>
-
-              <label class="profile-field">
-                <span>{{ t('user.profile.confirmPassword') }}</span>
-                <input v-model="passwordForm.confirm_password" type="password" required />
-              </label>
-
-              <div class="profile-security-note">
-                <ShieldCheck :size="18" />
-                <span>{{ t('user.profile.securityNote') }}</span>
-              </div>
-
-              <div class="profile-form__actions">
-                <button type="button" class="profile-outline-btn" @click="resetPasswordForm">
-                  {{ t('user.profile.quickClear') }}
-                </button>
-                <button type="submit" class="profile-dark-btn" :disabled="passwordSaving">
-                  <LoaderCircle v-if="passwordSaving" :size="16" class="profile-spinner" />
-                  <KeyRound v-else :size="16" />
-                  <span>{{ passwordSaving ? t('user.profile.updating') : t('user.profile.updatePassword') }}</span>
                 </button>
               </div>
             </form>
@@ -957,20 +841,21 @@ onMounted(loadProfile)
 }
 
 .profile-shell {
-  width: min(1180px, calc(100% - 32px));
-  margin: -46px auto 72px;
+  width: min(1320px, calc(100% - 32px));
+  margin: -58px auto 88px;
 }
 
 .profile-layout {
   display: grid;
-  grid-template-columns: minmax(260px, 290px) minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+  gap: 28px;
   align-items: start;
 }
 
 .profile-content {
   display: grid;
   gap: 24px;
+  min-width: 0;
 }
 
 .profile-surface,
@@ -984,6 +869,8 @@ onMounted(loadProfile)
 }
 
 .profile-sidebar {
+  position: sticky;
+  top: calc(var(--site-header-offset) + 22px);
   overflow: hidden;
 }
 
@@ -1095,7 +982,8 @@ onMounted(loadProfile)
 }
 
 .profile-card--content {
-  padding: 32px;
+  padding: 34px;
+  min-height: 100%;
 }
 
 .profile-card--promise {
@@ -1143,7 +1031,7 @@ onMounted(loadProfile)
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .profile-section-head--orders {
@@ -1168,15 +1056,17 @@ onMounted(loadProfile)
 
 .profile-panels-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
 }
 
 .profile-panel {
-  padding: 24px;
-  border-radius: 16px;
+  padding: 28px;
+  border-radius: 20px;
   border: 1px solid #e5e7eb;
-  background: #f8fafc;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.94) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .profile-panel__header {
@@ -1184,37 +1074,39 @@ onMounted(loadProfile)
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
 .profile-panel__header h4 {
   margin: 0;
   color: #0f172a;
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .profile-details {
   display: grid;
-  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .profile-detail {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr);
   gap: 14px;
   align-items: start;
-  padding: 16px;
-  border-radius: 14px;
+  min-height: 100%;
+  padding: 18px;
+  border-radius: 16px;
   border: 1px solid #e5e7eb;
   background: #fff;
 }
 
 .profile-detail__icon {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 14px;
   background: #fff7ed;
   color: #b58133;
 }
@@ -1329,20 +1221,8 @@ onMounted(loadProfile)
 }
 
 .profile-field--full,
-.profile-security-note,
 .profile-form__actions {
   grid-column: 1 / -1;
-}
-
-.profile-security-note {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 18px;
-  border-radius: 14px;
-  background: #fff7ed;
-  border: 1px solid #f5dfb4;
-  color: #8a5f1d;
 }
 
 .profile-form__actions {
@@ -1719,17 +1599,26 @@ onMounted(loadProfile)
   }
 
   .profile-shell {
-    width: min(100% - 28px, 980px);
-    margin-top: -40px;
+    width: min(100% - 28px, 1120px);
+    margin-top: -42px;
+  }
+
+  .profile-layout {
+    grid-template-columns: minmax(250px, 280px) minmax(0, 1fr);
+    gap: 22px;
   }
 
   .profile-card--content {
     padding: 28px 24px;
   }
 
-  .profile-panels-grid,
+  .profile-details,
   .profile-form {
     grid-template-columns: 1fr;
+  }
+
+  .profile-panel {
+    padding: 22px;
   }
 
   .profile-card--promise {
@@ -1766,6 +1655,10 @@ onMounted(loadProfile)
     gap: 18px;
     max-width: 760px;
     margin: 0 auto;
+  }
+
+  .profile-sidebar {
+    position: static;
   }
 
   .profile-sidebar__head {

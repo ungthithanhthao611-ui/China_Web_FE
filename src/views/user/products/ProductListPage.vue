@@ -5,10 +5,6 @@ import { ChevronDown, ChevronRight, Home, Play, Search, X, SlidersHorizontal } f
 import { uiState } from '@/shared/utils/uiState'
 import { listProductCategories, listProducts } from '@/views/user/services/productsApi'
 import { useI18n } from 'vue-i18n'
-import { useCartStore } from '@/views/user/stores/cart'
-import { useAuthStore } from '@/views/user/stores/auth'
-import { resolveProductDisplayPrice } from '@/views/user/utils/productPricing'
-import { ShoppingCart, Loader2 } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,47 +22,6 @@ const viewportWidth = ref(typeof window === 'undefined' ? 1200 : window.innerWid
 const categoryPanelOpen = ref(false)
 
 const displayedCategorySlug = computed(() => (hoveredCategorySlug.value !== null ? hoveredCategorySlug.value : activeCategorySlug.value))
-
-const cartStore = useCartStore()
-const authStore = useAuthStore()
-const addingProductId = ref(null)
-const cartNotice = ref('')
-let cartNoticeTimer = null
-
-const showCartNotice = () => {
-  cartNotice.value = t('user.home.cartAddSuccess')
-  if (cartNoticeTimer) {
-    window.clearTimeout(cartNoticeTimer)
-  }
-  cartNoticeTimer = window.setTimeout(() => {
-    cartNotice.value = ''
-    cartNoticeTimer = null
-  }, 2200)
-}
-
-const getDisplayPrice = (product) => resolveProductDisplayPrice(product)
-
-const formatPrice = (price) => {
-  if (!price) return t('user.home.contactPrice') || 'Liên hệ'
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
-}
-
-const handleAddToCart = async (product) => {
-  if (!authStore.isAuthenticated) {
-    alert('Vui lòng đăng nhập để thêm vào giỏ hàng')
-    return
-  }
-
-  addingProductId.value = product.id
-  try {
-    await cartStore.addItem(product.id, 1)
-    showCartNotice()
-  } catch (err) {
-    console.error(err)
-  } finally {
-    addingProductId.value = null
-  }
-}
 
 const MOBILE_BREAKPOINT = 560
 const DESKTOP_PAGE_SIZE = 9
@@ -312,19 +267,11 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateViewportWidth)
-  if (cartNoticeTimer) {
-    window.clearTimeout(cartNoticeTimer)
-  }
 })
 </script>
 
 <template>
   <div class="products-page">
-    <transition name="cart-toast">
-      <div v-if="cartNotice" class="cart-success-toast" role="status" aria-live="polite">
-        {{ cartNotice }}
-      </div>
-    </transition>
 
     <!-- Hero -->
     <section class="prod-hero">
@@ -494,32 +441,10 @@ onBeforeUnmount(() => {
                     <small>{{ t('user.products.videoDemoSub') }}</small>
                   </span>
                 </a>
-                <div class="prod-card__price-row">
-                  <div class="prod-card__price-meta">
-                    <span class="prod-card__price-label">{{ t('user.products.priceLabel') }}</span>
-                    <div v-if="getDisplayPrice(product).hasSale" class="prod-card__price-badges">
-                      <span class="prod-card__price-badge prod-card__price-badge--sale">Giá khuyến mãi</span>
-                      <span class="prod-card__price-badge prod-card__price-badge--original">Giá gốc</span>
-                    </div>
-                  </div>
-                  <template v-if="getDisplayPrice(product).hasSale">
-                    <span class="prod-card__price prod-card__price--sale">{{ formatPrice(getDisplayPrice(product).finalPrice) }}</span>
-                    <span class="prod-card__price-original">{{ formatPrice(getDisplayPrice(product).originalPrice) }}</span>
-                  </template>
-                  <span v-else class="prod-card__price">{{ formatPrice(getDisplayPrice(product).finalPrice) }}</span>
-                </div>
-                <div class="prod-card__footer">
+                <div class="prod-card__footer prod-card__footer--single">
                   <router-link :to="`/products/${product.slug}`" class="prod-card__detail-btn">
                     {{ t('user.products.viewDetails') }}
                   </router-link>
-                  <button 
-                    class="prod-card__cart-btn" 
-                    @click="handleAddToCart(product)"
-                    :disabled="addingProductId === product.id"
-                  >
-                    <Loader2 v-if="addingProductId === product.id" class="spinner" :size="16" />
-                    <ShoppingCart v-else :size="16" />
-                  </button>
                 </div>
               </div>
             </article>
@@ -1188,6 +1113,12 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 
+.prod-card__footer--single .prod-card__detail-btn {
+  min-height: 42px;
+  border-color: rgba(214, 176, 116, 0.42);
+  background: linear-gradient(135deg, #fff, #fff8ee);
+}
+
 .prod-card__detail-btn,
 .prod-card__inquiry-btn {
   flex: 1;
@@ -1443,149 +1374,6 @@ onBeforeUnmount(() => {
 }
 
 
-.prod-card__price-row {
-  margin: 8px 0 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.prod-card__price-meta {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.prod-card__price-label {
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.prod-card__price-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.prod-card__price-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 24px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.prod-card__price-badge--sale {
-  background: rgba(220, 38, 38, 0.1);
-  color: #dc2626;
-}
-
-.prod-card__price-badge--original {
-  background: #e2e8f0;
-  color: #475569;
-}
-
-.prod-card__price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.prod-card__price--sale {
-  color: #dc2626;
-}
-
-.prod-card__price-original {
-  font-size: 13px;
-  color: #94a3b8;
-  text-decoration: line-through;
-}
-
-.prod-card__cart-btn {
-  background: #f1f5f9;
-  border: none;
-  color: #1e293b;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #1e293b;
-    color: #fff;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.spinner {
-  animation: rotate 1s linear infinite;
-}
-
-.cart-success-toast {
-  position: fixed;
-  top: 92px;
-  right: 24px;
-  z-index: 1000;
-  max-width: min(320px, calc(100vw - 32px));
-  padding: 13px 18px;
-  border-radius: 10px;
-  background: #16a34a;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
-}
-
-.cart-toast-enter-active,
-.cart-toast-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.cart-toast-enter-from,
-.cart-toast-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 @media (max-width: 560px) {
-  .cart-success-toast {
-    top: 76px;
-    right: 16px;
-    left: 16px;
-    max-width: none;
-    text-align: center;
-  }
-
-  .prod-card__cart-btn {
-    width: 34px;
-    height: 34px;
-  }
-  
-  .prod-card__price {
-    font-size: 15px;
-  }
 }
 </style>

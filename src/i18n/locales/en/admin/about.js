@@ -98,5 +98,6 @@ export default {
     panel_title: 'EN/ZH Translations',
     auto_translate: 'Auto Translate',
     translating: 'Translating...',
+    translating_hint: 'Calling Google Translate for each field. Please keep the page open for a few seconds.',
   },
 }

@@ -98,5 +98,6 @@ export default {
     panel_title: 'Bản dịch EN/ZH',
     auto_translate: 'Dịch tự động',
     translating: 'Đang dịch...',
+    translating_hint: 'Hệ thống đang gọi Google Translate cho từng trường, vui lòng giữ trang trong giây lát.',
   },
 }

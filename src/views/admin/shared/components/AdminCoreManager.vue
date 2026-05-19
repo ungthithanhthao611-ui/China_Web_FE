@@ -147,6 +147,7 @@ const {
   submitForm,
   deleteRecord,
   autoTranslate,
+  translating,
   handleFileChange,
   handleVideoFileChange,
   uploadMedia,
@@ -647,6 +648,7 @@ async function openDetail(record) {
         :is-image-media="isImageMedia"
         :current-form-preview-url="currentFormPreviewUrl"
         :saving="saving"
+        :translating="translating"
         :field-groups="FIELD_GROUPS"
         :product-inline-uploading="productInlineUploading"
         :gallery-upload-progress="galleryUploadProgress"

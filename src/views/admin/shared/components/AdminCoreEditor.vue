@@ -255,6 +255,10 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  translating: {
+    type: Boolean,
+    default: false,
+  },
   fieldGroups: {
     type: Object,
     required: true,
@@ -649,6 +653,13 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
       @click.stop
       @mousedown.stop
     >
+      <div v-if="translating" class="editor-panel__translating-overlay" role="status" aria-live="polite">
+        <div class="translating-overlay__card">
+          <div class="translating-overlay__spinner" aria-hidden="true"></div>
+          <h4 class="translating-overlay__title">{{ $t('admin.about.translation.translating') }}</h4>
+          <p class="translating-overlay__desc">{{ $t('admin.about.translation.translating_hint') }}</p>
+        </div>
+      </div>
       <div class="editor-head">
         <div class="editor-head__content">
           <div class="editor-head__badge-wrap">
@@ -658,12 +669,12 @@ const supportsTranslation = computed(() => ["products", "product_categories", "p
               v-if="supportsTranslation"
               type="button"
               class="btn btn-sm btn-secondary btn-translate"
-              :disabled="saving"
+              :disabled="saving || translating"
               @click="emit('auto-translate')"
             >
-              <span v-if="saving" class="spinner-tiny"></span>
+              <span v-if="translating" class="spinner-tiny"></span>
               <span v-else>🪄</span>
-              {{ $t('admin.about.translation.auto_translate') }}
+              {{ translating ? $t('admin.about.translation.translating') : $t('admin.about.translation.auto_translate') }}
             </button>
           </div>
           <h3>{{ formMode === "create" ? $t('admin.common.create_entity', { label: safeConfigLabel }) : $t('admin.common.edit_entity', { label: safeConfigLabel }) }}</h3>

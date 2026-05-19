@@ -98,5 +98,6 @@ export default {
     panel_title: 'EN/ZH 翻译',
     auto_translate: '自动翻译',
     translating: '翻译中...',
+    translating_hint: '正在调用 Google 翻译，请稍等片刻。',
   },
 }
