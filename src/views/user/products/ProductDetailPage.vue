@@ -484,11 +484,8 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.prod-detail-page {
-  padding-top: var(--site-header-offset);
-}
-
 .prod-detail {
+  padding-top: var(--site-header-offset);
   min-height: 100vh;
   background: #fff;
   color: #1f2937;
