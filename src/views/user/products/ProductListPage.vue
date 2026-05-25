@@ -496,7 +496,7 @@ onBeforeUnmount(() => {
   height: 52vh;
   min-height: 320px;
   max-height: 480px;
-  background: url('/images/products_hero_v3.jpg') center/cover no-repeat;
+  background: url('/images/products_hero_v3.jpg') center bottom/cover no-repeat;
   display: flex;
   align-items: center;
   overflow: hidden;
