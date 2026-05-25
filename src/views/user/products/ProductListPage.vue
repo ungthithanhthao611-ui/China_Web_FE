@@ -498,14 +498,15 @@ onBeforeUnmount(() => {
   max-height: 1000px;
   background: url('/images/products_hero_v3.jpg') center/cover no-repeat;
   display: flex;
-  align-items: center;
+  align-items: flex-end; /* Align text block to bottom-left */
   overflow: hidden;
+  padding-bottom: 90px; /* Space above breadcrumbs */
 }
 
 .prod-hero__overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, rgba(10,17,32,0.72) 0%, rgba(10,17,32,0.38) 60%, rgba(10,17,32,0.18) 100%);
+  background: linear-gradient(120deg, rgba(10,17,32,0.65) 0%, rgba(10,17,32,0.3) 60%, rgba(10,17,32,0.12) 100%);
   z-index: 3;
 }
 
@@ -513,14 +514,14 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 4;
   padding-left: clamp(28px, 8vw, 160px);
-  padding-top: 20px;
+  max-width: 600px; /* Prevent text from spreading too wide */
 }
 
 .prod-hero__eyebrow {
   margin: 0 0 4px;
   color: rgba(214,184,136,0.9);
-  font-size: 13px;
-  letter-spacing: 2px;
+  font-size: 11px; /* Smaller eyebrow text */
+  letter-spacing: 1.5px;
   text-transform: uppercase;
 }
 
@@ -528,27 +529,29 @@ onBeforeUnmount(() => {
   margin: 0;
   color: $white;
   font-family: $font-title;
-  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem); /* Reduced title size */
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
 }
 
 .prod-hero__line {
-  width: 60px;
+  width: 40px; /* Shortened red line */
   height: 2px;
-  margin: 14px 0;
+  margin: 10px 0; /* Tighter vertical spacing */
   background: $primary-color;
 }
 
 .prod-hero__sub {
   margin: 0;
   color: rgba(255,255,255,0.72);
-  font-size: clamp(14px, 1.2vw, 16px);
+  font-size: clamp(13px, 1.1vw, 14px); /* Slightly smaller subtitle text */
+  line-height: 1.5;
 }
 
 .prod-hero__breadcrumb {
   position: absolute;
-  bottom: 20px;
+  bottom: 24px;
   left: clamp(28px, 8vw, 160px);
   z-index: 5;
   display: flex;
