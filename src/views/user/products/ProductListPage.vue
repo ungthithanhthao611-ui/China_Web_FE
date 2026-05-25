@@ -496,7 +496,7 @@ onBeforeUnmount(() => {
   height: 52vh;
   min-height: 320px;
   max-height: 480px;
-  background: url('https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1600&q=80') center/cover no-repeat;
+  background: url('/images/products_hero_new.jpg') center/100% 100% no-repeat;
   display: flex;
   align-items: center;
   overflow: hidden;

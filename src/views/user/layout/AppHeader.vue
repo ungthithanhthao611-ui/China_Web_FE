@@ -1825,20 +1825,23 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(214, 176, 116, 0.1);
-  border: 1px solid rgba(214, 176, 116, 0.3);
-  color: #d6b074;
+  background: rgba(214, 176, 116, 0.22);
+  border: 1.5px solid rgba(214, 176, 116, 0.65);
+  color: #e5c38c;
   padding: 8px 16px;
   border-radius: 12px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 
   &:hover {
     background: #d6b074;
     color: #0c1831;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(214, 176, 116, 0.3);
   }
 
   span {
