@@ -496,21 +496,40 @@ onBeforeUnmount(() => {
   height: 52vh;
   min-height: 320px;
   max-height: 480px;
-  background: url('/images/products_hero_new.jpg') center/100% 100% no-repeat;
   display: flex;
   align-items: center;
   overflow: hidden;
+
+  // Layer 1: Blurred background fill to prevent distortion/scale of square image
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -20px;
+    background: url('/images/products_hero_v3.jpg') center/cover no-repeat;
+    filter: blur(28px) brightness(0.42);
+    z-index: 1;
+  }
+
+  // Layer 2: Main square image rendered centered and clean without stretching
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('/images/products_hero_v3.jpg') center/contain no-repeat;
+    z-index: 2;
+  }
 }
 
 .prod-hero__overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(120deg, rgba(10,17,32,0.72) 0%, rgba(10,17,32,0.38) 60%, rgba(10,17,32,0.18) 100%);
+  z-index: 3;
 }
 
 .prod-hero__content {
   position: relative;
-  z-index: 1;
+  z-index: 4;
   padding-left: clamp(28px, 8vw, 160px);
   padding-top: 20px;
 }
@@ -549,7 +568,7 @@ onBeforeUnmount(() => {
   position: absolute;
   bottom: 20px;
   left: clamp(28px, 8vw, 160px);
-  z-index: 2;
+  z-index: 5;
   display: flex;
   align-items: center;
   gap: 8px;
