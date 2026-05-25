@@ -496,28 +496,10 @@ onBeforeUnmount(() => {
   height: 52vh;
   min-height: 320px;
   max-height: 480px;
+  background: url('/images/products_hero_v3.jpg') center/cover no-repeat;
   display: flex;
   align-items: center;
   overflow: hidden;
-
-  // Layer 1: Blurred background fill to prevent distortion/scale of square image
-  &::before {
-    content: '';
-    position: absolute;
-    inset: -20px;
-    background: url('/images/products_hero_v3.jpg') center/cover no-repeat;
-    filter: blur(28px) brightness(0.42);
-    z-index: 1;
-  }
-
-  // Layer 2: Main square image rendered centered and clean without stretching
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: url('/images/products_hero_v3.jpg') center/contain no-repeat;
-    z-index: 2;
-  }
 }
 
 .prod-hero__overlay {
