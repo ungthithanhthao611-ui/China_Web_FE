@@ -493,9 +493,9 @@ onBeforeUnmount(() => {
 /* ── Hero ── */
 .prod-hero {
   position: relative;
-  height: 72vh;
-  min-height: 480px;
-  max-height: 650px;
+  height: 85vh;
+  min-height: 550px;
+  max-height: 800px;
   background: url('/images/products_hero_v3.jpg') center/cover no-repeat;
   display: flex;
   align-items: center;
