@@ -68,6 +68,7 @@ const avatarFitOptions = [
 ]
 
 const translatableAboutFields = ['title', 'subtitle', 'content']
+const PRIMARY_ABOUT_LANGUAGE_ID = 2
 
 // Modal Editor State
 const isModalEditorOpen = ref(false)
@@ -97,6 +98,16 @@ const sectionAccentMap = {
   leadership_care: 'accent-leadership',
 }
 
+const sectionHelperMap = {
+  hero: 'Điều khiển hero đầu trang Giới thiệu: tiêu đề, mô tả và ảnh bìa.',
+  company_introduction: 'Điều khiển section Giới thiệu công ty: ảnh/video bên trái và nội dung bên phải.',
+  chairman_speech: 'Điều khiển section Tầm Nhìn & Chiến Lược: văn bản bên trái và ảnh lớn bên phải.',
+  organization_chart: 'Điều khiển section Sơ đồ tổ chức: tiêu đề và ảnh sơ đồ.',
+  corporate_culture: 'Điều khiển section Giá trị cốt lõi / Văn hóa: ảnh nền, giá trị và slogan.',
+  development_course: 'Điều khiển section Lịch sử phát triển: từng mốc thời gian và nội dung đi kèm.',
+  leadership_care: 'Điều khiển section Ban lãnh đạo: hồ sơ, chức vụ và ảnh đại diện từng người.',
+}
+
 const sectionOrder = Object.keys(ABOUT_SECTION_LABEL_MAP)
 const sectionPreviewPageMap = {
   hero: 'page1',
@@ -111,6 +122,7 @@ const sectionPreviewPageMap = {
 const sectionDefinitions = sectionOrder.map((key) => ({
   key,
   label: ABOUT_SECTION_LABEL_MAP[key],
+  helper: sectionHelperMap[key] || '',
   previewHref: ABOUT_SECTION_PREVIEW_MAP[key] || '',
   previewSectionId: sectionPreviewPageMap[key] || '',
   accentClass: sectionAccentMap[key] || 'accent-default',
@@ -364,6 +376,60 @@ function matchesCompleteness(record) {
   if (completenessFilter.value === 'missing_link') return !hasLink(record)
   if (completenessFilter.value === 'complete') return isRecordComplete(record)
   return true
+}
+
+function aboutBlockGroupKey(sectionKey, blockKey) {
+  return `${normalizeText(sectionKey).toLowerCase()}::${normalizeText(blockKey).toLowerCase()}`
+}
+
+function aboutLanguagePriority(languageId) {
+  const numericLanguageId = Number(languageId || 0)
+  if (numericLanguageId === PRIMARY_ABOUT_LANGUAGE_ID) return 3
+  if (!numericLanguageId) return 2
+  return 1
+}
+
+function recordContentScore(record) {
+  let score = 0
+  score += aboutLanguagePriority(record?.__blockLanguageId || record?.language_id) * 1000
+  if (isRecordComplete(record)) score += 80
+  if (hasImage(record)) score += 40
+  if (hasPrimaryContent(record)) score += 30
+  if (hasLink(record)) score += 10
+  if (record?.is_active !== false) score += 5
+  if (normalizeText(record?.status).toLowerCase() === 'published') score += 5
+  score -= Number(record?.sort_order || 0) / 1000
+  score -= Number(record?.id || 0) / 1000000
+  return score
+}
+
+function choosePreferredRecord(currentRecord, candidateRecord) {
+  if (!currentRecord) return candidateRecord
+  if (!candidateRecord) return currentRecord
+
+  const scoreDelta = recordContentScore(candidateRecord) - recordContentScore(currentRecord)
+  if (Math.abs(scoreDelta) > 0.0001) {
+    return scoreDelta > 0 ? candidateRecord : currentRecord
+  }
+
+  const sortDelta = Number(candidateRecord.sort_order || 0) - Number(currentRecord.sort_order || 0)
+  if (sortDelta !== 0) return sortDelta < 0 ? candidateRecord : currentRecord
+
+  return Number(candidateRecord.id || 0) < Number(currentRecord.id || 0)
+    ? candidateRecord
+    : currentRecord
+}
+
+function dedupeBlockItems(records = []) {
+  const recordsByItemKey = new Map()
+
+  records.forEach((record) => {
+    const normalizedItemKey = normalizeText(record?.item_key).toLowerCase()
+    const key = normalizedItemKey || `record:${record?.id || recordsByItemKey.size}`
+    recordsByItemKey.set(key, choosePreferredRecord(recordsByItemKey.get(key), record))
+  })
+
+  return [...recordsByItemKey.values()]
 }
 
 function matchesKeyword(record, block) {
@@ -1245,6 +1311,38 @@ async function refreshAll() {
   }
 }
 
+async function syncImageDraftAcrossDuplicateBlocks(draft, block, payload, token, fieldDefs = []) {
+  const sourceBlockIds = Array.isArray(block?.sourceBlockIds)
+    ? block.sourceBlockIds.map((id) => Number(id)).filter(Boolean)
+    : []
+
+  if (sourceBlockIds.length <= 1) return
+  if (!fieldsRequireImage(fieldDefs)) return
+
+  const sourceBlockId = Number(draft?.block_id || block?.id || 0)
+  const itemKey = normalizeText(draft?.item_key)
+  if (!sourceBlockId || !itemKey) return
+
+  const targetBlockIds = sourceBlockIds.filter((blockId) => blockId !== sourceBlockId)
+  for (const targetBlockId of targetBlockIds) {
+    const existingRecord = items.value.find((record) =>
+      Number(record.block_id || 0) === targetBlockId
+      && normalizeText(record.item_key) === itemKey,
+    )
+    const syncPayload = {
+      ...payload,
+      block_id: targetBlockId,
+      item_key: itemKey,
+    }
+
+    if (existingRecord?.id) {
+      await updateAdminEntityRecord('content_block_items', existingRecord.id, syncPayload, token)
+    } else {
+      await createAdminEntityRecord('content_block_items', syncPayload, token)
+    }
+  }
+}
+
 async function saveDraft(draft, block, fieldDefs, options = {}) {
   const token = normalizedToken()
   if (!token) return false
@@ -1284,6 +1382,7 @@ async function saveDraft(draft, block, fieldDefs, options = {}) {
       }
     }
 
+    await syncImageDraftAcrossDuplicateBlocks(draft, block, payload, token, fieldDefs)
     await loadItems()
     refreshSectionPreview()
     if (!draft.id && options.blockId) {
@@ -1388,27 +1487,68 @@ const sectionCards = computed(() => {
     .filter((section) => allowedSection === 'all' || allowedSection === section.key)
     .map((section) => {
       const itemGroups = new Map()
+      const ensureItemGroup = (blockKey, blockMeta = null, record = null) => {
+        const normalizedBlockKey = normalizeText(blockKey).toLowerCase()
+        if (!normalizedBlockKey) return null
+
+        const groupKey = aboutBlockGroupKey(section.key, normalizedBlockKey)
+        const blockId = Number(blockMeta?.id || record?.block_id || 0)
+
+        if (!itemGroups.has(groupKey)) {
+          itemGroups.set(groupKey, {
+            id: blockId,
+            language_id: blockMeta?.language_id || record?.language_id || null,
+            block_key: normalizedBlockKey,
+            block_type: blockMeta?.block_type || record?.block_type || '',
+            title: blockMeta?.title || record?.block_title || record?.title || normalizedBlockKey,
+            subtitle: blockMeta?.subtitle || '',
+            content: blockMeta?.content || '',
+            sort_order: Number(blockMeta?.sort_order ?? record?.sort_order ?? 0),
+            items: [],
+            sourceBlockIds: new Set(),
+          })
+        }
+
+        const group = itemGroups.get(groupKey)
+        if (blockId) {
+          group.sourceBlockIds.add(blockId)
+          const currentPriority = aboutLanguagePriority(group.language_id)
+          const candidateLanguageId = blockMeta?.language_id || record?.language_id || null
+          const candidatePriority = aboutLanguagePriority(candidateLanguageId)
+          if (
+            !group.id
+            || candidatePriority > currentPriority
+            || (candidatePriority === currentPriority && blockId < Number(group.id || Number.MAX_SAFE_INTEGER))
+          ) {
+            group.id = blockId
+            group.language_id = candidateLanguageId
+            group.title = blockMeta?.title || record?.block_title || record?.title || normalizedBlockKey
+            group.subtitle = blockMeta?.subtitle || ''
+            group.content = blockMeta?.content || ''
+          }
+        }
+        if (!group.block_type && (blockMeta?.block_type || record?.block_type)) {
+          group.block_type = blockMeta?.block_type || record?.block_type || ''
+        }
+        if (!group.title && (blockMeta?.title || record?.block_title || record?.title)) {
+          group.title = blockMeta?.title || record?.block_title || record?.title || normalizedBlockKey
+        }
+        if (!group.subtitle && blockMeta?.subtitle) group.subtitle = blockMeta.subtitle
+        if (!group.content && blockMeta?.content) group.content = blockMeta.content
+        const sortOrder = Number(blockMeta?.sort_order ?? record?.sort_order ?? group.sort_order ?? 0)
+        if (sortOrder < Number(group.sort_order || 0)) group.sort_order = sortOrder
+
+        return group
+      }
 
       if (shouldIncludeEmptyBlocks) {
         blocks.value.forEach((blockMeta) => {
-          const blockId = Number(blockMeta.id || 0)
-          if (!blockId) return
-
           const sectionKey =
             normalizeText(blockMeta.section_key || getAboutSectionFromBlockKey(blockMeta.block_key)).toLowerCase()
           if (sectionKey !== section.key) return
           if (!matchesKeywordOnBlock(blockMeta)) return
 
-          itemGroups.set(blockId, {
-            id: blockId,
-            block_key: normalizeText(blockMeta.block_key).toLowerCase(),
-            block_type: blockMeta.block_type || '',
-            title: blockMeta.title || blockMeta.block_key || `Block #${blockId}`,
-            subtitle: blockMeta.subtitle || '',
-            content: blockMeta.content || '',
-            sort_order: Number(blockMeta.sort_order ?? 0),
-            items: [],
-          })
+          ensureItemGroup(blockMeta.block_key, blockMeta)
         })
       }
 
@@ -1426,26 +1566,19 @@ const sectionCards = computed(() => {
           if (inferredSectionKey !== section.key) return
           if (!matchesKeyword(record, blockMeta || { block_key: blockKey, title: record.block_title })) return
 
-          if (!itemGroups.has(blockId)) {
-            itemGroups.set(blockId, {
-              id: blockId,
-              block_key: blockKey,
-              block_type: record.block_type || blockMeta?.block_type || '',
-              title: blockMeta?.title || record.block_title || record.title || blockKey,
-              subtitle: blockMeta?.subtitle || '',
-              content: blockMeta?.content || '',
-              sort_order: Number(blockMeta?.sort_order ?? record.sort_order ?? 0),
-              items: [],
+          const itemGroup = ensureItemGroup(blockKey, blockMeta, record)
+          if (itemGroup) {
+            itemGroup.items.push({
+              ...record,
+              __blockLanguageId: blockMeta?.language_id || record.language_id || null,
             })
           }
-
-          itemGroups.get(blockId).items.push(record)
         })
 
       const sectionBlocks = [...itemGroups.values()]
         .map((block) => {
           const schema = getBlockSchema(block.block_key)
-          const blockItems = [...block.items].sort((a, b) => {
+          const blockItems = dedupeBlockItems(block.items).sort((a, b) => {
             const sortDelta = Number(a.sort_order || 0) - Number(b.sort_order || 0)
             if (sortDelta !== 0) return sortDelta
             return Number(a.id || 0) - Number(b.id || 0)
@@ -1463,6 +1596,7 @@ const sectionCards = computed(() => {
             sectionKey: section.key,
             blockLabel: resolveAboutBlockDisplayName(block.block_key, block.title || block.block_key),
             schema,
+            sourceBlockIds: [...block.sourceBlockIds],
             allItems: blockItems,
             fixedEntries,
             dynamicRecords,
@@ -1745,6 +1879,7 @@ watch(
               <div class="section-card__info">
                 <p class="section-card__eyebrow">{{ sectionPageLabel(section) }}</p>
                 <h2>{{ section.label }}</h2>
+                <p v-if="section.helper" class="section-card__helper">{{ section.helper }}</p>
                 <div class="section-card__stats">
                   <span class="section-chip">{{ $t('admin.about.section.blocks_count', { count: section.counts.blocks }) }}</span>
                   <span class="section-chip">{{ $t('admin.about.section.items_count', { count: section.counts.items }) }}</span>
@@ -1967,7 +2102,7 @@ watch(
               <!-- Image Field -->
               <div v-if="modalFields.some(f => f.type === 'image')" class="schema-field schema-field--full upload-section">
                 <div class="upload-section__header">
-                  <span>Hình ảnh <strong v-if="modalFields.find(f => f.type === 'image')?.required" class="text-danger">*</strong></span>
+                  <span>{{ modalFields.find(f => f.type === 'image')?.label || 'Hình ảnh' }} <strong v-if="modalFields.find(f => f.type === 'image')?.required" class="text-danger">*</strong></span>
                   <button v-if="modalDraft.image_id" class="btn btn-ghost btn-sm text-danger" @click="clearDraftImageSelection(modalDraft, modalKey)">Xóa ảnh</button>
                 </div>
                 
@@ -2236,6 +2371,13 @@ watch(
   font-size: 16px;
   font-weight: 500;
   color: #1e293b;
+}
+
+.section-card__helper {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .section-thumb-clean {

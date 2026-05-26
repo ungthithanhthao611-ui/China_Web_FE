@@ -67,28 +67,28 @@ export const ABOUT_BLOCK_SECTION_MAP = {
 };
 
 export const ABOUT_SECTION_LABEL_MAP = {
-  hero: "Page 1 Hero",
-  company_introduction: "Page 2 Gioi thieu cong ty",
-  chairman_speech: "Page 3 Tam nhin va Su menh",
-  organization_chart: "Page 4 So do to chuc",
-  corporate_culture: "Page 5 Gia tri cot loi",
-  development_course: "Page 6 Lich su phat trien",
-  leadership_care: "Page 7 Ban lanh dao",
+  hero: "Page 1 - Hero đầu trang",
+  company_introduction: "Page 2 - Giới thiệu công ty",
+  chairman_speech: "Page 3 - Tầm Nhìn & Chiến Lược",
+  organization_chart: "Page 4 - Sơ đồ tổ chức",
+  corporate_culture: "Page 5 - Giá trị cốt lõi / Văn hóa",
+  development_course: "Page 6 - Lịch sử phát triển",
+  leadership_care: "Page 7 - Ban lãnh đạo",
 };
 
 export const ABOUT_BLOCK_LABEL_MAP = {
-  hero_summary: "Page 1 Hero",
-  intro_media: "Page 2 Gioi thieu cong ty",
-  intro_video: "Page 2 Gioi thieu cong ty",
-  intro_paragraphs: "Page 2 Gioi thieu cong ty",
-  speech_profile: "Page 3 Tam nhin va Su menh",
-  speech_body: "Page 3 Tam nhin va Su menh",
-  speech_signature: "Page 3 Tam nhin va Su menh",
-  org_chart_image: "Page 4 So do to chuc",
-  culture_values: "Page 5 Gia tri cot loi",
-  culture_slogan: "Page 5 Gia tri cot loi",
-  timeline: "Page 6 Lich su phat trien",
-  leadership_care_gallery: "Page 7 Ban lanh dao",
+  hero_summary: "Page 1 - Hero: tiêu đề, mô tả, ảnh bìa",
+  intro_media: "Page 2 - Ảnh/video giới thiệu công ty",
+  intro_video: "Page 2 - Nút và link video giới thiệu",
+  intro_paragraphs: "Page 2 - Nội dung giới thiệu công ty",
+  speech_profile: "Page 3 - Ảnh lớn bên phải Tầm Nhìn & Chiến Lược",
+  speech_body: "Page 3 - Văn bản Tầm Nhìn & Chiến Lược",
+  speech_signature: "Page 3 - Thông tin ký/tên lãnh đạo nếu dùng",
+  org_chart_image: "Page 4 - Sơ đồ tổ chức",
+  culture_values: "Page 5 - Giá trị cốt lõi / Văn hóa",
+  culture_slogan: "Page 5 - Slogan",
+  timeline: "Page 6 - Lịch sử phát triển",
+  leadership_care_gallery: "Page 7 - Hồ sơ ban lãnh đạo",
 };
 
 export const ABOUT_SECTION_OPTIONS = Object.entries(ABOUT_SECTION_LABEL_MAP).map(
@@ -119,11 +119,11 @@ const ABOUT_ITEM_FIELD_LABELS = {
     video_url: "Lien ket video",
   },
   speech_profile: {
-    portrait: "Hinh anh",
+    portrait: "Ảnh lớn bên phải section Tầm Nhìn & Chiến Lược",
   },
   speech_body: {
-    vision: "Noi dung tam nhin",
-    mission: "Noi dung su menh",
+    vision: "Nội dung tầm nhìn",
+    mission: "Nội dung chiến lược / sứ mệnh",
   },
   speech_signature: {
     sign_title: "Tieu de chu ky",
@@ -140,7 +140,7 @@ const ABOUT_ITEM_GLOBAL_LABEL_MAP = {
   description: "Noi dung chi tiet / Van ban",
   cover_image: "Hinh anh",
   company_introduction: "Menu dieu huong: Page 2 Gioi thieu cong ty",
-  chairman_speech: "Menu dieu huong: Page 3 Tam nhin va Su menh",
+  chairman_speech: "Menu điều hướng: Page 3 - Tầm Nhìn & Chiến Lược",
   organization_chart: "Menu dieu huong: Page 4 So do to chuc",
   corporate_culture: "Menu dieu huong: Page 5 Gia tri cot loi",
   development_course: "Menu dieu huong: Page 6 Lich su phat trien",

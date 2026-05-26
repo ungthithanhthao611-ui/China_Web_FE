@@ -23,14 +23,55 @@ const resolveUrl = (url) => {
 const findBlock = (blocks, key) =>
   blocks.find((b) => b.block_key === key) || null
 
+const itemHasText = (item) =>
+  Boolean(item?.title || item?.subtitle || item?.content)
+
+const itemHasImage = (item) => {
+  if (item?.media?.url || item?.image?.url) return true
+  const meta = item?.metadata_json && typeof item.metadata_json === 'object' ? item.metadata_json : {}
+  return Boolean(meta.src || meta.image_url || meta.image)
+}
+
+const itemScore = (item) => [
+  itemHasImage(item) ? 1 : 0,
+  itemHasText(item) ? 1 : 0,
+  String(item?.updated_at || ''),
+  Number(item?.id || 0),
+]
+
+const preferItem = (current, candidate) => {
+  if (!current) return candidate
+  const currentScore = itemScore(current)
+  const candidateScore = itemScore(candidate)
+
+  for (let index = 0; index < candidateScore.length; index += 1) {
+    if (candidateScore[index] > currentScore[index]) return candidate
+    if (candidateScore[index] < currentScore[index]) return current
+  }
+
+  return candidate.__sourceIndex > current.__sourceIndex ? candidate : current
+}
+
 const findSection = (sections, anchor) =>
   (sections || []).find((section) => section?.anchor === anchor) || null
 
 /** Lấy tất cả items của 1 block, đã sort theo sort_order */
 const blockItems = (blocks, key) => {
-  const block = findBlock(blocks, key)
-  if (!block?.items?.length) return []
-  return [...block.items].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+  const preferredItems = new Map()
+  let sourceIndex = 0
+
+  ;(blocks || [])
+    .filter((block) => block?.block_key === key)
+    .forEach((block) => {
+      ;(block.items || []).forEach((item) => {
+        const enrichedItem = { ...item, __sourceIndex: sourceIndex }
+        sourceIndex += 1
+        const itemKey = String(item?.item_key || '').trim() || `item:${sourceIndex}`
+        preferredItems.set(itemKey, preferItem(preferredItems.get(itemKey), enrichedItem))
+      })
+    })
+
+  return [...preferredItems.values()].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
 }
 
 /** Lấy 1 item cụ thể theo item_key trong block */

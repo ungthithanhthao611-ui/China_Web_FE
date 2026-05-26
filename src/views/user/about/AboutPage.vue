@@ -28,7 +28,7 @@ const getValidText = (val, fallback) => {
 
 const rawSectionMeta = computed(() => aboutView.value?.sectionMeta ?? []);
 const sectionMeta = computed(() => {
-  return rawSectionMeta.value.map((item) => {
+  let meta = rawSectionMeta.value.map((item) => {
     const keyMap = {
       'page1': 'user.about.tabIntro',
       'page2': 'user.about.tabIntro',
@@ -41,10 +41,16 @@ const sectionMeta = computed(() => {
     const key = keyMap[item.id];
     return { ...item, title: getValidText(item.title, key ? t(key) : item.title) }
   })
+
+  if (!aboutView.value?.leadershipItems?.length) {
+    meta = meta.filter(item => item.id !== 'page7')
+  }
+
+  return meta
 });
 const aboutTabs = computed(() => aboutView.value?.aboutTabs ?? []);
 const translatedTabs = computed(() => {
-  return aboutTabs.value.map((tab) => {
+  let tabs = aboutTabs.value.map((tab) => {
     const keyMap = {
       'page1': 'user.about.tabIntro',
       'page2': 'user.about.tabIntro',
@@ -57,6 +63,12 @@ const translatedTabs = computed(() => {
     const key = keyMap[tab.id];
     return { ...tab, title: getValidText(tab.title, key ? t(key) : tab.title) }
   })
+
+  if (!aboutView.value?.leadershipItems?.length) {
+    tabs = tabs.filter(tab => tab.id !== 'page7')
+  }
+
+  return tabs
 })
 const companyIntroduction = computed(() => {
   return aboutView.value?.companyIntroduction?.paragraphs ?? []
@@ -463,7 +475,12 @@ const getTargetSectionId = () => {
   return "page1";
 };
 
-const shouldRenderSection = (id) => !previewSectionId.value || previewSectionId.value === id;
+const shouldRenderSection = (id) => {
+  if (id === 'page7' && (!aboutView.value?.leadershipItems || aboutView.value.leadershipItems.length === 0)) {
+    return false;
+  }
+  return !previewSectionId.value || previewSectionId.value === id;
+};
 
 const isSectionVisible = (id) => visibleSections.value.includes(id);
 
@@ -1842,7 +1859,7 @@ onBeforeUnmount(() => {
 
 .chart-card {
   width: 100%;
-  margin-top: clamp(34px, 6vh, 72px);
+  margin-top: clamp(16px, 3vh, 36px);
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -1857,7 +1874,7 @@ onBeforeUnmount(() => {
     max-height: 62vh;
     height: auto;
     display: block;
-    margin: 3vw auto 0;
+    margin: 0 auto;
     object-fit: contain;
   }
 }

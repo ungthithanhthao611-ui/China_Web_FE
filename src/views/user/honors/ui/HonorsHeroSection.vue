@@ -75,7 +75,7 @@ const swiperModules = [Autoplay, Pagination, EffectFade]
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 96px 0 104px;
+  padding: 90px 0 96px;
   overflow: hidden;
 }
 
@@ -310,12 +310,12 @@ p {
   left: 50%;
   right: auto;
   bottom: clamp(18px, 3.8vh, 34px);
-  width: min(700px, calc(100% - 72px));
+  width: min(660px, calc(100% - 80px));
   transform: translateX(-50%);
   display: grid;
   grid-template-columns: 0.9fr 0.9fr 1.2fr;
   gap: 6px;
-  padding: 6px;
+  padding: 5px;
   border-radius: 24px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.94);
@@ -326,13 +326,13 @@ p {
 }
 
 .hero-tabs button {
-  min-height: 38px;
-  padding: 0 11px;
+  min-height: 34px;
+  padding: 0 10px;
   border: none;
   border-radius: 999px;
   background: transparent;
   color: #172033;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
   line-height: 1.2;
   letter-spacing: -0.015em;
@@ -362,7 +362,7 @@ p {
 @media (max-width: 1199px) {
   .hero {
     min-height: 100svh;
-    padding: 88px 0 96px;
+    padding: 82px 0 88px;
   }
 
   .content {
@@ -403,7 +403,7 @@ p {
   }
 
   .hero-tabs {
-    width: min(660px, calc(100% - 44px));
+    width: min(620px, calc(100% - 48px));
     grid-template-columns: 0.9fr 0.9fr 1.2fr;
     bottom: clamp(16px, 3.4vh, 28px);
   }
@@ -412,7 +412,7 @@ p {
 @media (max-width: 767px) {
   .hero {
     min-height: 100svh;
-    padding: 78px 0 82px;
+    padding: 72px 0 76px;
   }
 
   .hero::after {
@@ -484,7 +484,7 @@ p {
   }
 
   .hero-tabs {
-    width: min(460px, calc(100% - 18px));
+    width: min(430px, calc(100% - 16px));
     bottom: clamp(14px, 3vh, 24px);
     display: flex;
     grid-template-columns: none;
@@ -503,10 +503,10 @@ p {
 
   .hero-tabs button {
     flex: 0 0 auto;
-    min-width: clamp(118px, 35vw, 150px);
-    min-height: 34px;
-    padding: 0 8px;
-    font-size: 10px;
+    min-width: clamp(108px, 33vw, 138px);
+    min-height: 32px;
+    padding: 0 7px;
+    font-size: 9.5px;
   }
 
   .hero-tabs button + button {
@@ -517,7 +517,7 @@ p {
 
 @media (max-width: 479px) {
   .hero {
-    padding: 70px 0 74px;
+    padding: 66px 0 68px;
   }
 
   .content,

@@ -199,18 +199,19 @@ export const ABOUT_BLOCK_SCHEMAS = {
   },
 
   // ═══════════════════════════════════════════════════════════
-  // PAGE 3 — TẦM NHÌN & SỨ MỆNH (Chairman Speech)
+  // PAGE 3 — TẦM NHÌN & CHIẾN LƯỢC
   // ═══════════════════════════════════════════════════════════
   speech_profile: {
-    label: 'Ảnh chân dung lãnh đạo',
-    description: 'Ảnh đại diện của chủ tịch / tổng giám đốc.',
+    label: 'Page 3 - Ảnh lớn bên phải Tầm Nhìn & Chiến Lược',
+    description: 'Ảnh này hiển thị bên phải trong section Tầm Nhìn & Chiến Lược trên trang public. Đây không phải ảnh đại diện trong mục Ban lãnh đạo.',
     fixedItems: [
       {
         itemKey: 'portrait',
-        label: 'Ảnh chân dung',
+        label: 'Ảnh lớn bên phải section',
+        description: 'Sửa ảnh này nếu muốn đổi hình lớn bên phải của mục Tầm Nhìn & Chiến Lược.',
         fields: [
-          FIELD.image('Ảnh chân dung', { required: true }),
-          FIELD.title('Tên người (alt text)', { placeholder: 'Nguyễn Văn A' }),
+          FIELD.image('Ảnh lớn bên phải Tầm Nhìn & Chiến Lược', { required: true }),
+          FIELD.title('Alt text ảnh', { placeholder: 'Ví dụ: Nhà máy Thiên Đông Việt Nam' }),
         ],
         sortOrder: 10,
       },
@@ -218,8 +219,8 @@ export const ABOUT_BLOCK_SCHEMAS = {
   },
 
   speech_body: {
-    label: 'Nội dung Tầm nhìn & Sứ mệnh',
-    description: 'Văn bản tầm nhìn, sứ mệnh của công ty.',
+    label: 'Page 3 - Văn bản Tầm Nhìn & Chiến Lược',
+    description: 'Tiêu đề và các đoạn nội dung hiển thị bên trái ảnh trong section Tầm Nhìn & Chiến Lược.',
     fixedItems: [
       {
         itemKey: 'section_title',
@@ -227,7 +228,7 @@ export const ABOUT_BLOCK_SCHEMAS = {
         fields: [
           FIELD.title('Tiêu đề hiển thị', {
             required: true,
-            placeholder: 'Ví dụ: Tầm nhìn & Sứ mệnh',
+            placeholder: 'Ví dụ: Tầm Nhìn & Chiến Lược',
           }),
         ],
         sortOrder: 5,

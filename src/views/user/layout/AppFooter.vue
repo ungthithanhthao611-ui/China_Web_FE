@@ -28,7 +28,6 @@ const fallbackFooterGroups = computed(() => [
       { name: t('user.home.history'), path: '/about/development-course' },
       { name: t('user.home.visionMission'), path: '/about/corporate-culture' },
       { name: t('user.home.coreValues'), path: '/about/corporate-culture' },
-      { name: t('user.home.leadership'), path: '/about/leadership-care' },
       { name: t('user.home.orgChart'), path: '/about/organization-chart' },
     ],
   },
