@@ -489,7 +489,7 @@ export function useNavigationMenusManager(props, emit, options = {}) {
     }
 
     context.nodes.splice(context.index, 1)
-    notifySuccess(t('admin.common.success'))
+    await handleSaveTree()
   }
 
   async function handleDeleteMenu() {
