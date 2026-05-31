@@ -6,6 +6,8 @@ export default {
   total_revenue: '总收入',
   products: '产品',
   customers: '客户',
+  inquiries: '询价请求',
+  posts: '文章',
   reviews: '评价',
   growth_suffix: '与上期相比',
   revenue_chart_title: '每日营收',

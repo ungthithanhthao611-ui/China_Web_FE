@@ -94,20 +94,15 @@ const sectionLabelOverrides = Object.fromEntries(
 
 const dashboardKpis = ref([])
 
-const latestOrders = ref([])
-
-const topProducts = ref([])
-
-const orderStats = ref([])
+const latestInquiries = ref([])
 
 const quickStats = ref([])
 
 const KPI_ICONS = {
-  total_orders: ShoppingBag,
-  total_revenue: CircleDollarSign,
   products: Package,
   customers: Users,
-  reviews: MessageSquare
+  inquiries: ClipboardList,
+  posts: FileText,
 }
 
 const QUICK_STAT_ICONS = {
@@ -163,6 +158,12 @@ syncDateRange()
 
 async function onDateFilterChange() {
   syncDateRange()
+}
+
+function getInquiryStatusLabel(status) {
+  if (status === 'resolved' || status === 'replied') return 'Đã phản hồi'
+  if (status === 'in_progress') return 'Đang xử lý'
+  return 'Mới'
 }
 
 function resolveSection(value) {
@@ -425,9 +426,7 @@ async function loadDashboardStats() {
 
     if (dashboardStats) {
       dashboardKpis.value = (dashboardStats.kpis || []).map(kpi => ({ ...kpi, icon: KPI_ICONS[kpi.key] || Box }))
-      latestOrders.value = dashboardStats.latestOrders || []
-      topProducts.value = dashboardStats.topProducts || []
-      orderStats.value = dashboardStats.orderStats || []
+      latestInquiries.value = dashboardStats.latestInquiries || []
       quickStats.value = (dashboardStats.quickStats || []).map(stat => ({ ...stat, icon: QUICK_STAT_ICONS[stat.key] || Box }))
       inventoryPanel.lowStockThreshold = Number(dashboardStats.inventory?.lowStockThreshold || LOW_STOCK_FALLBACK_THRESHOLD)
       inventoryPanel.lowStockProducts = Array.isArray(dashboardStats.inventory?.lowStockProducts)
@@ -773,88 +772,33 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="dashboard-main-grid">
-          <section class="dashboard-card chart-card">
-            <div class="card-header">
-              <h2>{{ $t('admin.dashboard.revenue_chart_title') }}</h2>
-            </div>
-            <div class="chart-wrap">
-              <RevenueChart :token="token" :filters="dashboardFilters" />
-            </div>
-          </section>
-
           <section class="dashboard-card table-card">
             <div class="card-header">
-              <h2>{{ $t('admin.dashboard.latest_orders') }}</h2>
-              <button class="view-all-btn" type="button" @click="handleSectionChange('orders')">
+              <h2>Yêu cầu báo giá & Liên hệ mới nhất</h2>
+              <button class="view-all-btn" type="button" @click="handleSectionChange('inquiry_submissions')">
                 {{ $t('admin.dashboard.view_all') }}
               </button>
             </div>
-            <div class="latest-order-list">
-              <div v-if="!latestOrders.length" class="empty-state">
-                <p>Chưa có đơn hàng mới trong khoảng thời gian này</p>
+            <div class="latest-inquiry-list">
+              <div v-if="!latestInquiries.length" class="empty-state">
+                <p>Chưa có yêu cầu báo giá mới trong khoảng thời gian này</p>
               </div>
-              <article v-else v-for="order in latestOrders" :key="order.code" class="latest-order-row">
-                <span class="latest-order-row__icon">
+              <article v-else v-for="inquiry in latestInquiries" :key="inquiry.id" class="latest-inquiry-row">
+                <span class="latest-inquiry-row__icon">
                   <ClipboardList :size="18" />
                 </span>
-                <strong>#{{ order.code }}</strong>
-                <span>{{ order.customer }}</span>
-                <span>{{ order.time }}</span>
-                <span class="status-badge" :class="`status-badge--${order.statusKey}`">
-                  {{ STATUS_MAP[order.statusKey] || order.statusKey }}
+                <div class="inquiry-info">
+                  <strong>{{ inquiry.name }}</strong>
+                  <span>{{ inquiry.phone }} | {{ inquiry.email }}</span>
+                </div>
+                <div class="inquiry-subject">
+                  <p class="subject-text">{{ inquiry.subject }}</p>
+                  <span class="inquiry-time">{{ inquiry.time }}</span>
+                </div>
+                <span class="status-badge" :class="`status-badge--${inquiry.status}`">
+                  {{ getInquiryStatusLabel(inquiry.status) }}
                 </span>
-                <b>{{ order.amount }}</b>
               </article>
-            </div>
-          </section>
-        </div>
-
-        <div class="dashboard-bottom-grid">
-          <section class="dashboard-card product-card">
-            <div class="card-header">
-              <h2>{{ $t('admin.dashboard.top_selling_products') }}</h2>
-            </div>
-            <div class="top-product-list">
-              <div v-if="!topProducts.length" class="empty-state">
-                <p>Chưa có dữ liệu sản phẩm bán chạy trong khoảng thời gian này</p>
-              </div>
-              <article v-else v-for="(product, idx) in topProducts" :key="product.name" class="top-product-row">
-                <span class="top-product-row__rank">#{{ idx + 1 }}</span>
-                <div class="product-thumb">
-                  <img v-if="product.image_url" :src="product.image_url" :alt="product.name" />
-                  <div v-else class="product-thumb-placeholder"><Package :size="16" stroke-width="1.5" /></div>
-                </div>
-                <div class="product-info-wrap">
-                  <div class="product-info-main">
-                    <strong>{{ product.name }}</strong>
-                    <p>{{ product.sold }} đã bán | Còn: {{ product.stock_quantity }}</p>
-                  </div>
-                  <div class="product-revenue">
-                    <strong>{{ product.revenue.toLocaleString('vi-VN') }}đ</strong>
-                  </div>
-                </div>
-              </article>
-            </div>
-          </section>
-
-          <section class="dashboard-card status-card">
-            <div class="card-header">
-              <h2>{{ $t('admin.dashboard.orders_by_status') }}</h2>
-            </div>
-            <div class="status-card__body">
-              <div v-if="!orderStats.length" class="empty-state">
-                <p>Chưa có đơn hàng trong khoảng thời gian này</p>
-              </div>
-              <template v-else>
-                <div class="donut-chart" :style="pieChartStyle"></div>
-                <div class="status-legend">
-                  <div v-for="item in orderStats" :key="item.key">
-                    <span :style="{ background: item.color }"></span>
-                    <p>{{ STATUS_MAP[item.key] || item.key }}</p>
-                    <strong>{{ item.value }}% ({{ item.count }})</strong>
-                  </div>
-                </div>
-              </template>
             </div>
           </section>
 
@@ -2022,7 +1966,7 @@ button:disabled {
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
 }
 
@@ -2032,6 +1976,17 @@ button:disabled {
   align-items: center;
   gap: 18px;
   padding: 22px 18px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  border-color: #3b82f6;
 }
 
 .kpi-card__icon {
@@ -2961,6 +2916,105 @@ button:disabled {
   .profile-actions {
     flex-direction: column;
   }
+}
+
+.latest-inquiry-list {
+  display: grid;
+  gap: 16px;
+}
+
+.latest-inquiry-row {
+  display: grid;
+  grid-template-columns: 34px 1.4fr 1.6fr 100px;
+  align-items: center;
+  gap: 16px;
+  color: #334155;
+  font-size: 13px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.latest-inquiry-row:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateX(2px);
+}
+
+.latest-inquiry-row__icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.inquiry-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.inquiry-info strong {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inquiry-info span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inquiry-subject {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.subject-text {
+  margin: 0;
+  color: #334155;
+  font-weight: 700;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inquiry-time {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-badge--new {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge--in_progress {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-badge--resolved,
+.status-badge--replied {
+  background: #e2e8f0;
+  color: #475569;
 }
 </style>
 

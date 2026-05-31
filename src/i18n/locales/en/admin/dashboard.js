@@ -6,6 +6,8 @@ export default {
   total_revenue: 'Total Revenue',
   products: 'Products',
   customers: 'Customers',
+  inquiries: 'Inquiries',
+  posts: 'News Posts',
   reviews: 'Reviews',
   growth_suffix: 'compared to previous period',
   revenue_chart_title: 'Revenue by Day',

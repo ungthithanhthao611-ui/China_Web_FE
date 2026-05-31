@@ -6,6 +6,8 @@ export default {
   total_revenue: 'Tổng doanh thu',
   products: 'Sản phẩm',
   customers: 'Khách hàng',
+  inquiries: 'Yêu cầu báo giá',
+  posts: 'Bài viết',
   reviews: 'Đánh giá',
   growth_suffix: 'so với kỳ trước',
   revenue_chart_title: 'Doanh thu theo ngày',
