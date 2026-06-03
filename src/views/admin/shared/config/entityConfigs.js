@@ -98,7 +98,7 @@ export const ENTITY_MANAGER_CONFIGS = {
   page_sections: {
     label: 'Các Phần Trang',
     eyebrow: 'Cấu trúc các phần của trang',
-    description: 'Quản lý các phần cấu trúc bên trong một trang CMS. Ví dụ với trang Giới thiệu, bảng này chứa các phần: Hero, Giới thiệu công ty, Tầm Nhìn & Chiến Lược, Sơ đồ tổ chức, Giá trị cốt lõi, Lịch sử phát triển, Ban lãnh đạo.',
+    description: 'Quản lý các phần cấu trúc bên trong một trang CMS. Ví dụ với trang Giới thiệu, bảng này chứa các phần: Hero, Giới thiệu công ty, Tầm Nhìn & Chiến Lược, Sơ đồ tổ chức, Giá trị cốt lõi, Lịch sử phát triển.',
     titleField: 'title',
     editorPresentation: 'modal',
     hideMediaGallery: true,
@@ -109,7 +109,6 @@ export const ENTITY_MANAGER_CONFIGS = {
       if (record.preview_href) {
         return record.preview_href
       }
-
       if (record.page_slug === 'about') {
         const aboutRouteMap = {
           hero: '/about/company-introduction#page1',
@@ -118,18 +117,14 @@ export const ENTITY_MANAGER_CONFIGS = {
           organization_chart: '/about/organization-chart#page4',
           corporate_culture: '/about/corporate-culture#page5',
           development_course: '/about/development-course#page6',
-          leadership_care: '/about/leadership-care#page7',
         }
         return aboutRouteMap[record.anchor] || '/about/company-introduction#page1'
       }
-
       if (record.page_slug) {
         return `/${record.page_slug}${record.anchor ? `#${record.anchor}` : ''}`
       }
-
       return ''
     },
-    fields: ['title', 'content', 'image_id', 'sort_order'],
     fieldLabels: {
       title: 'Tên mục hiển thị',
       content: 'Ghi chú (Nội bộ)',
@@ -163,10 +158,8 @@ export const ENTITY_MANAGER_CONFIGS = {
         'culture_values': '10. Giá trị cốt lõi',
         'culture_slogan': '11. Slogan',
         'timeline': '12. Lịch sử phát triển',
-        'leadership_care_gallery': '13. Ban lãnh đạo (Album)',
       }
       const rawKey = String(record?.block_key || record?.title || '').toLowerCase().trim();
-      // Try to find a match by comparing lowercase keys
       const matchedKey = Object.keys(translations).find(k => k.toLowerCase() === rawKey);
       return matchedKey ? translations[matchedKey] : (record?.block_key || record?.title || '');
     },
@@ -1132,10 +1125,6 @@ export const ADMIN_SECTION_GROUPS = [
       {
         key: 'capability_settings',
         label: 'admin.sidebar.capability_settings',
-      },
-      {
-        key: 'honor_categories',
-        label: 'admin.sidebar.honor_categories',
       },
       {
         key: 'honors',

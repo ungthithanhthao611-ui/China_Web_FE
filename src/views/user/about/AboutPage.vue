@@ -36,15 +36,13 @@ const sectionMeta = computed(() => {
       'page4': 'user.about.tabOrgChart',
       'page5': 'user.about.tabCulture',
       'page6': 'user.about.tabTimeline',
-      'page7': 'user.about.tabLeadership'
+      
     };
     const key = keyMap[item.id];
     return { ...item, title: getValidText(item.title, key ? t(key) : item.title) }
   })
 
-  if (!aboutView.value?.leadershipItems?.length) {
-    meta = meta.filter(item => item.id !== 'page7')
-  }
+  
 
   return meta
 });
@@ -58,15 +56,13 @@ const translatedTabs = computed(() => {
       'page4': 'user.about.tabOrgChart',
       'page5': 'user.about.tabCulture',
       'page6': 'user.about.tabTimeline',
-      'page7': 'user.about.tabLeadership'
+      
     };
     const key = keyMap[tab.id];
     return { ...tab, title: getValidText(tab.title, key ? t(key) : tab.title) }
   })
 
-  if (!aboutView.value?.leadershipItems?.length) {
-    tabs = tabs.filter(tab => tab.id !== 'page7')
-  }
+  
 
   return tabs
 })
@@ -76,7 +72,7 @@ const companyIntroduction = computed(() => {
 const chairmanSpeech = computed(() => aboutView.value?.chairmanSpeech ?? null);
 const cultureBlocks = computed(() => aboutView.value?.cultureBlocks ?? []);
 const timelineEntries = computed(() => aboutView.value?.timelineEntries ?? []);
-const leadershipItems = computed(() => aboutView.value?.leadershipItems ?? []);
+
 const speechPortrait = computed(() => aboutView.value?.chairmanSpeech?.portrait ?? "");
 const heroBannerImage = computed(() => aboutView.value?.hero?.coverImage || "");
 const introImage = computed(() => aboutView.value?.companyIntroduction?.coverImage ?? "");
@@ -108,7 +104,7 @@ const shouldPrioritizeCultureImage = computed(() => {
   return path.includes('/about/corporate-culture') || hash === '#page5';
 });
 const timelineTitle = computed(() => getValidText(aboutView.value?.timelineSectionTitle, t('user.about.timelineTitle')));
-const leadershipTitle = computed(() => getValidText(aboutView.value?.leadershipSectionTitle, t('user.about.leadershipTitle')));
+
 
 const activeSection = ref("page1");
 const visibleSections = ref(["page1"]);
@@ -116,7 +112,7 @@ const chartOpen = ref(false);
 const timelineSwiper = ref(null);
 const timelineAtStart = ref(true);
 const timelineAtEnd = ref(false);
-const leadershipSwiper = ref(null);
+
 const introScroller = ref(null);
 const speechScroller = ref(null);
 const syncingRouteFromSection = ref(false);
@@ -441,22 +437,7 @@ const slideTimeline = (direction) => {
   }
 };
 
-const bindLeadershipSwiper = (instance) => {
-  leadershipSwiper.value = instance;
-};
 
-const slideLeadership = (direction) => {
-  const instance = leadershipSwiper.value;
-  if (!instance) {
-    return;
-  }
-
-  if (direction < 0) {
-    instance.slidePrev();
-  } else {
-    instance.slideNext();
-  }
-};
 
 const getTargetSectionId = () => {
   if (previewSectionId.value) {
@@ -897,62 +878,7 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-      <section v-if="shouldRenderSection('page7')" id="page7" class="about-section leadership-section section-full home-reveal" :class="{ 'is-visible': isSectionVisible('page7') }">
-        <div class="section-shell leadership-shell">
-          <div class="leadership-heading" data-reveal-item>
-            <h2 class="leadership-title">
-              <span>{{ leadershipTitle }}</span>
-            </h2>
-          </div>
-
-          <div class="leadership-stage visual" data-reveal-item>
-            <div v-if="leadershipItems.length > 1" class="leadership-nav">
-              <button type="button" class="is-prev" @click="slideLeadership(-1)">
-                <ChevronLeft :size="34" />
-              </button>
-              <button type="button" class="is-next" @click="slideLeadership(1)">
-                <ChevronRight :size="34" />
-              </button>
-            </div>
-
-            <div class="leadership-fade" />
-
-            <div class="leadership-carousel">
-              <Swiper
-                class="leadership-swiper"
-                :slides-per-view="1"
-                :space-between="0"
-                :speed="700"
-                :breakpoints="{
-                  768: { slidesPerView: 'auto', spaceBetween: 50 },
-                  1600: { slidesPerView: 'auto', spaceBetween: 100 }
-                }"
-                @swiper="bindLeadershipSwiper"
-              >
-                <SwiperSlide v-for="item in leadershipItems" :key="`${item.name}-${item.role}-${item.image}`">
-                  <article class="leadership-card">
-                    <div class="leadership-card-frame">
-                      <div class="leadership-photo">
-                        <img
-                          :src="item.image"
-                          alt="Leadership care"
-                          loading="lazy"
-                          :style="{
-                            objectFit: item.avatarFit || 'cover',
-                            objectPosition: `${item.avatarFocusX ?? 50}% ${item.avatarFocusY ?? 50}%`,
-                          }"
-                        />
-                      </div>
-                      <strong class="leadership-year">{{ item.role }}</strong>
-                    </div>
-                    <p class="leadership-copy">{{ item.name }}</p>
-                  </article>
-                </SwiperSlide>
-              </Swiper>
-            </div>
-          </div>
-        </div>
-      </section>
+      
 
 
       <div v-if="chartOpen" class="about-modal light" @click.self="chartOpen = false">

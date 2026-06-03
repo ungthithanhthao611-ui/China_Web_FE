@@ -137,6 +137,7 @@ const defaultProductionCards = () => [
     title: 'Dây chuyền sản xuất hiện đại',
     description: '',
     icon: 'factory',
+    image_url: '',
     sort_order: 0,
     is_active: true,
   },
@@ -144,6 +145,7 @@ const defaultProductionCards = () => [
     title: 'Máy móc tự động',
     description: '',
     icon: 'cog',
+    image_url: '',
     sort_order: 1,
     is_active: true,
   },
@@ -522,6 +524,26 @@ function uploadGalleryImage(item, index) {
   })
 }
 
+function productionImageUploadKey(item, index) {
+  return `capability-production:${normalizeText(item?.id || item?.title) || index}`
+}
+
+function uploadProductionImage(item, index) {
+  const key = productionImageUploadKey(item, index)
+  const title = normalizeText(item?.title) || `Production capability ${index + 1}`
+  return submitImageAsset({
+    key,
+    currentValue: item.image_url,
+    assetFolder: 'capability/production',
+    publicIdBase: title,
+    title,
+    altText: normalizeText(item?.description) || title,
+    onSuccess: (url) => {
+      item.image_url = url
+    },
+  })
+}
+
 function uploadBannerImage() {
   if (!itemModal.item) {
     notifyError('Không tìm thấy dữ liệu banner để tải ảnh lên.')
@@ -611,6 +633,34 @@ function hasPendingModalGalleryImageUpload() {
   return hasPendingGalleryItemUpload(itemModal.item, itemModal.index)
 }
 
+function hasPendingProductionItemUpload(item, index) {
+  const state = imageUploadStateMeta(productionImageUploadKey(item, index))
+  if (state.file) {
+    return true
+  }
+
+  return state.mode === 'url'
+    && normalizeText(state.sourceUrl)
+    && normalizeText(state.sourceUrl) !== normalizeText(item?.image_url)
+}
+
+function uploadModalProductionImage() {
+  if (!itemModal.item || itemModal.type !== 'production') {
+    notifyError('Không tìm thấy dữ liệu card công nghệ để tải ảnh lên.')
+    return false
+  }
+
+  return uploadProductionImage(itemModal.item, itemModal.index)
+}
+
+function hasPendingModalProductionImageUpload() {
+  if (!itemModal.item || itemModal.type !== 'production') {
+    return false
+  }
+
+  return hasPendingProductionItemUpload(itemModal.item, itemModal.index)
+}
+
 async function flushPendingOverviewUploads() {
   if (hasPendingFieldImageUpload('factory_main_image_url', form.factory_main_image_url)) {
     const uploadedMainImage = await uploadImageForField('factory_main_image_url', {
@@ -633,6 +683,19 @@ async function flushPendingOverviewUploads() {
     const uploadedGalleryImage = await uploadGalleryImage(item, index)
     if (!uploadedGalleryImage) {
       throw new Error(`Không thể tải ảnh gallery #${index + 1} trước khi lưu.`)
+    }
+  }
+}
+
+async function flushPendingProductionUploads() {
+  for (const [index, item] of form.production_capabilities.entries()) {
+    if (!hasPendingProductionItemUpload(item, index)) {
+      continue
+    }
+
+    const uploadedProductionImage = await uploadProductionImage(item, index)
+    if (!uploadedProductionImage) {
+      throw new Error(`Không thể tải ảnh công nghệ sản xuất #${index + 1} trước khi lưu.`)
     }
   }
 }
@@ -830,6 +893,7 @@ function listTypeMeta(type) {
         target.title = normalizeText(snapshot?.title)
         target.description = normalizeText(snapshot?.description)
         target.icon = normalizeText(snapshot?.icon || 'factory') || 'factory'
+        target.image_url = normalizeText(snapshot?.image_url)
         target.sort_order = Number.isFinite(Number(snapshot?.sort_order)) ? Number(snapshot.sort_order) : 0
         target.is_active = Boolean(snapshot?.is_active)
       },
@@ -837,6 +901,7 @@ function listTypeMeta(type) {
         title: normalizeText(item?.title) ? `${normalizeText(item.title)} (bản sao)` : '',
         description: normalizeText(item?.description),
         icon: normalizeText(item?.icon || 'factory') || 'factory',
+        image_url: normalizeText(item?.image_url),
         sort_order: index + 1,
         is_active: Boolean(item?.is_active),
       }),
@@ -975,6 +1040,14 @@ async function saveModalItem() {
     }
   }
 
+  if (type === 'production' && hasPendingModalProductionImageUpload()) {
+    const uploaded = await uploadModalProductionImage()
+    if (!uploaded) {
+      notifyError('Không thể tải ảnh card công nghệ lên. Vui lòng kiểm tra lại file hoặc URL ảnh.')
+      return
+    }
+  }
+
   if (!meta.validate(item)) {
     const message = type === 'banners'
       ? 'Vui lòng tải ảnh banner lên thành công trước khi lưu.'
@@ -1035,6 +1108,14 @@ async function cancelListItemEdit(type, item, index) {
 
 async function saveListItem(type, item, index) {
   const meta = listTypeMeta(type)
+  if (type === 'production' && hasPendingProductionItemUpload(item, index)) {
+    const uploaded = await uploadProductionImage(item, index)
+    if (!uploaded) {
+      notifyError('Không thể tải ảnh card công nghệ lên. Vui lòng kiểm tra lại file hoặc URL ảnh.')
+      return
+    }
+  }
+
   if (!meta.validate(item)) {
     notifyError(`Vui lòng nhập đầy đủ thông tin bắt buộc trước khi lưu ${meta.singular}.`)
     return
@@ -1142,6 +1223,7 @@ function toCapabilitiesPayload(items = []) {
       title: normalizeText(item?.title),
       description: normalizeText(item?.description),
       icon: normalizeText(item?.icon || 'factory') || 'factory',
+      image_url: normalizeText(item?.image_url),
       sort_order: Number.isFinite(Number(item?.sort_order))
         ? Number(item.sort_order)
         : index,
@@ -1304,6 +1386,7 @@ async function addCapabilityCard() {
     title: '',
     description: '',
     icon: 'factory',
+    image_url: '',
     sort_order: form.production_capabilities.length,
     is_active: true,
   }
@@ -1441,6 +1524,7 @@ async function persistCapabilitySettings(successMessage) {
 
   try {
     await flushPendingOverviewUploads()
+    await flushPendingProductionUploads()
     validateBeforeSave()
 
     const payloadMap = buildPayloadMap()
@@ -2397,6 +2481,80 @@ watch(
                   </label>
                 </div>
 
+                <div class="image-manager image-manager--compact">
+                  <div class="image-manager__head">
+                    <span>Ảnh minh họa công nghệ</span>
+                    <div class="image-mode-switch">
+                      <button
+                        type="button"
+                        class="image-mode-btn"
+                        :class="{ 'image-mode-btn--active': imageUploadMode(productionImageUploadKey(item, index)) === 'file' }"
+                        :disabled="!isEditingListItem('production', item, index)"
+                        @click="setImageUploadMode(productionImageUploadKey(item, index), 'file', item.image_url)"
+                      >
+                        Tải file
+                      </button>
+                      <button
+                        type="button"
+                        class="image-mode-btn"
+                        :class="{ 'image-mode-btn--active': imageUploadMode(productionImageUploadKey(item, index)) === 'url' }"
+                        :disabled="!isEditingListItem('production', item, index)"
+                        @click="setImageUploadMode(productionImageUploadKey(item, index), 'url', item.image_url)"
+                      >
+                        Import URL
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    class="image-preview-card image-preview-card--production"
+                    :class="{ 'image-preview-card--empty': !imagePreviewSource(productionImageUploadKey(item, index), item.image_url) }"
+                  >
+                    <img
+                      v-if="imagePreviewSource(productionImageUploadKey(item, index), item.image_url)"
+                      :src="imagePreviewSource(productionImageUploadKey(item, index), item.image_url)"
+                      alt="Preview"
+                    />
+                    <div v-else class="image-preview-card__placeholder">Chưa có ảnh minh họa</div>
+                  </div>
+
+                  <div
+                    v-if="isEditingListItem('production', item, index)"
+                    class="image-control-stack"
+                  >
+                    <input
+                      v-if="imageUploadMode(productionImageUploadKey(item, index)) === 'file'"
+                      type="file"
+                      accept="image/*"
+                      @change="onSelectImageFile(productionImageUploadKey(item, index), $event)"
+                    />
+                    <input
+                      v-else
+                      :value="imageUploadStateMeta(productionImageUploadKey(item, index)).sourceUrl"
+                      type="url"
+                      placeholder="https://..."
+                      @input="onChangeImageUrl(productionImageUploadKey(item, index), $event.target.value)"
+                    />
+                  </div>
+
+                  <input
+                    v-model="item.image_url"
+                    :disabled="!isEditingListItem('production', item, index)"
+                    type="text"
+                    placeholder="URL ảnh minh họa sau khi upload"
+                  />
+
+                  <button
+                    v-if="isEditingListItem('production', item, index)"
+                    type="button"
+                    class="btn btn-inline"
+                    :disabled="imageUploadStateMeta(productionImageUploadKey(item, index)).uploading"
+                    @click="uploadProductionImage(item, index)"
+                  >
+                    {{ imageActionLabel(productionImageUploadKey(item, index)) }}
+                  </button>
+                </div>
+
                 <label class="field">
                   <span>Mô tả</span>
                   <textarea
@@ -2482,6 +2640,76 @@ watch(
                 <span>Mô tả chi tiết</span>
                 <textarea v-model="itemModal.item.description" rows="4" placeholder="Nhập mô tả cho card năng lực này..." />
               </label>
+              <div class="image-manager">
+                <div class="image-manager__head">
+                  <span>Ảnh minh họa công nghệ</span>
+                  <div class="image-mode-switch">
+                    <button
+                      type="button"
+                      class="image-mode-btn"
+                      :class="{ 'image-mode-btn--active': imageUploadMode(productionImageUploadKey(itemModal.item, itemModal.index)) === 'file' }"
+                      @click="setImageUploadMode(productionImageUploadKey(itemModal.item, itemModal.index), 'file', itemModal.item.image_url)"
+                    >
+                      Tải file
+                    </button>
+                    <button
+                      type="button"
+                      class="image-mode-btn"
+                      :class="{ 'image-mode-btn--active': imageUploadMode(productionImageUploadKey(itemModal.item, itemModal.index)) === 'url' }"
+                      @click="setImageUploadMode(productionImageUploadKey(itemModal.item, itemModal.index), 'url', itemModal.item.image_url)"
+                    >
+                      Import URL
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  class="image-preview-card image-preview-card--production"
+                  :class="{ 'image-preview-card--empty': !imagePreviewSource(productionImageUploadKey(itemModal.item, itemModal.index), itemModal.item.image_url) }"
+                >
+                  <img
+                    v-if="imagePreviewSource(productionImageUploadKey(itemModal.item, itemModal.index), itemModal.item.image_url)"
+                    :src="imagePreviewSource(productionImageUploadKey(itemModal.item, itemModal.index), itemModal.item.image_url)"
+                    alt="Preview"
+                  />
+                  <div v-else class="image-preview-card__placeholder">Chưa có ảnh minh họa</div>
+                </div>
+
+                <div class="image-control-stack">
+                  <input
+                    v-if="imageUploadMode(productionImageUploadKey(itemModal.item, itemModal.index)) === 'file'"
+                    type="file"
+                    accept="image/*"
+                    @change="onSelectImageFile(productionImageUploadKey(itemModal.item, itemModal.index), $event)"
+                  />
+                  <input
+                    v-else
+                    :value="imageUploadStateMeta(productionImageUploadKey(itemModal.item, itemModal.index)).sourceUrl"
+                    type="url"
+                    placeholder="https://..."
+                    @input="onChangeImageUrl(productionImageUploadKey(itemModal.item, itemModal.index), $event.target.value)"
+                  />
+                </div>
+
+                <input
+                  v-model="itemModal.item.image_url"
+                  type="text"
+                  placeholder="URL ảnh minh họa sau khi upload"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-inline"
+                  :disabled="imageUploadStateMeta(productionImageUploadKey(itemModal.item, itemModal.index)).uploading"
+                  @click="uploadModalProductionImage"
+                >
+                  {{ imageActionLabel(productionImageUploadKey(itemModal.item, itemModal.index)) }}
+                </button>
+
+                <p class="image-upload-feedback image-upload-feedback--strong">
+                  Bạn có thể tải ngay hoặc bấm <strong>{{ itemModal.isNew ? 'Thêm mới' : 'Lưu thay đổi' }}</strong> để hệ thống tự tải ảnh trước khi lưu.
+                </p>
+              </div>
               <label class="field field--toggle">
                 <span>Trạng thái hiển thị</span>
                 <input v-model="itemModal.item.is_active" type="checkbox" />
@@ -3243,6 +3471,11 @@ watch(
 
 .image-preview-card--overview-hero {
   height: 260px;
+}
+
+.image-preview-card--production {
+  min-height: 180px;
+  aspect-ratio: 16 / 9;
 }
 
 .overview-gallery-admin {

@@ -68,12 +68,12 @@ export default {
     }
   },
   items: {
-    label: 'Capability / Certifications',
+    label: 'ISO & CE',
     eyebrow: 'Capability Details',
-    description: 'Manage details of awards, ISO/CE certificates, and specific capability milestones.',
-    add_new: 'Add Item',
-    edit: 'Edit Item',
-    delete: 'Delete Item',
+    description: 'Manage ISO and CE certificate images and details displayed on the Capability page.',
+    add_new: 'Add Certificate',
+    edit: 'Edit Certificate',
+    delete: 'Delete Certificate',
     fields: {
       award_year: 'Year / Timeline',
       award_category: 'Capability Group',

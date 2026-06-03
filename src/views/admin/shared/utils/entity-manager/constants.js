@@ -45,7 +45,6 @@ export const ABOUT_SECTION_PREVIEW_MAP = {
   organization_chart: "/about/organization-chart#page4",
   corporate_culture: "/about/corporate-culture#page5",
   development_course: "/about/development-course#page6",
-  leadership_care: "/about/leadership-care#page7",
 };
 
 export const ABOUT_BLOCK_SECTION_MAP = {
@@ -63,7 +62,6 @@ export const ABOUT_BLOCK_SECTION_MAP = {
   culture_values: "corporate_culture",
   culture_slogan: "corporate_culture",
   timeline: "development_course",
-  leadership_care_gallery: "leadership_care",
 };
 
 export const ABOUT_SECTION_LABEL_MAP = {
@@ -73,7 +71,6 @@ export const ABOUT_SECTION_LABEL_MAP = {
   organization_chart: "Page 4 - Sơ đồ tổ chức",
   corporate_culture: "Page 5 - Giá trị cốt lõi / Văn hóa",
   development_course: "Page 6 - Lịch sử phát triển",
-  leadership_care: "Page 7 - Ban lãnh đạo",
 };
 
 export const ABOUT_BLOCK_LABEL_MAP = {
@@ -88,7 +85,6 @@ export const ABOUT_BLOCK_LABEL_MAP = {
   culture_values: "Page 5 - Giá trị cốt lõi / Văn hóa",
   culture_slogan: "Page 5 - Slogan",
   timeline: "Page 6 - Lịch sử phát triển",
-  leadership_care_gallery: "Page 7 - Hồ sơ ban lãnh đạo",
 };
 
 export const ABOUT_SECTION_OPTIONS = Object.entries(ABOUT_SECTION_LABEL_MAP).map(
@@ -144,7 +140,6 @@ const ABOUT_ITEM_GLOBAL_LABEL_MAP = {
   organization_chart: "Menu dieu huong: Page 4 So do to chuc",
   corporate_culture: "Menu dieu huong: Page 5 Gia tri cot loi",
   development_course: "Menu dieu huong: Page 6 Lich su phat trien",
-  leadership_care: "Menu dieu huong: Page 7 Ban lanh dao",
 };
 
 export const resolveAboutBlockDisplayName = (blockKey, fallback = "") => {
@@ -206,13 +201,7 @@ const resolveDynamicAboutFieldLabel = (blockKey, itemKey) => {
     return `Moc lich su ${milestoneIndex}`;
   }
 
-  const leaderIndex =
-    normalizedBlockKey === "leadership_care_gallery"
-      ? parseNumericSuffix(normalizedItemKey, "leader")
-      : null;
-  if (leaderIndex) {
-    return `Ho so lanh dao ${leaderIndex}`;
-  }
+
 
   return ABOUT_ITEM_GLOBAL_LABEL_MAP[normalizedItemKey] || "";
 };

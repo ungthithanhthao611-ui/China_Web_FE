@@ -693,7 +693,11 @@ async function openModalEditor(record, block, fields, options = {}) {
     modalDraft.value = ensureRecordDraft(record, fields, block)
   } else if (options.isFixed) {
     modalKey.value = draftKeyForFixed(block.id, options.itemKey)
-    modalDraft.value = ensureFixedDraft(block, options, record)
+    modalDraft.value = ensureFixedDraft(block, {
+      itemKey: options.itemKey,
+      fields: fields,
+      sortOrder: options.sortOrder || 10,
+    }, record)
   } else {
     // New dynamic item
     modalKey.value = draftKeyForBlock(block.id)
@@ -1993,7 +1997,7 @@ watch(
                     <button
                       type="button"
                       class="btn btn-primary btn-sm"
-                      @click="openModalEditor(entry.record, block, entry.fields, { isFixed: true, itemKey: entry.itemKey, label: entry.label })"
+                      @click="openModalEditor(entry.record, block, entry.fields, { isFixed: true, itemKey: entry.itemKey, label: entry.label, sortOrder: entry.sortOrder })"
                     >
                       Chỉnh sửa
                     </button>

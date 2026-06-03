@@ -372,6 +372,7 @@ async function loadHonors() {
       hero.value = parsed.hero
       factoryOverview.value = parsed.factoryOverview
       factoryGallery.value = parsed.factoryGallery
+      productionCapabilities.value = parsed.productionCapabilities || []
       certificateItems.value = parsed.certificateItems
       corporateItems.value = parsed.corporateItems
       projectItems.value = parsed.projectItems
@@ -442,19 +443,32 @@ async function loadHonors() {
     }
     factoryGallery.value = Array.isArray(payload.factory_gallery) ? payload.factory_gallery : []
     productionCapabilities.value = Array.isArray(payload.production_capabilities) ? payload.production_capabilities : []
-    certificateItems.value = Array.isArray(payload.certificates) ? payload.certificates : []
-    corporateItems.value = (payload.sections?.corporate_honors || []).length
-      ? payload.sections.corporate_honors
-      : certificateItems.value.filter((item) => {
-          const cat = String(item.category || '').toLowerCase()
-          return cat.includes('corporate') || cat.includes('năng lực') || cat.includes('technology')
-        })
-    projectItems.value = (payload.sections?.project_honors || []).length
-      ? payload.sections.project_honors
-      : certificateItems.value.filter((item) => {
-          const cat = String(item.category || '').toLowerCase()
-          return cat.includes('project') || cat.includes('iso') || cat.includes('ce') || cat.includes('qualification')
-        })
+    certificateItems.value = Array.isArray(payload.sections?.qualification_certificates)
+      ? payload.sections.qualification_certificates
+      : []
+    if (!certificateItems.value.length && Array.isArray(payload.certificates)) {
+      certificateItems.value = payload.certificates.filter((item) => {
+        const displayType = String(item.display_type || '').toLowerCase()
+        const category = String(item.category || '').toLowerCase()
+        return (
+          displayType === 'qualification_certificate'
+          || category.includes('iso')
+          || category.includes('ce')
+          || category.includes('qualification')
+          || category.includes('certificate')
+        )
+      })
+    }
+    corporateItems.value = productionCapabilities.value.map((item, index) => ({
+      id: item.id || `production-${index + 1}`,
+      title: item.title,
+      short_description: item.description,
+      description: item.description,
+      sort_order: item.sort_order ?? index,
+      icon: item.icon || 'factory',
+      image_url: item.image_url || item.image || '',
+    }))
+    projectItems.value = certificateItems.value
     contactInfo.value = {
       ...contactInfo.value,
       ...(payload.contact_info || {}),
@@ -480,6 +494,7 @@ async function loadHonors() {
       hero: hero.value,
       factoryOverview: factoryOverview.value,
       factoryGallery: factoryGallery.value,
+      productionCapabilities: productionCapabilities.value,
       certificateItems: certificateItems.value,
       corporateItems: corporateItems.value,
       projectItems: projectItems.value,

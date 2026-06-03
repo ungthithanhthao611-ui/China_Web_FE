@@ -84,6 +84,7 @@ const LEGACY_SECTION_REDIRECTS = {
   project_products: 'projects',
   entity_media: 'projects',
   admin_users: 'users',
+  honor_categories: 'honors',
 }
 
 const adminSidebarGroups = ADMIN_SECTION_GROUPS
@@ -887,16 +888,6 @@ onBeforeUnmount(() => {
         :token="token"
         :active="true"
         view-mode="honors"
-        @notify-success="setSuccess"
-        @notify-error="setError"
-        @clear-notify="clearMessages"
-      />
-
-      <HonorsManager
-        v-else-if="activeSection === 'honor_categories'"
-        :token="token"
-        :active="true"
-        view-mode="categories"
         @notify-success="setSuccess"
         @notify-error="setError"
         @clear-notify="clearMessages"

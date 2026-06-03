@@ -433,43 +433,7 @@ export const ABOUT_BLOCK_SCHEMAS = {
     },
   },
 
-  // ═══════════════════════════════════════════════════════════
-  // PAGE 7 — BAN LÃNH ĐẠO
-  // ═══════════════════════════════════════════════════════════
-  leadership_care_gallery: {
-    label: 'Hồ sơ ban lãnh đạo',
-    description: 'Mỗi thành viên gồm tên, chức vụ/vai trò và ảnh đại diện.',
-    fixedItems: [
-      {
-        itemKey: 'section_title',
-        label: 'Tiêu đề hiển thị Page 7',
-        fields: [
-          FIELD.title('Tiêu đề hiển thị', {
-            required: true,
-            placeholder: 'Ví dụ: Ban lãnh đạo',
-          }),
-        ],
-        sortOrder: 5,
-      },
-    ],
-    dynamicItems: {
-      keyPrefix: 'leader',
-      label: 'Thành viên lãnh đạo mới',
-      fields: [
-        FIELD.title('Họ và tên', { required: true, placeholder: 'Nguyễn Văn A' }),
-        FIELD.subtitle('Chức vụ / Vai trò', {
-          required: true,
-          placeholder: 'Tổng Giám đốc',
-        }),
-        FIELD.content('Tiểu sử ngắn (nếu có)', { placeholder: 'Vài dòng giới thiệu...' }),
-        FIELD.image('Ảnh đại diện', {
-          required: true,
-          helpText: 'Sau khi chọn ảnh, bạn có thể căn nhanh 4 góc hoặc giữa để avatar hiển thị đúng ý hơn ở giao diện người dùng.',
-        }),
-      ],
-      sortOrderStep: 10,
-    },
-  },
+  
 
 }
 

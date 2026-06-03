@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { Boxes, ChevronLeft, ChevronRight, Cog, Factory, ShieldCheck } from 'lucide-vue-next'
 import HonorCard from './HonorCard.vue'
 
 const { t } = useI18n()
@@ -24,24 +24,61 @@ const props = defineProps({
 const activeTab = ref('corporate')
 const corporatePage = ref(0)
 const projectPage = ref(0)
+const activeProjectCategory = ref('all')
 const PAGE_SIZE = 6
 
 const corporateTotalPages = computed(() => Math.max(1, Math.ceil(props.corporateItems.length / PAGE_SIZE)))
-const projectTotalPages = computed(() => Math.max(1, Math.ceil(props.projectItems.length / PAGE_SIZE)))
+const filteredProjectItems = computed(() => {
+  if (activeProjectCategory.value === 'all') return props.projectItems
+  return props.projectItems.filter((item) => categoryKey(certificateCategoryLabel(item)) === activeProjectCategory.value)
+})
+const projectTotalPages = computed(() => Math.max(1, Math.ceil(filteredProjectItems.value.length / PAGE_SIZE)))
 const pagedCorporateItems = computed(() => {
   const startIndex = corporatePage.value * PAGE_SIZE
   return props.corporateItems.slice(startIndex, startIndex + PAGE_SIZE)
 })
 const pagedProjectItems = computed(() => {
   const startIndex = projectPage.value * PAGE_SIZE
-  return props.projectItems.slice(startIndex, startIndex + PAGE_SIZE)
+  return filteredProjectItems.value.slice(startIndex, startIndex + PAGE_SIZE)
 })
 const showCorporatePagination = computed(() => props.corporateItems.length > PAGE_SIZE)
-const showProjectPagination = computed(() => props.projectItems.length > PAGE_SIZE)
+const showProjectPagination = computed(() => filteredProjectItems.value.length > PAGE_SIZE)
 const isCorporateFirstPage = computed(() => corporatePage.value === 0)
 const isCorporateLastPage = computed(() => corporatePage.value >= corporateTotalPages.value - 1)
 const isProjectFirstPage = computed(() => projectPage.value === 0)
 const isProjectLastPage = computed(() => projectPage.value >= projectTotalPages.value - 1)
+const projectCategoryOptions = computed(() => {
+  const categoryMap = new Map([
+    ['iso', { key: 'iso', label: 'ISO', count: 0, defaultOrder: 0 }],
+    ['ce', { key: 'ce', label: 'CE', count: 0, defaultOrder: 1 }],
+  ])
+  props.projectItems.forEach((item) => {
+    const label = certificateCategoryLabel(item)
+    const key = categoryKey(label)
+    if (!categoryMap.has(key)) {
+      categoryMap.set(key, { key, label, count: 0 })
+    }
+    categoryMap.get(key).count += 1
+  })
+
+  return [
+    {
+      key: 'all',
+      label: t('user.capability.allCategories'),
+      count: props.projectItems.length,
+    },
+    ...Array.from(categoryMap.values()).sort((left, right) => {
+      if (Number.isFinite(left.defaultOrder) || Number.isFinite(right.defaultOrder)) {
+        return Number(left.defaultOrder ?? 99) - Number(right.defaultOrder ?? 99)
+      }
+      return left.label.localeCompare(right.label)
+    }),
+  ]
+})
+const activeProjectCategoryLabel = computed(() => {
+  return projectCategoryOptions.value.find((item) => item.key === activeProjectCategory.value)?.label
+    || t('user.capability.allCategories')
+})
 
 function prevCorporatePage() {
   if (isCorporateFirstPage.value) return
@@ -63,6 +100,44 @@ function nextProjectPage() {
   projectPage.value += 1
 }
 
+function iconComponent(icon) {
+  const normalized = String(icon || '').toLowerCase()
+  if (normalized.includes('cog') || normalized.includes('gear')) return Cog
+  if (normalized.includes('shield') || normalized.includes('quality')) return ShieldCheck
+  if (normalized.includes('box') || normalized.includes('capacity')) return Boxes
+  return Factory
+}
+
+function certificateCategoryLabel(item) {
+  const label = String(item?.category || item?.category_name || item?.group_name || '').trim()
+  const normalized = label.toLowerCase()
+  if (
+    !label
+    || normalized === 'iso & ce'
+    || normalized === 'qualification certificate'
+    || normalized === 'nhà máy sx'
+    || normalized === 'chứng chỉ năng lực'
+  ) {
+    return 'ISO'
+  }
+  return label
+}
+
+function categoryKey(label) {
+  return String(label || 'iso-ce')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'iso-ce'
+}
+
+function selectProjectCategory(key) {
+  activeProjectCategory.value = key
+  projectPage.value = 0
+}
+
 watch(
   () => props.corporateItems,
   () => {
@@ -74,6 +149,9 @@ watch(
 watch(
   () => props.projectItems,
   () => {
+    if (!projectCategoryOptions.value.some((item) => item.key === activeProjectCategory.value)) {
+      activeProjectCategory.value = 'all'
+    }
     projectPage.value = 0
   },
   { deep: true },
@@ -127,7 +205,7 @@ watch(activeTab, () => {
       </header>
 
       <div v-if="activeTab === 'corporate'">
-        <div v-if="!corporateItems.length" class="empty">{{ t('user.capability.emptyGallery') || 'Chưa có nội dung công nghệ sản xuất.' }}</div>
+        <div v-if="!corporateItems.length" class="empty">{{ t('user.capability.emptyTechnology') }}</div>
         <template v-else>
           <div class="section-toolbar">
             <div class="section-toolbar__summary">
@@ -158,16 +236,27 @@ watch(activeTab, () => {
             </div>
           </div>
 
-          <div class="grid">
-            <HonorCard
+          <div class="tech-grid">
+            <article
               v-for="(item, index) in pagedCorporateItems"
               :key="`corporate-${item.id}`"
-              :item="item"
-              :image-src="imageResolver(item.image_url || item.image)"
-              variant="frame"
-              class="reveal-item"
+              class="tech-card reveal-item"
               :style="{ '--i': index }"
-            />
+            >
+              <div
+                v-if="item.image_url || item.image"
+                class="tech-card__media"
+              >
+                <img :src="imageResolver(item.image_url || item.image)" :alt="item.title" />
+              </div>
+              <div class="tech-card__icon">
+                <component :is="iconComponent(item.icon)" :size="22" />
+              </div>
+              <div class="tech-card__body">
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.short_description || item.description }}</p>
+              </div>
+            </article>
           </div>
         </template>
       </div>
@@ -175,10 +264,23 @@ watch(activeTab, () => {
       <div v-else>
         <div v-if="!projectItems.length" class="empty">{{ t('user.capability.emptyCertifications') }}</div>
         <template v-else>
+          <div v-if="projectCategoryOptions.length > 2" class="certificate-category-tabs" aria-label="Danh mục chứng chỉ">
+            <button
+              v-for="category in projectCategoryOptions"
+              :key="category.key"
+              type="button"
+              :class="{ active: activeProjectCategory === category.key }"
+              @click="selectProjectCategory(category.key)"
+            >
+              <span>{{ category.label }}</span>
+              <strong>{{ category.count }}</strong>
+            </button>
+          </div>
+
           <div class="section-toolbar">
             <div class="section-toolbar__summary">
-              <strong>{{ projectItems.length }}</strong>
-              <span>{{ t('user.capability.certifications') }}</span>
+              <strong>{{ filteredProjectItems.length }}</strong>
+              <span>{{ activeProjectCategoryLabel }}</span>
             </div>
 
             <div v-if="showProjectPagination" class="pager" :aria-label="t('user.capability.paginationCertifications')">
@@ -204,7 +306,8 @@ watch(activeTab, () => {
             </div>
           </div>
 
-          <div class="grid">
+          <div v-if="!filteredProjectItems.length" class="empty">{{ t('user.capability.emptyCertifications') }}</div>
+          <div v-else class="grid">
             <HonorCard
               v-for="(item, index) in pagedProjectItems"
               :key="`project-${item.id}`"
@@ -325,6 +428,66 @@ watch(activeTab, () => {
   align-items: start;
 }
 
+.tech-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.tech-card {
+  min-height: 190px;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 8px;
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.tech-card__media {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  background: #f8fafc;
+}
+
+.tech-card__media img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.tech-card__icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+}
+
+.tech-card h3 {
+  margin: 0;
+  color: #0f172a;
+  font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.tech-card p {
+  margin: 8px 0 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.68;
+}
+
 .empty {
   color: #475569;
   text-align: left;
@@ -333,6 +496,10 @@ watch(activeTab, () => {
 
 @media (max-width: 1024px) {
   .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tech-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -365,6 +532,10 @@ watch(activeTab, () => {
   }
 
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tech-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -437,6 +608,50 @@ watch(activeTab, () => {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
+}
+
+.certificate-category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.certificate-category-tabs button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  border-radius: 999px;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+}
+
+.certificate-category-tabs button.active {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #dc2626, #f97316);
+}
+
+.certificate-category-tabs strong {
+  min-width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  font-size: 11px;
+}
+
+.certificate-category-tabs button.active strong {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 /* ── Reveal Animations ── */

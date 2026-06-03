@@ -68,12 +68,12 @@ export default {
     }
   },
   items: {
-    label: '能力 / 认证',
+    label: 'ISO & CE',
     eyebrow: '能力详情',
-    description: '管理奖项、ISO/CE 证书和特定能力里程碑的详情。',
-    add_new: '添加项目',
-    edit: '编辑项目',
-    delete: '删除项目',
+    description: '管理能力页面展示的 ISO 与 CE 证书图片和信息。',
+    add_new: '添加证书',
+    edit: '编辑证书',
+    delete: '删除证书',
     fields: {
       award_year: '年份 / 时间轴',
       award_category: '能力组',

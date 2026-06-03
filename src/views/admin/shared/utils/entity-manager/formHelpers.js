@@ -480,7 +480,6 @@ export function createEntityManagerFormHelpers({
     culture_values: /^(section_title|cover_image|value_\d+)$/,
     culture_slogan: /^slogan_\d+$/,
     timeline: /^milestone_\d+$/,
-    leadership_care_gallery: /^leader_\d+$/,
     org_chart_image: /^main_chart$/,
   };
 
@@ -549,9 +548,7 @@ export function createEntityManagerFormHelpers({
       }
     }
 
-    if (blockKey === "leadership_care_gallery" && !String(form.subtitle || "").trim()) {
-      errors.push('Block "leadership_care_gallery" yêu cầu "subtitle" là chức vụ.');
-    }
+
   };
 
   const setDefaultFormValues = (record = {}) => {

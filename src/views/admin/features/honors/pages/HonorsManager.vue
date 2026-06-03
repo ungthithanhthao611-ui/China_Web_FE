@@ -47,6 +47,46 @@ const categoryTypeOptions = computed(() => [
   { value: 'custom', label: t('admin.capability.categories.types.custom') },
 ])
 
+const DEFAULT_CERTIFICATE_CATEGORIES = [
+  {
+    name: 'ISO',
+    slug: 'iso',
+    type: 'qualification_certificate',
+    parent_id: null,
+    description: 'Chứng chỉ ISO',
+    sort_order: 0,
+    is_active: true,
+  },
+  {
+    name: 'CE',
+    slug: 'ce',
+    type: 'qualification_certificate',
+    parent_id: null,
+    description: 'Chứng nhận CE',
+    sort_order: 1,
+    is_active: true,
+  },
+]
+
+const LEGACY_CERTIFICATE_CATEGORY_LABELS = new Set([
+  'qualification certificate',
+  'chứng chỉ năng lực',
+  'nhà máy sx',
+])
+
+function isLegacyCertificateCategory(item) {
+  const name = String(item?.name || '').trim().toLowerCase()
+  const slug = String(item?.slug || '').trim().toLowerCase()
+  const compactName = name.replace(/\s+/g, '')
+  return (
+    LEGACY_CERTIFICATE_CATEGORY_LABELS.has(name)
+    || LEGACY_CERTIFICATE_CATEGORY_LABELS.has(slug)
+    || slug === 'qualification-certificate'
+    || slug === 'nh-m-y-sx'
+    || /^k{3,}$/.test(compactName)
+  )
+}
+
 const loading = ref(false)
 const saving = ref(false)
 const uploading = ref(false)
@@ -193,6 +233,18 @@ const categoryMap = computed(() => {
   return map
 })
 
+const certificateCategories = computed(() => categories.value.filter((item) => {
+  const type = String(item?.type || '').toLowerCase()
+  return type === 'qualification_certificate' && !isLegacyCertificateCategory(item)
+}))
+
+const defaultHonorCategoryId = computed(() => (
+  filters.categoryId
+  || certificateCategories.value.find((item) => String(item.slug || '').toLowerCase() === 'iso')?.id
+  || certificateCategories.value[0]?.id
+  || ''
+))
+
 const categoryParentOptions = computed(() => {
   if (!editingCategoryId.value) {
     return categories.value
@@ -247,7 +299,7 @@ function resetUploadFeedback() {
 }
 
 function resetHonorForm() {
-  honorForm.category_id = categories.value[0]?.id || ''
+  honorForm.category_id = defaultHonorCategoryId.value
   honorForm.title = ''
   honorForm.slug = ''
   honorForm.short_description = ''
@@ -275,7 +327,7 @@ function openCreateHonorForm() {
 function openEditHonorForm(record) {
   honorFormMode.value = 'edit'
   editingHonorId.value = record.id
-  honorForm.category_id = record.category_id || ''
+  honorForm.category_id = record.category_id || defaultHonorCategoryId.value
   honorForm.title = record.title || ''
   honorForm.slug = record.slug || ''
   honorForm.short_description = record.short_description || ''
@@ -330,7 +382,7 @@ function buildHonorPayload() {
     image_url: String(honorForm.image_url || '').trim() || null,
     year: honorForm.year ? Number(honorForm.year) : null,
     issued_by: String(honorForm.issued_by || '').trim() || null,
-    display_type: String(honorForm.display_type || '').trim() || null,
+    display_type: 'qualification_certificate',
     sort_order: Number(honorForm.sort_order || 0),
     is_featured: Boolean(honorForm.is_featured),
     is_active: Boolean(honorForm.is_active),
@@ -360,8 +412,8 @@ function openEditCategoryForm(record) {
   editingCategoryId.value = record.id
   categoryForm.name = record.name || ''
   categoryForm.slug = record.slug || ''
-  categoryForm.type = record.type || 'qualification_certificate'
-  categoryForm.parent_id = record.parent_id || ''
+  categoryForm.type = 'qualification_certificate'
+  categoryForm.parent_id = ''
   categoryForm.description = record.description || ''
   categoryForm.sort_order = Number(record.sort_order || 0)
   categoryForm.is_active = Boolean(record.is_active)
@@ -394,8 +446,8 @@ function buildCategoryPayload() {
   return {
     name: String(categoryForm.name || '').trim(),
     slug: String(categoryForm.slug || '').trim() || null,
-    type: String(categoryForm.type || '').trim(),
-    parent_id: categoryForm.parent_id ? Number(categoryForm.parent_id) : null,
+    type: 'qualification_certificate',
+    parent_id: null,
     description: String(categoryForm.description || '').trim() || null,
     sort_order: Number(categoryForm.sort_order || 0),
     is_active: Boolean(categoryForm.is_active),
@@ -407,6 +459,24 @@ async function loadCategories() {
   if (!token) return
   const response = await listHonorCategories(token, { include_deleted: false })
   categories.value = response.items || []
+  if (normalizedViewMode.value === 'honors') {
+    const existingDefaultSlugs = new Set(
+      categories.value
+        .filter((item) => String(item.type || '').toLowerCase() === 'qualification_certificate')
+        .map((item) => String(item.slug || '').toLowerCase())
+        .filter((slug) => DEFAULT_CERTIFICATE_CATEGORIES.some((defaultCategory) => defaultCategory.slug === slug)),
+    )
+    if (!existingDefaultSlugs.size) {
+      for (const defaultCategory of DEFAULT_CERTIFICATE_CATEGORIES) {
+        const created = await createHonorCategory(token, defaultCategory)
+        categories.value.push(created)
+      }
+    }
+    categories.value = [...categories.value].sort((left, right) => (
+      Number(left.sort_order || 0) - Number(right.sort_order || 0)
+      || Number(left.id || 0) - Number(right.id || 0)
+    ))
+  }
 }
 
 async function fetchHonorsPage() {
@@ -435,7 +505,11 @@ async function fetchHonorsPage() {
     }
 
     const response = await listHonors(token, query)
-    const nextItems = response.items || []
+    const nextItems = (response.items || []).map((item) => ({
+      ...item,
+      category_id: item.category_id || '',
+      display_type: 'qualification_certificate',
+    }))
     const nextTotal = response.pagination?.total || 0
 
     if (!nextItems.length && nextTotal > 0 && nextPage > 1) {
@@ -826,11 +900,11 @@ watch(pageSize, async (nextSize, previousSize) => {
       </section>
 
       <section v-if="showHonorsSection" class="editor-head" style="padding: 24px 32px 16px; border-top: 1px solid #f1f5f9;">
-        <div class="toolbar-grid" style="grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%;">
+        <div class="toolbar-grid" style="grid-template-columns: minmax(0, 1fr) 220px 180px auto; gap: 12px; width: 100%;">
           <input v-model="filters.keyword" type="search" class="form-control" :placeholder="$t('admin.about.toolbar.search_placeholder')" />
           <select v-model="filters.categoryId" class="form-control">
-            <option value="">-- {{ $t('admin.capability.categories.label') }} --</option>
-            <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+            <option value="">Tất cả danh mục</option>
+            <option v-for="category in certificateCategories" :key="category.id" :value="category.id">{{ category.name }}</option>
           </select>
           <select v-model="filters.status" class="form-control">
             <option value="all">{{ $t('admin.about.toolbar.all_status') }}</option>
@@ -840,7 +914,25 @@ watch(pageSize, async (nextSize, previousSize) => {
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn btn-secondary btn-sm" :disabled="loading" @click="applyHonorsFilters">{{ $t('admin.about.toolbar.refresh') }}</button>
             <button type="button" class="btn btn-secondary btn-sm" :disabled="loading" @click="refreshAll">{{ $t('admin.about.toolbar.reset') }}</button>
+            <button type="button" class="btn btn-primary btn-sm" @click="openCreateCategoryForm">+ Danh mục</button>
           </div>
+        </div>
+        <div v-if="certificateCategories.length" class="certificate-category-strip">
+          <article
+            v-for="category in certificateCategories"
+            :key="category.id"
+            class="certificate-category-chip"
+            :class="{ 'certificate-category-chip--active': String(filters.categoryId) === String(category.id) }"
+          >
+            <button type="button" class="certificate-category-chip__main" @click="filters.categoryId = String(category.id); applyHonorsFilters()">
+              <strong>{{ category.name }}</strong>
+              <span>/{{ category.slug }}</span>
+            </button>
+            <div class="certificate-category-chip__actions">
+              <button type="button" class="btn btn-secondary btn-sm" @click="openEditCategoryForm(category)">Sửa</button>
+              <button type="button" class="btn btn-danger btn-sm" @click="removeCategory(category)">Xóa</button>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -851,7 +943,6 @@ watch(pageSize, async (nextSize, previousSize) => {
               <tr>
                 <th style="width: 80px;">{{ $t('admin.about.section.blocks_count', { count: 1 }).split(' ')[1] }}</th>
                 <th>{{ $t('admin.capability.items.label') }}</th>
-                <th style="width: 180px;">{{ $t('admin.capability.items.fields.award_category') }}</th>
                 <th style="width: 80px;">{{ $t('admin.capability.categories.table.status') }}</th>
                 <th style="width: 180px;">{{ $t('admin.capability.categories.table.actions') }}</th>
               </tr>
@@ -877,7 +968,6 @@ watch(pageSize, async (nextSize, previousSize) => {
                     <p class="table-cell-subtext" style="font-weight: normal;">{{ item.issued_by || 'Chưa có đơn vị cấp' }}</p>
                   </div>
                 </td>
-                <td>{{ categoryName(item.category_id) }}</td>
                 <td>
                   <span :class="item.is_active ? 'badge badge-active' : 'badge badge-inactive'">
                     {{ item.is_active ? $t('admin.common.active') : $t('admin.common.inactive') }}
@@ -956,17 +1046,17 @@ watch(pageSize, async (nextSize, previousSize) => {
 
         <form class="dynamic-form" @submit.prevent="submitHonorForm">
           <label class="editor-field">
-            <span>{{ $t('admin.capability.items.fields.award_category') }}</span>
+            <span>Danh mục</span>
             <select v-model="honorForm.category_id">
-              <option disabled value="">{{ $t('admin.common.no_data') }}</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
+              <option disabled value="">Chọn danh mục ISO/CE</option>
+              <option v-for="category in certificateCategories" :key="category.id" :value="category.id">
                 {{ category.name }}
               </option>
             </select>
           </label>
 
           <label class="editor-field">
-            <span>{{ $t('admin.capability.categories.table.name') }}</span>
+            <span>Tên chứng chỉ</span>
             <input v-model="honorForm.title" type="text" />
           </label>
 
@@ -976,7 +1066,7 @@ watch(pageSize, async (nextSize, previousSize) => {
           </label>
 
           <label class="editor-field">
-            <span>{{ $t('admin.about.media.media_title') }} URL</span>
+            <span>URL ảnh chứng chỉ</span>
             <input v-model="honorForm.image_url" type="text" />
           </label>
 
@@ -988,15 +1078,6 @@ watch(pageSize, async (nextSize, previousSize) => {
           <label class="editor-field">
             <span>{{ $t('admin.capability.items.fields.issuer') }}</span>
             <input v-model="honorForm.issued_by" type="text" />
-          </label>
-
-          <label class="editor-field">
-            <span>{{ $t('admin.capability.categories.table.type') }}</span>
-            <select v-model="honorForm.display_type">
-              <option value="qualification_certificate">{{ $t('admin.capability.categories.types.qualification_certificate') }}</option>
-              <option value="corporate_honors">{{ $t('admin.capability.categories.types.corporate_honors') }}</option>
-              <option value="project_honors">{{ $t('admin.capability.categories.types.project_honors') }}</option>
-            </select>
           </label>
 
           <label class="editor-field">
@@ -1021,7 +1102,7 @@ watch(pageSize, async (nextSize, previousSize) => {
           </label>
 
           <label class="editor-field wide">
-            <span>{{ $t('admin.capability.items.fields.short_description') || 'Short Description' }}</span>
+            <span>Mô tả ngắn</span>
             <textarea v-model="honorForm.short_description" rows="4"></textarea>
           </label>
 
@@ -1037,7 +1118,7 @@ watch(pageSize, async (nextSize, previousSize) => {
     </teleport>
 
     <teleport to="body">
-      <div v-if="showCategorySection && categoryFormOpen" class="editor-shell editor-shell--modal" @click.self="closeCategoryForm">
+      <div v-if="categoryFormOpen" class="editor-shell editor-shell--modal" @click.self="closeCategoryForm">
         <aside class="editor-panel editor-panel--modal" @click.stop>
           <div class="editor-head">
             <div class="editor-head__content">
@@ -1064,25 +1145,6 @@ watch(pageSize, async (nextSize, previousSize) => {
           <label class="editor-field">
             <span>Slug</span>
             <input v-model="categoryForm.slug" type="text" :placeholder="$t('admin.about.toolbar.slug_placeholder')" />
-          </label>
-
-          <label class="editor-field">
-            <span>{{ $t('admin.capability.categories.table.type') }}</span>
-            <select v-model="categoryForm.type">
-              <option v-for="option in categoryTypeOptions" :key="option.value" :value="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </label>
-
-          <label class="editor-field">
-            <span>{{ $t('admin.capability.items.fields.award_category') }}</span>
-            <select v-model="categoryForm.parent_id">
-              <option value="">{{ $t('admin.common.no_data') }}</option>
-              <option v-for="item in categoryParentOptions" :key="item.id" :value="item.id">
-                {{ item.name }}
-              </option>
-            </select>
           </label>
 
           <label class="editor-field">
@@ -1159,6 +1221,55 @@ watch(pageSize, async (nextSize, previousSize) => {
   margin: 0;
   font-size: 13px;
   color: #64748b;
+}
+
+.certificate-category-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 14px;
+}
+
+.certificate-category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+}
+
+.certificate-category-chip--active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.certificate-category-chip__main {
+  min-width: 88px;
+  display: grid;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+  text-align: left;
+  cursor: pointer;
+}
+
+.certificate-category-chip__main strong {
+  font-size: 13px;
+  line-height: 1.1;
+}
+
+.certificate-category-chip__main span {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.certificate-category-chip__actions {
+  display: inline-flex;
+  gap: 6px;
 }
 
 .intro-eyebrow, .editor-eyebrow {

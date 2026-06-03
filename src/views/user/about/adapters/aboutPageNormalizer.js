@@ -306,37 +306,6 @@ function normalizeDevelopmentCourse(blocks) {
     })
 }
 
-
-
-function normalizeLeadershipCare(blocks) {
-  return blockItems(blocks, 'leadership_care_gallery')
-    .filter((it) => String(it.item_key || '').trim() !== 'section_title')
-    .map((it) => {
-      const meta = itemMeta(it)
-      const legacyPreset = String(meta.avatar_focus || '').trim().toLowerCase()
-      const fallbackFocus =
-        legacyPreset === 'top-left'
-          ? { x: 0, y: 0 }
-          : legacyPreset === 'top-right'
-            ? { x: 100, y: 0 }
-            : legacyPreset === 'bottom-left'
-              ? { x: 0, y: 100 }
-              : legacyPreset === 'bottom-right'
-                ? { x: 100, y: 100 }
-                : { x: 50, y: 50 }
-
-      return {
-        name: it.title || '',
-        role: it.subtitle || meta.role || meta.position || meta.year || '',
-        image: itemImage(it, 'image_url'),
-        avatarFocusX: Number.isFinite(Number(meta.focus_x)) ? Number(meta.focus_x) : fallbackFocus.x,
-        avatarFocusY: Number.isFinite(Number(meta.focus_y)) ? Number(meta.focus_y) : fallbackFocus.y,
-        avatarFit: meta.avatar_fit === 'contain' ? 'contain' : 'cover',
-        text: it.title || '',
-      }
-    })
-}
-
 // ---------------------------------------------------------------------------
 // Section meta builder (cho navigation dots + tabs)
 // ---------------------------------------------------------------------------
@@ -348,7 +317,6 @@ const SECTION_CONFIG = [
   { anchor: 'organization_chart', id: 'page4', title: 'Sơ đồ tổ chức', routeSuffix: 'organization-chart', hash: '#page4' },
   { anchor: 'corporate_culture', id: 'page5', title: 'Giá trị cốt lõi', routeSuffix: 'corporate-culture', hash: '#page5' },
   { anchor: 'development_course', id: 'page6', title: 'Lịch sử phát triển', routeSuffix: 'development-course', hash: '#page6' },
-  { anchor: 'leadership_care', id: 'page7', title: 'Ban lãnh đạo', routeSuffix: 'leadership-care', hash: '#page7' },
 ]
 
 function buildSectionMeta(sections) {
@@ -386,7 +354,6 @@ export function normalizeAboutPage(raw, banners = []) {
   const cultureCoverItem = findItem(blocks, 'culture_values', 'cover_image')
   const cultureTitleItem = findItem(blocks, 'culture_values', 'section_title')
   const timelineTitleItem = findItem(blocks, 'timeline', 'section_title')
-  const leadershipTitleItem = findItem(blocks, 'leadership_care_gallery', 'section_title')
   const cultureCoverFallbackItem =
     blockItems(blocks, 'culture_values').find((item) => itemImage(item)) || null
 
@@ -417,9 +384,6 @@ export function normalizeAboutPage(raw, banners = []) {
     timelineEntries: normalizeDevelopmentCourse(blocks),
     timelineSectionTitle:
       itemStr(timelineTitleItem) || sectionTitle(sections, 'development_course', 'Lịch sử phát triển'),
-    leadershipItems: normalizeLeadershipCare(blocks),
-    leadershipSectionTitle:
-      itemStr(leadershipTitleItem) || sectionTitle(sections, 'leadership_care', 'Ban lãnh đạo'),
     introSectionTitle:
       itemStr(introTitleItem) || sectionTitle(sections, 'company_introduction', 'Giới thiệu công ty'),
     speechSectionTitle:

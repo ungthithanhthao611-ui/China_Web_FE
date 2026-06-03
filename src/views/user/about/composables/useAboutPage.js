@@ -21,6 +21,12 @@ const ABOUT_CACHE_TTL = 5 * 60 * 1000
 const ABOUT_MEMORY_CACHE = new Map()
 let inFlightRequest = null
 
+function isAdminPreviewMode() {
+  if (typeof window === 'undefined') return false
+  const params = new URLSearchParams(window.location.search)
+  return params.get('adminPreview') === '1' || Boolean(params.get('previewTs'))
+}
+
 function getCacheKey(locale) {
   return `${ABOUT_CACHE_PREFIX}${String(locale || 'vi').trim().toLowerCase() || 'vi'}`
 }
@@ -140,25 +146,28 @@ export function useAboutPage() {
     const currentLocale = locale.value
     loading.value = !aboutView.value
     error.value = null
+    const isPreview = isAdminPreviewMode()
 
-    if (!force || !aboutView.value) {
+    if ((!force && !isPreview) || !aboutView.value) {
       const cached = readCachedAbout(currentLocale)
       if (cached) {
         syncFromRaw(cached)
         loading.value = false
-        if (!force) {
+        if (!force && !isPreview) {
           return cached
         }
       }
     }
 
-    if (inFlightRequest && !force) {
+    if (inFlightRequest && !force && !isPreview) {
       return inFlightRequest
     }
 
     inFlightRequest = getPageDetail('about')
       .then((raw) => {
-        writeCachedAbout(currentLocale, raw)
+        if (!isPreview) {
+          writeCachedAbout(currentLocale, raw)
+        }
         syncFromRaw(raw)
         return raw
       })

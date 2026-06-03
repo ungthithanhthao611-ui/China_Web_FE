@@ -68,12 +68,12 @@ export default {
     }
   },
   items: {
-    label: 'Năng Lực / Chứng Nhận',
+    label: 'ISO & CE',
     eyebrow: 'Chi tiết năng lực',
-    description: 'Quản lý chi tiết các giải thưởng, chứng chỉ ISO/CE, và các mốc năng lực cụ thể.',
-    add_new: 'Thêm mục năng lực',
-    edit: 'Sửa mục năng lực',
-    delete: 'Xóa mục năng lực',
+    description: 'Quản lý hình ảnh và thông tin các chứng chỉ ISO, CE hiển thị trên trang Năng lực.',
+    add_new: 'Thêm chứng chỉ',
+    edit: 'Sửa chứng chỉ',
+    delete: 'Xóa chứng chỉ',
     fields: {
       award_year: 'Năm / Mốc thời gian',
       award_category: 'Nhóm năng lực',
