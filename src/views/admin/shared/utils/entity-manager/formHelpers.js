@@ -31,7 +31,12 @@ export function createEntityManagerFormHelpers({
   clampBannerFocus,
   isAllowedVideoUrl,
   t,
+  te,
 }) {
+  const isI18nKey = (str) => {
+    if (typeof str !== "string" || !str) return false;
+    return /^[a-z0-9_.-]+$/i.test(str) && typeof te === "function" && te(str);
+  };
   const recordDisplayName = (record = null) => {
     const source = record || form;
     return String(
@@ -61,22 +66,20 @@ export function createEntityManagerFormHelpers({
 
   const fieldLabel = (field) => {
     const customLabel = config.value?.fieldLabels?.[field];
-    if (customLabel) return t(customLabel);
+    if (customLabel) return isI18nKey(customLabel) ? t(customLabel) : customLabel;
     return field.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
   const fieldPlaceholder = (field) => {
     const key = config.value?.placeholders?.[field];
     if (!key) return "";
-    const translated = t(key);
-    return translated !== key ? translated : key;
+    return isI18nKey(key) ? t(key) : key;
   };
 
   const fieldHelpText = (field) => {
     const key = config.value?.helpText?.[field];
     if (!key) return "";
-    const translated = t(key);
-    return translated !== key ? translated : key;
+    return isI18nKey(key) ? t(key) : key;
   };
 
   const slugify = (value) =>
@@ -372,8 +375,9 @@ export function createEntityManagerFormHelpers({
     const configuredOptions = configSelectOptions(field);
     if (configuredOptions) {
       return configuredOptions.map(opt => {
-        if (typeof opt === 'string') return { value: opt, label: t(opt) };
-        return { ...opt, label: t(opt.label || opt.value) };
+        if (typeof opt === 'string') return { value: opt, label: isI18nKey(opt) ? t(opt) : opt };
+        const labelKey = opt.label || opt.value;
+        return { ...opt, label: isI18nKey(labelKey) ? t(labelKey) : labelKey };
       });
     }
 
@@ -389,10 +393,13 @@ export function createEntityManagerFormHelpers({
     return source.map(opt => {
       if (typeof opt === 'string') {
         const key = `admin.common.${opt}`;
-        const translated = t(key);
-        return { value: opt, label: translated !== key ? translated : t(opt) };
+        if (isI18nKey(key)) return { value: opt, label: t(key) };
+        const fallbackKey = `admin.common.status_options.${opt}`;
+        if (isI18nKey(fallbackKey)) return { value: opt, label: t(fallbackKey) };
+        return { value: opt, label: opt };
       }
-      return { ...opt, label: t(opt.label || opt.value) };
+      const labelKey = opt.label || opt.value;
+      return { ...opt, label: isI18nKey(labelKey) ? t(labelKey) : labelKey };
     });
   };
 

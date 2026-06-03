@@ -56,7 +56,7 @@ const FALLBACK_ENTITY_CONFIG = Object.freeze({
 })
 
 export function useEntityManager(props, emit) {
-  const { t } = useI18n()
+  const { t, te } = useI18n()
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // STATE
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -151,13 +151,33 @@ export function useEntityManager(props, emit) {
         : DEFAULT_STATUS_OPTIONS
     return source
       .map((option) => {
+        let value = ''
+        let rawLabel = ''
         if (typeof option === 'string') {
-          return { value: option, label: t(option) }
+          value = option
+          rawLabel = option
+        } else {
+          value = String(option?.value || '').trim()
+          rawLabel = String(option?.label || option?.value || '').trim()
         }
-        return {
-          value: String(option?.value || '').trim(),
-          label: t(String(option?.label || option?.value || '').trim()),
+
+        if (!value) return { value: '', label: '' }
+
+        let label = rawLabel
+        const optKey = `admin.common.status_options.${value}`
+        const commonKey = `admin.common.${value}`
+
+        if (rawLabel.includes('.') && te(rawLabel)) {
+          label = t(rawLabel)
+        } else if (te(optKey)) {
+          label = t(optKey)
+        } else if (te(commonKey)) {
+          label = t(commonKey)
+        } else if (/^[a-z0-9_.-]+$/i.test(rawLabel) && te(rawLabel)) {
+          label = t(rawLabel)
         }
+
+        return { value, label }
       })
       .filter((option) => option.value)
   })
@@ -389,6 +409,7 @@ export function useEntityManager(props, emit) {
     },
     isAllowedVideoUrl,
     t,
+    te,
   })
 
   const {
