@@ -159,10 +159,19 @@ const filteredSectionMeta = computed(() => {
 })
 
 let observer = null;
+let activeObserverInstance = null;
 
 const setupObserver = () => {
+  // Phải có scrollContainer để observer hoạt động đúng
+  if (!scrollContainer.value) return;
+
   if (observer) {
     observer.disconnect();
+    observer = null;
+  }
+  if (activeObserverInstance) {
+    activeObserverInstance.disconnect();
+    activeObserverInstance = null;
   }
 
   observer = new IntersectionObserver(
@@ -181,7 +190,7 @@ const setupObserver = () => {
     }
   );
 
-  const activeObserver = new IntersectionObserver(
+  activeObserverInstance = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
@@ -197,9 +206,11 @@ const setupObserver = () => {
     }
   );
 
-  document.querySelectorAll(".about-section").forEach((section) => {
+  // Observe cả hero (page1) và tất cả about-section
+  const allSections = scrollContainer.value.querySelectorAll('.about-hero, .about-section');
+  allSections.forEach((section) => {
     observer.observe(section);
-    activeObserver.observe(section);
+    activeObserverInstance.observe(section);
   });
 };
 
@@ -478,8 +489,50 @@ const isSyncingByClick = ref(false);
 const scrollContainer = ref(null);
 let scrollRafId = null;
 
+/**
+ * Detect section đang hiển thị dựa trên scroll position.
+ * Đây là cơ chế fallback/bổ trợ cho IntersectionObserver,
+ * đảm bảo section luôn được đánh dấu visible khi cuộn trang.
+ */
 const handleContainerScroll = () => {
-  // Không làm gì cả vì IntersectionObserver đã đảm nhận việc update activeSection!
+  if (scrollRafId) return; // Throttle bằng rAF
+
+  scrollRafId = requestAnimationFrame(() => {
+    scrollRafId = null;
+    const container = scrollContainer.value;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const containerH = containerRect.height;
+    const allSections = container.querySelectorAll('.about-hero, .about-section');
+    let bestMatch = null;
+    let bestRatio = 0;
+
+    allSections.forEach((section) => {
+      const rect = section.getBoundingClientRect();
+      const visibleTop = Math.max(rect.top, containerRect.top);
+      const visibleBottom = Math.min(rect.bottom, containerRect.bottom);
+      const visibleH = Math.max(0, visibleBottom - visibleTop);
+      const ratio = visibleH / containerH;
+
+      if (ratio > bestRatio) {
+        bestRatio = ratio;
+        bestMatch = section;
+      }
+
+      // Đánh dấu visible nếu ≥15% diện tích hiển thị
+      if (ratio >= 0.15 && section.id && !visibleSections.value.includes(section.id)) {
+        visibleSections.value.push(section.id);
+      }
+    });
+
+    // Cập nhật active section (section chiếm >50%)
+    if (bestMatch && bestMatch.id && bestRatio > 0.5) {
+      if (activeSection.value !== bestMatch.id) {
+        activeSection.value = bestMatch.id;
+      }
+    }
+  });
 };
 
 const scrollToSection = (id, smooth = true) => {
@@ -594,6 +647,21 @@ watch(aboutView, async (val) => {
     await nextTick();
     setupObserver();
     syncRouteToScroll();
+    // Trigger thủ công 1 lần để đánh dấu section đang hiển thị
+    handleContainerScroll();
+  }
+});
+
+// Khi scrollContainer ref có DOM element → setup observer + bind scroll event
+watch(scrollContainer, async (el) => {
+  if (el) {
+    el.addEventListener('scroll', handleContainerScroll, { passive: true });
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    await nextTick();
+    setupObserver();
+    syncRouteToScroll();
+    // Trigger lần đầu để detect section đang hiển thị
+    handleContainerScroll();
   }
 });
 
@@ -604,12 +672,14 @@ onMounted(async () => {
   window.addEventListener('resize', updateTimelineViewport, { passive: true });
 
   await nextTick();
+  // scrollContainer có thể đã sẵn sàng nếu data đã load trước đó
   if (scrollContainer.value) {
     scrollContainer.value.addEventListener('scroll', handleContainerScroll, { passive: true });
     scrollContainer.value.addEventListener('wheel', handleWheel, { passive: false });
+    setupObserver();
+    syncRouteToScroll();
+    handleContainerScroll();
   }
-  setupObserver();
-  syncRouteToScroll();
 });
 
 onBeforeUnmount(() => {
@@ -621,6 +691,11 @@ onBeforeUnmount(() => {
   }
   if (observer) {
     observer.disconnect();
+    observer = null;
+  }
+  if (activeObserverInstance) {
+    activeObserverInstance.disconnect();
+    activeObserverInstance = null;
   }
   if (scrollRafId) cancelAnimationFrame(scrollRafId);
 });

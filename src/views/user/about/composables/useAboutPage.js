@@ -16,65 +16,15 @@ import { getPageDetail } from '@/views/user/services/publicApi'
 import { useBootstrapStore } from '@/views/user/stores/bootstrap'
 import { normalizeAboutPage } from '../adapters/aboutPageNormalizer'
 
-const ABOUT_CACHE_PREFIX = 'about-page-cache:'
-const ABOUT_CACHE_TTL = 5 * 60 * 1000
-const ABOUT_MEMORY_CACHE = new Map()
 let inFlightRequest = null
+const loading = ref(true)
+const error = ref(null)
+const aboutView = ref(null)
 
 function isAdminPreviewMode() {
   if (typeof window === 'undefined') return false
   const params = new URLSearchParams(window.location.search)
   return params.get('adminPreview') === '1' || Boolean(params.get('previewTs'))
-}
-
-function getCacheKey(locale) {
-  return `${ABOUT_CACHE_PREFIX}${String(locale || 'vi').trim().toLowerCase() || 'vi'}`
-}
-
-function readCachedAbout(locale) {
-  const cacheKey = getCacheKey(locale)
-  const memoryEntry = ABOUT_MEMORY_CACHE.get(cacheKey)
-  if (memoryEntry && Date.now() - memoryEntry.timestamp <= ABOUT_CACHE_TTL) {
-    return memoryEntry.payload || null
-  }
-
-  try {
-    const raw = localStorage.getItem(cacheKey)
-    if (!raw) return null
-
-    const parsed = JSON.parse(raw)
-    const timestamp = Number(parsed?.timestamp || 0)
-    if (!timestamp || Date.now() - timestamp > ABOUT_CACHE_TTL) {
-      localStorage.removeItem(cacheKey)
-      ABOUT_MEMORY_CACHE.delete(cacheKey)
-      return null
-    }
-
-    ABOUT_MEMORY_CACHE.set(cacheKey, {
-      timestamp,
-      payload: parsed?.payload || null,
-    })
-
-    return parsed?.payload || null
-  } catch {
-    return null
-  }
-}
-
-function writeCachedAbout(locale, payload) {
-  const cacheKey = getCacheKey(locale)
-  const entry = {
-    timestamp: Date.now(),
-    payload,
-  }
-
-  ABOUT_MEMORY_CACHE.set(cacheKey, entry)
-
-  try {
-    localStorage.setItem(cacheKey, JSON.stringify(entry))
-  } catch {
-    // Ignore quota / serialization errors
-  }
 }
 
 function ensureImagePreloadLink(url) {
@@ -128,9 +78,6 @@ function applySeo(view) {
 export function useAboutPage() {
   const { locale } = useI18n()
   const bootstrapStore = useBootstrapStore()
-  const loading = ref(true)
-  const error = ref(null)
-  const aboutView = ref(null)
   const heroBanners = computed(() => bootstrapStore.heroBanners || [])
 
   function syncFromRaw(raw) {
@@ -148,26 +95,12 @@ export function useAboutPage() {
     error.value = null
     const isPreview = isAdminPreviewMode()
 
-    if ((!force && !isPreview) || !aboutView.value) {
-      const cached = readCachedAbout(currentLocale)
-      if (cached) {
-        syncFromRaw(cached)
-        loading.value = false
-        if (!force && !isPreview) {
-          return cached
-        }
-      }
-    }
-
     if (inFlightRequest && !force && !isPreview) {
       return inFlightRequest
     }
 
     inFlightRequest = getPageDetail('about')
       .then((raw) => {
-        if (!isPreview) {
-          writeCachedAbout(currentLocale, raw)
-        }
         syncFromRaw(raw)
         return raw
       })

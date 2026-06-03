@@ -106,6 +106,7 @@ const filters = reactive({
   status: 'all',
 })
 const currentPage = ref(1)
+
 const pageSize = ref(10)
 const totalRecords = ref(0)
 
@@ -134,6 +135,8 @@ const categoryFormOpen = ref(false)
 const categoryFormMode = ref('create')
 const editingCategoryId = ref(null)
 const categoryFormErrors = ref([])
+
+const manageCategoriesModalOpen = ref(false)
 
 const categoryForm = reactive({
   name: '',
@@ -884,8 +887,7 @@ watch(pageSize, async (nextSize, previousSize) => {
                   {{ $t('admin.capability.categories.edit') }}
                 </button>
                 <button
-                  type="button"
-                  class="btn btn-ghost btn-sm"
+                  type="button" class="btn btn-ghost btn-sm"
                   @click="onToggleCategoryActive(item, !item.is_active)"
                 >
                   {{ item.is_active ? $t('admin.about.section.collapse') : $t('admin.about.section.edit') }}
@@ -917,22 +919,19 @@ watch(pageSize, async (nextSize, previousSize) => {
             <button type="button" class="btn btn-primary btn-sm" @click="openCreateCategoryForm">+ Danh mục</button>
           </div>
         </div>
-        <div v-if="certificateCategories.length" class="certificate-category-strip">
-          <article
-            v-for="category in certificateCategories"
-            :key="category.id"
-            class="certificate-category-chip"
-            :class="{ 'certificate-category-chip--active': String(filters.categoryId) === String(category.id) }"
-          >
-            <button type="button" class="certificate-category-chip__main" @click="filters.categoryId = String(category.id); applyHonorsFilters()">
-              <strong>{{ category.name }}</strong>
-              <span>/{{ category.slug }}</span>
-            </button>
-            <div class="certificate-category-chip__actions">
-              <button type="button" class="btn btn-secondary btn-sm" @click="openEditCategoryForm(category)">Sửa</button>
-              <button type="button" class="btn btn-danger btn-sm" @click="removeCategory(category)">Xóa</button>
+        <div v-if="certificateCategories.length" class="category-box-container">
+          <button type="button" class="category-box-card" @click="manageCategoriesModalOpen = true">
+            <div class="category-box-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
             </div>
-          </article>
+            <div class="category-box-card__info">
+              <strong>Danh mục ISO & CE</strong>
+              <span>{{ certificateCategories.length }} danh mục con</span>
+            </div>
+            <div class="category-box-card__arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          </button>
         </div>
       </section>
 
@@ -1176,6 +1175,56 @@ watch(pageSize, async (nextSize, previousSize) => {
       </div>
     </teleport>
 
+    <teleport to="body">
+      <div v-if="manageCategoriesModalOpen" class="editor-shell editor-shell--modal" @click.self="manageCategoriesModalOpen = false">
+        <aside class="editor-panel editor-panel--modal category-detail-panel" @click.stop>
+          <div class="editor-head">
+            <div class="editor-head__content">
+              <div class="editor-head__badge-wrap">
+                <span class="editor-head__badge">ISO & CE</span>
+              </div>
+              <h3>Chi tiết danh mục</h3>
+              <p class="editor-head__copy">Xem và quản lý các danh mục chứng chỉ hiện có</p>
+            </div>
+            <button type="button" class="icon-btn" @click="manageCategoriesModalOpen = false">×</button>
+          </div>
+
+          <div class="category-modal-body">
+            <div class="category-modal-actions">
+              <button type="button" class="btn btn-primary btn-sm btn-block" @click="openCreateCategoryForm(); manageCategoriesModalOpen = false">
+                + Thêm danh mục mới
+              </button>
+            </div>
+
+            <div class="category-list-mini">
+              <div
+                v-for="category in certificateCategories"
+                :key="category.id"
+                class="category-item-mini"
+                :class="{ 'category-item-mini--active': String(filters.categoryId) === String(category.id) }"
+              >
+                <div
+                  class="category-item-mini__content"
+                  @click="filters.categoryId = String(category.id); applyHonorsFilters(); manageCategoriesModalOpen = false"
+                  title="Bấm để lọc theo danh mục này"
+                >
+                  <div class="category-item-mini__dot"></div>
+                  <div class="category-item-mini__details">
+                    <span class="category-item-mini__name">{{ category.name }}</span>
+                    <span class="category-item-mini__slug">/{{ category.slug }}</span>
+                  </div>
+                </div>
+                <div class="category-item-mini__actions">
+                  <button type="button" class="btn btn-secondary btn-xs" @click="openEditCategoryForm(category); manageCategoriesModalOpen = false">Sửa</button>
+                  <button type="button" class="btn btn-danger btn-xs" @click="removeCategory(category); manageCategoriesModalOpen = false">Xóa</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </teleport>
+
     <CoreConfirmDialog
       :visible="confirmDialog.visible"
       :dialog="confirmDialog"
@@ -1221,55 +1270,6 @@ watch(pageSize, async (nextSize, previousSize) => {
   margin: 0;
   font-size: 13px;
   color: #64748b;
-}
-
-.certificate-category-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding-top: 14px;
-}
-
-.certificate-category-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
-}
-
-.certificate-category-chip--active {
-  border-color: #3b82f6;
-  background: #eff6ff;
-}
-
-.certificate-category-chip__main {
-  min-width: 88px;
-  display: grid;
-  gap: 2px;
-  border: 0;
-  background: transparent;
-  color: #0f172a;
-  text-align: left;
-  cursor: pointer;
-}
-
-.certificate-category-chip__main strong {
-  font-size: 13px;
-  line-height: 1.1;
-}
-
-.certificate-category-chip__main span {
-  color: #64748b;
-  font-size: 11px;
-}
-
-.certificate-category-chip__actions {
-  display: inline-flex;
-  gap: 6px;
 }
 
 .intro-eyebrow, .editor-eyebrow {
@@ -1407,35 +1407,6 @@ watch(pageSize, async (nextSize, previousSize) => {
   font-weight: 500;
 }
 
-.btn-secondary-inline, .btn-danger-inline, .btn-soft-inline {
-  padding: 6px 12px;
-  font-size: 12px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-secondary-inline {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.btn-danger-inline {
-  background: #fef2f2;
-  color: #dc2626;
-}
-
-.btn-soft-inline {
-  background: #f0f9ff;
-  color: #0369a1;
-}
-
-.btn-secondary-inline:hover { background: #e2e8f0; }
-.btn-danger-inline:hover { background: #fecaca; }
-.btn-soft-inline:hover { background: #e0f2fe; }
-
 @media (max-width: 768px) {
   .intro-card {
     flex-direction: column;
@@ -1541,5 +1512,182 @@ watch(pageSize, async (nextSize, previousSize) => {
   .capability-category-grid {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* Box Danh mục mới */
+.category-box-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.category-box-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  width: 260px;
+}
+
+.category-box-card:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.08);
+}
+
+.category-box-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.category-box-card__info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.category-box-card__info strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.category-box-card__info span {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.category-box-card__arrow {
+  color: #94a3b8;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.category-box-card:hover .category-box-card__arrow {
+  color: #3b82f6;
+  transform: translateX(2px);
+}
+
+/* Modal chi tiết danh mục */
+.category-detail-panel {
+  max-width: 460px !important;
+  width: 100%;
+}
+
+.category-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.category-modal-actions {
+  margin-bottom: 8px;
+}
+
+.btn-block {
+  width: 100%;
+  justify-content: center;
+  font-weight: 500;
+  padding: 10px;
+}
+
+.category-list-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.category-item-mini {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  transition: all 0.2s;
+}
+
+.category-item-mini:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.category-item-mini--active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.category-item-mini__content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-grow: 1;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.category-item-mini__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.category-item-mini--active .category-item-mini__dot {
+  background: #3b82f6;
+}
+
+.category-item-mini__details {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.category-item-mini__name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.category-item-mini__slug {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.category-item-mini__actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-xs {
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 4px;
 }
 </style>
