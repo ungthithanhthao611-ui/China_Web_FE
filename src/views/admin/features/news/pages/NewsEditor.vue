@@ -62,6 +62,15 @@
                 @click.stop="selectBlock(block.id)"
                 @mousedown.stop="startDrag($event, block)"
               >
+                <!-- Drag Handle di chuyển khối -->
+                <button
+                  v-if="store.selectedBlockId === block.id"
+                  class="news-editor-block__drag-handle"
+                  @mousedown.stop="startDrag($event, block, true)"
+                >
+                  <Move :size="14" />
+                </button>
+
                 <button class="news-editor-block__delete" @click.stop="store.removeBlock(block.id)">
                   <X :size="14" />
                 </button>
@@ -171,10 +180,35 @@
                 <textarea :value="store.post.contentZh" rows="7" @input="store.setPost({ contentZh: $event.target.value })"></textarea>
               </label>
 
-              <label class="sidebar-field">
-                <span>Thumbnail URL</span>
-                <input :value="store.post.thumbnailUrl" type="text" placeholder="https://..." @input="store.setPost({ thumbnailUrl: $event.target.value })" />
-              </label>
+              <div class="sidebar-field">
+                <span>Thumbnail URL (Ảnh bìa)</span>
+                <div class="thumbnail-upload-wrapper">
+                  <div v-if="store.post.thumbnailUrl" class="thumbnail-preview-container">
+                    <img :src="store.post.thumbnailUrl" alt="Thumbnail Preview" class="thumbnail-preview" />
+                    <button type="button" class="thumbnail-remove-btn" @click="store.setPost({ thumbnailUrl: '' })">
+                      <X :size="12" />
+                    </button>
+                  </div>
+                  <div class="thumbnail-actions-row">
+                    <input
+                      :value="store.post.thumbnailUrl"
+                      type="text"
+                      placeholder="https://..."
+                      @input="store.setPost({ thumbnailUrl: $event.target.value })"
+                    />
+                    <button type="button" class="thumbnail-upload-btn" @click="thumbnailFileInputRef?.click()" title="Tải ảnh bìa lên từ máy tính">
+                      <Upload :size="14" />
+                    </button>
+                  </div>
+                  <input
+                    ref="thumbnailFileInputRef"
+                    class="sr-only"
+                    type="file"
+                    accept="image/*"
+                    @change="handleThumbnailUpload"
+                  />
+                </div>
+              </div>
 
               <label class="sidebar-field">
                 <span>Status</span>
@@ -309,6 +343,17 @@
                     <span>Text Color</span>
                     <input class="sidebar-color sidebar-color--full" :value="selectedBlock.props.color || '#111827'" type="color" @input="updateBlockProps(selectedBlock.id, { color: $event.target.value })" />
                   </label>
+                  <label class="sidebar-field sidebar-field--checkbox">
+                    <div class="checkbox-row">
+                      <input
+                        id="auto-height-checkbox"
+                        type="checkbox"
+                        :checked="selectedBlock.props.autoHeight !== false"
+                        @change="updateBlockProps(selectedBlock.id, { autoHeight: $event.target.checked })"
+                      />
+                      <label for="auto-height-checkbox">Tự động chiều cao</label>
+                    </div>
+                  </label>
                 </template>
 
                 <template v-if="selectedBlock.type === 'image'">
@@ -377,7 +422,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Copy, Image as ImageIcon, LayoutGrid, Loader2, Save, Type, Upload, X } from 'lucide-vue-next'
+import { Copy, Image as ImageIcon, LayoutGrid, Loader2, Move, Save, Type, Upload, X } from 'lucide-vue-next'
 
 import { ADMIN_TOKEN_STORAGE_KEY } from '@/views/admin/shared/constants/auth'
 import {
@@ -410,6 +455,7 @@ const saveStatus = ref('idle')
 const translationLoading = ref(false)
 const postImageInputRef = ref(null)
 const blockImageInputRef = ref(null)
+const thumbnailFileInputRef = ref(null)
 const uploadedImages = ref([])
 const currentImageAction = ref(null)
 const editorSyncKey = ref(0)
@@ -848,6 +894,14 @@ async function handleSidebarImageUpload(event) {
   event.target.value = ''
 }
 
+async function handleThumbnailUpload(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  const asset = await createImageAsset(file)
+  store.setPost({ thumbnailUrl: asset.src })
+  event.target.value = ''
+}
+
 function insertUploadedImage(src) {
   if (selectedBlock.value?.type === 'image') {
     updateBlockProps(selectedBlock.value.id, { src })
@@ -938,8 +992,8 @@ function blockStyle(block) {
 }
 
 let dragState = null
-function startDrag(event, block) {
-  if (event.target.closest('.ProseMirror') || event.target.closest('input, textarea, button, select')) return
+function startDrag(event, block, isHandle = false) {
+  if (!isHandle && (event.target.closest('.ProseMirror') || event.target.closest('input, textarea, button, select'))) return
   dragState = {
     id: block.id,
     startX: event.clientX,
@@ -998,11 +1052,21 @@ function onResize(event) {
   }, true)
 }
 
-function stopResize() {
+function stopResize(event) {
   if (resizeState) {
     const block = store.blocks.find((item) => item.id === resizeState.id)
     if (block) {
-      store.updateBlock(resizeState.id, { w: block.w, h: block.h })
+      const updates = { w: block.w, h: block.h }
+      if (isRichTextBlock(block)) {
+        const deltaY = event ? Math.abs(event.clientY - resizeState.startY) : 0
+        if (deltaY > 2) {
+          updates.props = {
+            ...block.props,
+            autoHeight: false,
+          }
+        }
+      }
+      store.updateBlock(resizeState.id, updates)
     }
   }
   resizeState = null
@@ -1631,6 +1695,36 @@ onBeforeUnmount(() => {
   opacity: 1;
 }
 
+.news-editor-block__drag-handle {
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  z-index: 3;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #2563eb;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.18);
+  cursor: move;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.news-editor-block:hover .news-editor-block__drag-handle,
+.news-editor-block--selected .news-editor-block__drag-handle {
+  opacity: 1;
+}
+
+.news-editor-block__drag-handle:hover {
+  transform: scale(1.1);
+  background: #1d4ed8;
+}
+
 .news-editor-sidebar {
   position: relative;
   min-width: 260px;
@@ -1745,6 +1839,34 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.sidebar-field--checkbox {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.checkbox-row label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  margin: 0;
 }
 
 .sidebar-empty {
@@ -1874,6 +1996,74 @@ onBeforeUnmount(() => {
   color: #0f172a;
   cursor: pointer;
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
+}
+
+.thumbnail-upload-wrapper {
+  display: grid;
+  gap: 8px;
+}
+
+.thumbnail-preview-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.thumbnail-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumbnail-remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(15, 23, 42, 0.75);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.thumbnail-remove-btn:hover {
+  background: #ef4444;
+  transform: scale(1.05);
+}
+
+.thumbnail-actions-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  gap: 8px;
+}
+
+.thumbnail-upload-btn {
+  height: 40px;
+  width: 40px;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid #dbe2ea;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.thumbnail-upload-btn:hover {
+  background: #f8fafc;
 }
 
 .sr-only {

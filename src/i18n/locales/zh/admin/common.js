@@ -178,4 +178,5 @@ export default {
     login_history: '登录历史',
     records_count: '{count} 条记录',
   },
+  error_occurred: '发生错误',
 }

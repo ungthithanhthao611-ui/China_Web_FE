@@ -178,4 +178,5 @@ export default {
     login_history: 'Login History',
     records_count: '{count} records',
   },
+  error_occurred: 'An error occurred',
 }

@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft } from 'lucide-vue-next'
 import Breadcrumb from '@/views/user/news/ui/Breadcrumb.vue'
 import { uiState } from '@/shared/utils/uiState'
 import { getNewsDetail, getNewsList } from '@/views/user/services/publicApi'
@@ -193,35 +192,11 @@ onMounted(() => {
 
     <!-- Article -->
     <template v-else-if="article">
-      <section class="detail-hero">
-        <div class="hero-media">
-          <img :src="imageUrl(article)" :alt="article.title" class="hero-img" />
-          <div class="hero-overlay"></div>
-        </div>
-        <div class="container detail-hero-inner">
-          <div class="hero-copy" data-aos="fade-up">
-            <router-link :to="defaultNewsRoute" class="back-link">
-              <ArrowLeft :size="16" />
-              <span>{{ t('user.projects.backHome') }}</span>
-            </router-link>
-            <div class="detail-meta">
-              <span class="detail-category">{{ t('user.home.news') }}</span>
-              <span class="detail-date">{{ formatDate(article.published_at || article.created_at) }}</span>
-            </div>
-            <h1>{{ article.title }}</h1>
-          </div>
-        </div>
-      </section>
-
       <Breadcrumb :paths="breadcrumbs" />
 
       <section class="detail-body-section">
         <div class="container detail-grid">
           <article class="article-card">
-            <div v-if="imageUrl(article)" class="article-image">
-              <img :src="imageUrl(article)" :alt="article.title" />
-            </div>
-
             <div class="article-content">
               <header class="article-meta">
                 <h2 class="article-main-title">{{ article.title }}</h2>
@@ -280,6 +255,7 @@ onMounted(() => {
 .news-detail-page {
   background: #fdfdfd;
   color: #1a1a1a;
+  padding-top: var(--site-header-offset, 126px);
 }
 
 .detail-hero {

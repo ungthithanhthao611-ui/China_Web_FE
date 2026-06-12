@@ -178,4 +178,5 @@ export default {
     login_history: 'Lịch sử đăng nhập',
     records_count: '{count} bản ghi',
   },
+  error_occurred: 'Đã xảy ra lỗi',
 }

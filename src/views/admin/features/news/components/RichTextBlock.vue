@@ -1,5 +1,12 @@
 <template>
-  <div class="rich-text-block" :class="{ 'rich-text-block--active': selected }" @mousedown.stop>
+  <div
+    class="rich-text-block"
+    :class="{
+      'rich-text-block--active': selected,
+      'rich-text-block--fixed-height': block.props?.autoHeight === false
+    }"
+    @mousedown.stop
+  >
     <EditorContent :editor="editor" class="rich-text-block__content" />
   </div>
 </template>
@@ -104,6 +111,22 @@ defineExpose({
 .rich-text-block {
   width: 100%;
   min-height: 100%;
+}
+
+.rich-text-block--fixed-height {
+  height: 100%;
+  overflow: hidden;
+}
+
+.rich-text-block--fixed-height .rich-text-block__content {
+  height: 100%;
+  overflow: hidden;
+}
+
+.rich-text-block--fixed-height :deep(.ProseMirror) {
+  height: 100%;
+  min-height: 100% !important;
+  overflow-y: auto !important;
 }
 
 .rich-text-block__content {

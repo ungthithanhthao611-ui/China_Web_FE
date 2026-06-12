@@ -9,6 +9,14 @@
           <p>{{ $t('admin.news.description') }}</p>
         </div>
         <div class="intro-actions">
+          <button
+            v-if="selectedIds.length > 0"
+            type="button"
+            class="btn btn-danger btn-sm"
+            @click="showBulkDeleteModal = true"
+          >
+            <Trash2 :size="14" /> Xóa đã chọn ({{ selectedIds.length }})
+          </button>
           <button class="btn btn-ghost btn-sm" @click="showCrawlModal = true">
             <Download :size="14" /> {{ $t('admin.news.actions.crawl') }}
           </button>
@@ -24,6 +32,14 @@
           <table class="ultimate-table">
             <thead>
               <tr>
+                <th style="width: 40px; text-align: center;">
+                  <input
+                    type="checkbox"
+                    :checked="isAllSelected"
+                    @change="toggleSelectAll"
+                    style="cursor: pointer;"
+                  />
+                </th>
                 <th style="width: 80px;">{{ $t('admin.news.table.image') }}</th>
                 <th>{{ $t('admin.news.table.title') }}</th>
                 <th style="width: 140px;">{{ $t('admin.news.table.status') }}</th>
@@ -34,20 +50,28 @@
             <tbody>
               <!-- Loading -->
               <tr v-if="loading">
-                <td colspan="5" class="text-center py-12">
+                <td colspan="6" class="text-center py-12">
                   <span class="text-sub">{{ $t('admin.news.table.loading') }}</span>
                 </td>
               </tr>
 
               <!-- Empty -->
               <tr v-else-if="posts.length === 0">
-                <td colspan="5" class="text-center py-12 text-sub">
+                <td colspan="6" class="text-center py-12 text-sub">
                   {{ $t('admin.news.table.empty') }}
                 </td>
               </tr>
 
               <!-- Rows -->
-              <tr v-else v-for="post in posts" :key="post.id">
+              <tr v-else v-for="post in posts" :key="post.id" :class="{ 'row-selected': selectedIds.includes(post.id) }">
+                <td style="text-align: center;">
+                  <input
+                    type="checkbox"
+                    :value="post.id"
+                    v-model="selectedIds"
+                    style="cursor: pointer;"
+                  />
+                </td>
                 <td>
                   <div class="section-thumb-clean" style="width: 60px; height: 40px;">
                     <img
@@ -139,11 +163,30 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Bulk Delete Modal -->
+    <Teleport to="body">
+      <div v-if="showBulkDeleteModal" class="modal-overlay" @click.self="showBulkDeleteModal = false">
+        <div class="modal-card modal-card--sm">
+          <div class="modal-body text-center">
+            <div class="modal-icon modal-icon--danger">
+              <AlertTriangle :size="24" />
+            </div>
+            <h3>Xóa các bài viết đã chọn?</h3>
+            <p class="text-sub">Bạn có chắc chắn muốn xóa {{ selectedIds.length }} bài viết đã chọn không? Thao tác này không thể hoàn tác.</p>
+          </div>
+          <div class="modal-footer modal-footer--center">
+            <button class="btn btn-secondary btn-sm" style="flex: 1;" @click="showBulkDeleteModal = false">Hủy</button>
+            <button class="btn btn-danger btn-sm" style="flex: 1;" @click="executeBulkDelete">Xóa</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -172,9 +215,24 @@ const loading = ref(false)
 const showCrawlModal = ref(false)
 const crawlUrl = ref('')
 const deleteTarget = ref(null)
+const selectedIds = ref([])
+const showBulkDeleteModal = ref(false)
+
+const isAllSelected = computed(() => {
+  return posts.value.length > 0 && selectedIds.value.length === posts.value.length
+})
+
+function toggleSelectAll(event) {
+  if (event.target.checked) {
+    selectedIds.value = posts.value.map(p => p.id)
+  } else {
+    selectedIds.value = []
+  }
+}
 
 async function fetchPosts() {
   loading.value = true
+  selectedIds.value = []
   try {
     const res = await listAdminEntityRecords('news_posts', token)
     posts.value = res.items || res.data || res || []
@@ -214,6 +272,23 @@ async function executeDelete() {
     await fetchPosts()
   } catch (err) {
     alert(t('admin.common.error_occurred') + ': ' + err.message)
+  }
+}
+
+async function executeBulkDelete() {
+  if (selectedIds.value.length === 0) return
+  loading.value = true
+  try {
+    await Promise.all(
+      selectedIds.value.map(id => deleteAdminEntityRecord('news_posts', id, token))
+    )
+    selectedIds.value = []
+    showBulkDeleteModal.value = false
+    await fetchPosts()
+  } catch (err) {
+    alert(t('admin.common.error_occurred') + ': ' + err.message)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -281,6 +356,10 @@ onMounted(fetchPosts)
 .ultimate-table {
   width: 100%;
   border-collapse: collapse;
+}
+
+.ultimate-table tr.row-selected {
+  background-color: #eff6ff;
 }
 
 .ultimate-table th {
